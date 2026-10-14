@@ -2,6 +2,9 @@
 
 > Written by the session that built this prototype (Windows machine, `C:\test2\OtadiPlus`) before it ran out of
 > disk space. **Read this file + `README.md` first** — they contain everything needed to continue on a new machine.
+>
+> Updated by the session that finished §6 on `C:\test2\OstadiPlusPrototype`: standalone APK built, full
+> on-device verification (§6.2) and the cross-app demo (§6.3) pass — see §2 for the evidence.
 
 ---
 
@@ -52,25 +55,33 @@ payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) 
   `editor-mobile.png`). An interactive run-through (create course → editor) was also verified.
 * **Student app source** — all screens written and `npx tsc --noEmit` ✅ (see §5 for the file map).
   `android/` was generated with `npx expo prebuild --platform android --no-install`.
+* **Standalone APK built and installed** — `scripts\verify-android.ps1 -Install -Launch` produces
+  `app-debug.apk` (≈148 MB) with the JS bundle + 93 assets embedded (`debuggableVariants = []` in
+  `android/app/build.gradle` — re-applied automatically by the script after every prebuild). The app runs
+  with Metro stopped and no `adb reverse` (verified: Metro killed, still fine).
+* **On-device verification (old §6.2) — ALL PASS** on the Pixel_9a emulator (API 36, `emulator-5554`).
+  Automated by `scripts/device-verify.mjs` (Node + adb; uses ADBKeyboard to type — see §3). Screenshots:
+  `shots/device-01-home.png` … `device-08-hiba-profile-pending.png` (home + resume card, video player,
+  PDF reader pages 1→2, profile before/after sync, discoverable course, pending student).
+* **Cross-app demo (old §6.3) — VERIFIED end-to-end**: dashboard publishes `crs-exam` + activates
+  هبة الرامي → payload `shots/demo-payload.txt` (4,845 chars, marker `Z`) → pasted on-device →
+  «تمت المزامنة مع بيانات الأستاذ ✓» → «تحضير الامتحان الوطني» appears in دوراتي → hiba shows
+  «بانتظار التفعيل» on `crs-diff` and «نشط» on `crs-exam`.
+* **Three Hermes web-API gaps fixed** (each crashed/broke the app on-device only, not in the browser —
+  details in §5): `Intl.RelativeTimeFormat` in `selectors.ts`, `DecompressionStream` in `demoSync.ts`
+  (pure-JS raw-DEFLATE fallback, byte-identical to zlib), and an unbounded multiline `TextInput` in
+  `ProfileScreen.tsx` (a pasted payload grew past the sync button; now capped with `maxHeight`).
 
-### ⚠️ Blocked / unfinished
+### ✅ Resolved (historical)
 
-* **APK build never completed**: the machine's C: drive hit **0 bytes free** mid-build.
-  * The failing run reported two things: (a) missing **NDK 27.1.12297006** — which has since been installed
-    into `%LOCALAPPDATA%\Android\Sdk\ndk\27.1.12297006`, and (b) `java.io.IOException: There is not enough
-    space on the disk`.
-  * Remaining work needs roughly **2–3 GB free**: finish NDK install, compile, link, package
-    (`app-debug.apk` ≈ 20–30 MB with bundled media).
-  * Safe cleanups already performed (freed ≈7.7 GB, consumed again by Gradle): npm cache, pip cache, Yarn
-    cache, browser caches, Temp files older than 48 h. Still on disk and **user-owned** (do not delete
-    without asking): `~/.nuget` 7.3 GB, `%LOCALAPPDATA%\Docker` 9.4 GB, `~/.cache/huggingface` 1.85 GB,
-    `~/.android/avd` 5.07 GB (the Pixel_9a AVD — required to run the emulator),
-    `Android\Sdk\system-images` 7 GB (required), `%APPDATA%\Code` 4.6 GB (VS Code extensions),
-    Chrome/Edge profiles.
-* **The app was never launched on a device/emulator** — so all on-device verification (RTL layout, expo-video
-  playback, resume, document reader, sync paste, storage) is still to do.
-* Emulator boot was attempted (`emulator -avd Pixel_9a -no-snapshot-save -gpu auto`) but not verified.
-* No end-to-end cross-app demo run (teacher publish → student sees it) has been executed yet.
+* The old "APK never built" blocker (C: drive hit 0 bytes mid-build, missing NDK) is **resolved** — the NDK
+  `27.1.12297006` is installed, the build completes in ≈1 min warm, and §2 above records the verification.
+* Safe cleanups already performed on this machine (freed ≈7.7 GB, consumed again by Gradle): npm cache, pip
+  cache, Yarn cache, browser caches, Temp files older than 48 h. Still on disk and **user-owned** (do not
+  delete without asking): `~/.nuget` 7.3 GB, `%LOCALAPPDATA%\Docker` 9.4 GB, `~/.cache/huggingface` 1.85 GB,
+  `~/.android/avd` 5.07 GB (the Pixel_9a AVD — required to run the emulator),
+  `Android\Sdk\system-images` 7 GB (required), `%APPDATA%\Code` 4.6 GB (VS Code extensions),
+  Chrome/Edge profiles.
 
 ---
 
@@ -78,15 +89,26 @@ payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) 
 
 * **Node 24.0.x, npm 11.x**, `ffmpeg`/`ffprobe` on PATH, Playwright 1.64 with Chromium installed
   (`npx playwright install chromium` was needed once after a `chromium_headless_shell-1248` miss).
-* **JDK 17** at `C:\Program Files\Android\Android Studio\jbr` (the system default `java` is 24 — Gradle needs
-  `JAVA_HOME` pointed at the JBR).
+  Note: Node ≥22.7 can import the shared `.ts` sources directly in scratch scripts (type stripping) — useful
+  for testing shared codecs off-device; avoid TS parameter properties (`constructor(private x)`) in shared
+  code, strip-only mode rejects them.
+* **JDK 17** = Temurin at `C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot` (the system `java` is
+  newer — Gradle needs `JAVA_HOME` on 17; `scripts/verify-android.ps1` finds 17–21 automatically).
 * **Android SDK** at `%LOCALAPPDATA%\Android\Sdk` — platforms `android-34/35/36`, build-tools `34.0.0/35.0.0`,
-  NDK `27.1.12297006`, emulator, platform-tools, AVD **`Pixel_9a`**.
+  NDK `27.1.12297006`, emulator, platform-tools, AVD **`Pixel_9a`** (API 36; adb serial `emulator-5554`).
+* **ADBKeyboard** (`com.android.adbkeyboard/.AdbIME`) is installed and set as the emulator's default IME:
+  Gboard's handwriting/stylus mode swallows `adb input text` (commits 1 char), so the test driver types via
+  `am broadcast -a ADB_INPUT_TEXT --es msg '<text>'` (+ `ADB_CLEAR_TEXT`). To type manually, switch back with
+  `adb shell ime set com.google.android.inputmethod.latin/...LatinIME`.
+* **16 GB RAM** — kill Gradle daemons (`.\gradlew.bat --stop`) before big builds; don't run Metro + Gradle
+  concurrently when tight. ~8 GB free disk was enough for a full rebuild.
 * Gradle **8.14.3** is cached in `%USERPROFILE%\.gradle\wrapper\dists\gradle-8.14.3-all`.
   ⚠️ `android/gradle/wrapper/gradle-wrapper.properties` was edited to use the **`-all`** distribution URL
   (the `-bin` download times out here). If you re-run `expo prebuild`, that file is regenerated — re-apply
   the change or let Gradle download.
-* Project root: `C:\test2\OtadiPlus` (not a git repo until this session initialised it).
+* Project root: `C:\test2\OstadiPlusPrototype` (HTTPS clone of the GitHub remote — SSH was not set up here).
+* Windows PowerShell 5.1 reads `.ps1` files as ANSI — keep `.ps1` files **pure ASCII** (a UTF-8 em-dash in a
+  string literal becomes a curly quote and breaks parsing).
 
 ---
 
@@ -107,14 +129,15 @@ npm run dashboard             # vite dev server (HashRouter, so any static host 
 # student app — Metro dev server
 npm run app                   # then press "a" for Android, or use an emulator already booted
 
-# native Android build (this is where the previous session stopped)
-$env:JAVA_HOME    = 'C:\Program Files\Android\Android Studio\jbr'      # JDK 17
-$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
-$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
-Set-Location apps\student-app\android
-.\gradlew.bat :app:assembleDebug
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r app\build\outputs\apk\debug\app-debug.apk
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n ma.atlas.ostadiplus.student/.MainActivity
+# native Android build + install + launch (one shot; auto-finds JDK 17 + SDK)
+.\scripts\verify-android.ps1 -Install -Launch     # add -SkipBuild to only install+launch
+# produces apps\student-app\android\app\build\outputs\apk\debug\app-debug.apk (~148 MB,
+# JS bundle + assets embedded via debuggableVariants = [] — the script re-applies that
+# patch after every `expo prebuild`). The APK runs standalone: no Metro, no adb reverse.
+
+# on-device verification driver (emulator booted, APK installed, ADBKeyboard installed —
+# it types payloads over `am broadcast` because Gboard swallows `adb input text`)
+node scripts\device-verify.mjs                   # writes shots/device-01..08-*.png
 ```
 
 Type-check both apps:
@@ -140,9 +163,11 @@ npx tsc --noEmit            # in apps/student-app
     (use these to demo «teacher activates → student sees the course»).
   * Courses: `crs-diff` (الحساب التفاضلي, published, 3 chapters/8 lessons), `crs-vectors`,
     `crs-functions`, `crs-exam` (**draft** — used for the publish demo).
-* `demoSync.ts` payload: `OSTADI1:` + marker (`Z` = deflate-raw, only when `CompressionStream` exists i.e.
-  browsers; `B` = plain base64, which is what Hermes/RN produces and also accepts) + base64(JSON).
-  Hand-rolled UTF-8/base64 so it works in Hermes without `Buffer`/`TextEncoder`.
+* `demoSync.ts` payload: `OSTADI1:` + marker (`Z` = deflate-raw via `CompressionStream` when available,
+  `B` = plain base64) + base64(JSON). Encoding happens in the browser (dashboard); **decoding works
+  everywhere**: hand-rolled UTF-8/base64 for Hermes (no `Buffer`/`TextEncoder`), and when
+  `DecompressionStream` is missing (Hermes) a pure-JS raw-DEFLATE decoder (`inflateRawSync`) takes over —
+  it is byte-identical to zlib (verified off-device against `node:zlib` with the real payload).
 
 ### Media
 
@@ -172,6 +197,36 @@ npx tsc --noEmit            # in apps/student-app
   `playToEnd` → completed, resume by setting `player.currentTime` in the setup callback.
 * App id: `ma.atlas.ostadiplus.student` (see `app.json`).
 
+### Hermes gaps (break on-device only — browsers never show these)
+
+Hermes ships a small `Intl` and lacks some web APIs. Three real bugs were found on-device and fixed:
+
+* `Intl.RelativeTimeFormat` — **missing** (`DateTimeFormat`/`NumberFormat` exist and support `ar-MA`).
+  `selectors.ts#relativeTime` feature-detects and falls back to «قبل/خلال …» + «أمس/غداً» phrasing.
+* `DecompressionStream`/`CompressionStream` — **missing** → `demoSync.ts` uses the pure-JS
+  `inflateRawSync` fallback for `Z` payloads (see above).
+* Unbounded multiline `TextInput`: a full payload (~4.8 KB pasted as one string) expands a `multiline`
+  field past the screen, hiding «لصق ومزامنة» below the fold. `ProfileScreen` caps it (`maxHeight: 132`).
+
+Debugging aids that worked: `console.error`'s real JS stack can be printed to logcat via
+`nativeLoggingHook` (a temporary patch in `index.ts`); Hermes stack frames in component errors are
+function-entry positions (`1:bytecodeOffset`) and symbolicate against
+`android/app/build/generated/sourcemaps/react/debug/index.android.bundle.map`.
+
+### Build/runtime gotchas
+
+* `metro.config.js` must start from `expo/metro-config`'s `getDefaultConfig` and merge with `mergeConfig`
+  from `@react-native/metro-config` (**expo does not export `mergeConfig`**; a bare-RN config causes a
+  serializer mismatch). `@react-native/metro-config` and `babel-preset-expo` are required devDependencies
+  of `apps/student-app` (they were missing from the lockfile — Metro/babel fail without them).
+* Debug APKs skip JS bundling by default; `debuggableVariants = []` embeds it (patch in `scripts/verify-android.ps1`
+  step 3b — re-apply after every `expo prebuild`).
+* A debug APK still prefers a reachable Metro (`10.0.2.2:8081` on emulators) and only falls back to the
+  embedded bundle — kill Metro when you want to prove standalone behaviour.
+* Seed quirk (do not "fix" silently — see §8): `st-iman`'s saved `positionSec` (214 s) exceeds the seed
+  lesson's duration (162 s), so the resume marker is hidden by design (lesson already completed) and the
+  player seeks to the end.
+
 ### Dashboard specifics
 
 * Store: `src/store/DemoStore.tsx` — one reducer with granular actions (`course/create`,
@@ -183,22 +238,17 @@ npx tsc --noEmit            # in apps/student-app
 
 ## 6. Suggested next steps (in order)
 
-1. **Free ~3 GB** on the working drive (ask the user before deleting anything), or run on a machine with
-   space. Then finish the build (`.\gradlew.bat :app:assembleDebug`) and install on the AVD
-   (`Pixel_9a`, API 36 image) or any connected device.
-2. **On-device verification checklist** (screenshots to save into `shots/`):
-   * splash → sign-in (RTL correct on first launch, Arabic shaping fine),
-   * pick **إمان السيد** → Home shows «تابع التعلّم» with a real resume position,
-   * open the video lesson → plays offline, close & reopen → resumes, «تعليم كمتمل» updates progress,
-   * open a PDF lesson → page-images swipe, page counter, «تمت قراءة المستند»,
-   * announcements tab respects course filtering, profile shows enrollments with status pills,
-   * paste an `OSTADI1:` payload generated by the dashboard → dataset updates,
-   * sign out → switch to a pending student → courses visible but lessons locked with the review banner.
-3. **Cross-app demo run**: dashboard → publish `crs-exam` → activate a pending student → copy payload →
-   paste in the app → verify the course appears and unlocks.
-4. Nice-to-haves if there is appetite (not required by the brief): keep `android/` in sync with `expo
-   prebuild`, add a small `scripts/verify-android.ps1`, reduce APK size (bundle fewer posters), or ship the
-   document reader with a real PDF engine.
+All of the original next steps are **done** (see §2 for evidence): standalone APK, on-device verification
+checklist, cross-app demo. What remains, in order of usefulness:
+
+1. **Demo at 1080p**: the emulator window can be centred with any `SetWindowPos` helper; screenshots land in
+   `shots/`. Re-run `node scripts\device-verify.mjs` any time — it resets the app (`pm clear`) and walks the
+   whole story, writing `shots/device-01..08-*.png`.
+2. **Refresh the payload before a live demo**: the committed `shots/demo-payload.txt` is a snapshot; the
+   quickest way to regenerate is the dashboard (الإعدادات → نسخ رمز المزامنة) — or re-run the Playwright
+   cross-app flow that produced it.
+3. Nice-to-haves if there is appetite (not required by the brief): reduce APK size (bundle fewer posters),
+   ship the document reader with a real PDF engine, or add a release build (`assembleRelease` + signing).
 
 ---
 
@@ -206,11 +256,14 @@ npx tsc --noEmit            # in apps/student-app
 
 * Remote: `git@github.com:ouaalane/OstadiPlusPrototype.git`, branch `main`.
 * Included in git: all source, plus the **synced media copies** that make the apps run right after a clone —
-  `apps/teacher-dashboard/public/media` (13.4 MB) and `apps/student-app/src/assets` (12.8 MB), plus
-  `apps/student-app/android/` (Expo-generated native project, minus build outputs).
+  `apps/teacher-dashboard/public/media` (13.4 MB) and `apps/student-app/src/assets` (12.8 MB).
+  `apps/student-app/android/` is **not** committed — it is generated with `npx expo prebuild --platform
+  android --no-install` (or automatically by `scripts/verify-android.ps1` when missing).
 * Excluded (`.gitignore`): `node_modules/`, `dist/`, `media/generated/` (regenerate with `npm run media`),
   Gradle build outputs, `*.apk`, editor folders.
-* Screenshots in `shots/` are committed as verification evidence.
+* Screenshots in `shots/` are committed as verification evidence: dashboard (`*-desktop/mobile.png`) and
+  on-device (`device-01..08-*.png`). `shots/demo-payload.txt` is the captured cross-app sync payload;
+  `scripts/device-verify.mjs` is the adb driver that produced the device screenshots.
 
 ## 8. Deliberate scope cuts (do not "fix" these without asking)
 

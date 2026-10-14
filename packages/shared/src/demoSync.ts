@@ -159,11 +159,227 @@ async function deflate(bytes: Uint8Array): Promise<Uint8Array | null> {
   }
 }
 
+/**
+ * Pure-JS raw-DEFLATE (RFC 1951) decoder.
+ *
+ * Hermes (React Native) has no `DecompressionStream`, so the browser-compressed
+ * `Z` payloads could not be read on-device. This is the same "Hermes lacks a
+ * web API" gap as the hand-rolled Base64/UTF-8 above; it is only used when the
+ * platform cannot inflate natively.
+ */
+class BitReader {
+  private pos = 0;
+  private bit = 0;
+  private readonly data: Uint8Array;
+
+  constructor(data: Uint8Array) {
+    this.data = data;
+  }
+
+  readBit(): number {
+    if (this.pos >= this.data.length) throw new Error('unexpected end of data');
+    const b = (this.data[this.pos] >> this.bit) & 1;
+    if (++this.bit === 8) {
+      this.bit = 0;
+      this.pos++;
+    }
+    return b;
+  }
+
+  readBits(n: number): number {
+    let v = 0;
+    for (let i = 0; i < n; i++) v |= this.readBit() << i;
+    return v;
+  }
+
+  align(): void {
+    if (this.bit) {
+      this.bit = 0;
+      this.pos++;
+    }
+  }
+
+  get bytePos(): number {
+    return this.pos;
+  }
+
+  seek(pos: number): void {
+    this.pos = pos;
+    this.bit = 0;
+  }
+}
+
+interface Huffman {
+  counts: number[]; // counts[len] = symbols with that length (count[0] forced 0)
+  symbols: number[]; // symbols sorted by (length, symbol)
+  starts: number[]; // starts[len] = index into symbols of first symbol of len
+  codeStarts: number[]; // codeStarts[len] = first canonical code value of len
+}
+
+function buildHuffman(lengths: number[]): Huffman {
+  const MAX = 15;
+  const counts = new Array<number>(MAX + 1).fill(0);
+  for (const l of lengths) if (l > 0) counts[l]++;
+  const codeStarts = new Array<number>(MAX + 1).fill(0);
+  let code = 0;
+  for (let bits = 1; bits <= MAX; bits++) {
+    code = (code + counts[bits - 1]) << 1;
+    codeStarts[bits] = code;
+  }
+  const total = counts.reduce((a, b) => a + b, 0);
+  const starts = new Array<number>(MAX + 1).fill(0);
+  let off = 0;
+  for (let bits = 1; bits <= MAX; bits++) {
+    starts[bits] = off;
+    off += counts[bits];
+  }
+  const symbols = new Array<number>(total);
+  const fill = starts.slice();
+  for (let sym = 0; sym < lengths.length; sym++) {
+    const l = lengths[sym];
+    if (l > 0) symbols[fill[l]++] = sym;
+  }
+  return { counts, symbols, starts, codeStarts };
+}
+
+function decodeSymbol(r: BitReader, h: Huffman): number {
+  let code = 0;
+  for (let len = 1; len <= 15; len++) {
+    code = (code << 1) | r.readBit();
+    const cnt = h.counts[len];
+    if (cnt) {
+      const idx = code - h.codeStarts[len];
+      if (idx >= 0 && idx < cnt) return h.symbols[h.starts[len] + idx];
+    }
+  }
+  throw new Error('invalid Huffman code');
+}
+
+const LENGTH_BASE = [
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67,
+  83, 99, 115, 131, 163, 195, 227, 258,
+];
+const LENGTH_EXTRA = [
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,
+  5, 5, 0,
+];
+const DIST_BASE = [
+  1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513,
+  769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+];
+const DIST_EXTRA = [
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11,
+  11, 12, 12, 13, 13,
+];
+
+export function inflateRawSync(data: Uint8Array): Uint8Array {
+  const r = new BitReader(data);
+  const out: number[] = [];
+  let fixed: { lit: Huffman; dist: Huffman } | null = null;
+  let final = false;
+
+  while (!final) {
+    final = r.readBit() === 1;
+    const type = r.readBits(2);
+
+    if (type === 0) {
+      // stored (uncompressed) block
+      r.align();
+      const p = r.bytePos;
+      const len = data[p] | (data[p + 1] << 8);
+      const start = p + 4;
+      if (start + len > data.length) throw new Error('stored block overrun');
+      for (let i = 0; i < len; i++) out.push(data[start + i]);
+      r.seek(start + len);
+      continue;
+    }
+    if (type === 3) throw new Error('invalid block type');
+
+    let lit: Huffman;
+    let dist: Huffman;
+    if (type === 1) {
+      // fixed Huffman codes
+      if (!fixed) {
+        const lengths = new Array<number>(288).fill(8);
+        for (let i = 144; i < 256; i++) lengths[i] = 9;
+        for (let i = 256; i < 280; i++) lengths[i] = 7;
+        fixed = {
+          lit: buildHuffman(lengths),
+          dist: buildHuffman(new Array<number>(32).fill(5)),
+        };
+      }
+      lit = fixed.lit;
+      dist = fixed.dist;
+    } else {
+      // dynamic Huffman codes
+      const hlit = r.readBits(5) + 257;
+      const hdist = r.readBits(5) + 1;
+      const hclen = r.readBits(4) + 4;
+      const order = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+      const clLengths = new Array<number>(19).fill(0);
+      for (let i = 0; i < hclen; i++) clLengths[order[i]] = r.readBits(3);
+      const clHuff = buildHuffman(clLengths);
+
+      const all = new Array<number>(hlit + hdist).fill(0);
+      let i = 0;
+      while (i < all.length) {
+        const sym = decodeSymbol(r, clHuff);
+        if (sym < 16) {
+          all[i++] = sym;
+        } else if (sym === 16) {
+          if (i === 0) throw new Error('no previous code length');
+          let repeat = 3 + r.readBits(2);
+          if (i + repeat > all.length) throw new Error('repeat overrun');
+          const prev = all[i - 1];
+          while (repeat-- > 0) all[i++] = prev;
+        } else if (sym === 17) {
+          let repeat = 3 + r.readBits(3);
+          if (i + repeat > all.length) throw new Error('repeat overrun');
+          while (repeat-- > 0) all[i++] = 0;
+        } else {
+          let repeat = 11 + r.readBits(7);
+          if (i + repeat > all.length) throw new Error('repeat overrun');
+          while (repeat-- > 0) all[i++] = 0;
+        }
+      }
+      lit = buildHuffman(all.slice(0, hlit));
+      dist = buildHuffman(all.slice(hlit));
+    }
+
+    for (;;) {
+      const sym = decodeSymbol(r, lit);
+      if (sym < 256) {
+        out.push(sym);
+      } else if (sym === 256) {
+        break;
+      } else {
+        const li = sym - 257;
+        if (li >= LENGTH_BASE.length) throw new Error('invalid length symbol');
+        const length = LENGTH_BASE[li] + r.readBits(LENGTH_EXTRA[li]);
+        const ds = decodeSymbol(r, dist);
+        if (ds >= DIST_BASE.length) throw new Error('invalid distance symbol');
+        const distance = DIST_BASE[ds] + r.readBits(DIST_EXTRA[ds]);
+        const start = out.length - distance;
+        if (start < 0) throw new Error('distance too far back');
+        for (let k = 0; k < length; k++) out.push(out[start + k]);
+      }
+    }
+  }
+  return Uint8Array.from(out);
+}
+
 async function inflate(bytes: Uint8Array): Promise<Uint8Array | null> {
   const DS = (globalThis as any).DecompressionStream as
     | Ctor<ByteTransformStream>
     | undefined;
-  if (!DS) return null;
+  if (!DS) {
+    // Hermes has no DecompressionStream — decode with the pure-JS fallback.
+    try {
+      return inflateRawSync(bytes);
+    } catch {
+      return null;
+    }
+  }
   try {
     const stream = new DS('deflate-raw');
     const writer = stream.writable.getWriter();

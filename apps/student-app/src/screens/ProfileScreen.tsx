@@ -191,6 +191,9 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.line },
   input: {
     minHeight: 84,
+    // a full sync payload is ~4.8 KB — without a cap the multiline field
+    // grows past the button (and the screen); scroll inside instead.
+    maxHeight: 132,
     borderWidth: 1.2,
     borderColor: colors.line,
     borderRadius: radius.sm + 2,

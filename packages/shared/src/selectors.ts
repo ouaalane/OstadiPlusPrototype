@@ -220,15 +220,37 @@ export function relativeTime(iso: string, locale = 'ar'): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const minutes = Math.round(diff / 60000);
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   if (Math.abs(minutes) < 1) return 'الآن';
-  if (Math.abs(minutes) < 60) return rtf.format(-minutes, 'minute');
+
+  // Hermes (React Native's engine) does not implement Intl.RelativeTimeFormat,
+  // so feature-detect and fall back to equivalent Arabic wording.
+  const rtf =
+    typeof Intl.RelativeTimeFormat === 'function'
+      ? new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+      : null;
+  const fmt = (value: number, unit: 'minute' | 'hour' | 'day' | 'month'): string => {
+    if (rtf) return rtf.format(value, unit);
+    const past = value < 0;
+    const n = Math.abs(value);
+    if (unit === 'day' && n === 1) return past ? 'أمس' : 'غداً';
+    const words: Record<typeof unit, [string, string, string]> = {
+      minute: ['دقيقة', 'دقيقتين', 'دقائق'],
+      hour: ['ساعة', 'ساعتين', 'ساعات'],
+      day: ['يوم', 'يومين', 'أيام'],
+      month: ['شهر', 'شهرين', 'أشهر'],
+    };
+    const [one, two, many] = words[unit];
+    const amount = n === 1 ? one : n === 2 ? two : `${n} ${many}`;
+    return past ? `قبل ${amount}` : `خلال ${amount}`;
+  };
+
+  if (Math.abs(minutes) < 60) return fmt(-minutes, 'minute');
   const hours = Math.round(minutes / 60);
-  if (Math.abs(hours) < 24) return rtf.format(-hours, 'hour');
+  if (Math.abs(hours) < 24) return fmt(-hours, 'hour');
   const days = Math.round(hours / 24);
-  if (Math.abs(days) < 30) return rtf.format(-days, 'day');
+  if (Math.abs(days) < 30) return fmt(-days, 'day');
   const months = Math.round(days / 30);
-  return rtf.format(-months, 'month');
+  return fmt(-months, 'month');
 }
 
 export function formatDate(iso: string): string {
