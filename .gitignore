@@ -1,0 +1,26 @@
+node_modules/
+dist/
+build/
+.DS_Store
+*.log
+npm-debug.log*
+
+# React Native / Android
+apps/student-app/android/app/build/
+apps/student-app/android/.gradle/
+apps/student-app/android/local.properties
+apps/student-app/.metro-health-check*
+*.apk
+*.aab
+
+# generated media (regenerate with `npm run media`)
+media/generated/
+
+# editors
+.vscode/
+.idea/
+
+# agent / tooling working dirs
+.opencode/
+.playwright-mcp/
+

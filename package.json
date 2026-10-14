@@ -1,0 +1,22 @@
+{
+  "name": "ostadiplus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OstadiPlus — interactive product prototype (teacher dashboard + student Android app)",
+  "workspaces": [
+    "packages/*",
+    "apps/teacher-dashboard"
+  ],
+  "scripts": {
+    "dashboard": "npm run dev -w @ostadiplus/teacher-dashboard",
+    "dashboard:build": "npm run build -w @ostadiplus/teacher-dashboard",
+    "app": "npm run start --prefix apps/student-app",
+    "app:android": "npm run android --prefix apps/student-app",
+    "media": "node scripts/generate-media.mjs",
+    "media:sync": "node scripts/sync-media.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.0",
+    "typescript": "^5.9.3"
+  }
+}

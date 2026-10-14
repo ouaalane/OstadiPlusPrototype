@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "OstadiPlus",
+    "slug": "ostadiplus-student",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "scheme": "ostadiplus",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "primaryColor": "#2F5BFF",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F7FC"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ma.atlas.ostadiplus.student"
+    },
+    "android": {
+      "package": "ma.atlas.ostadiplus.student",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#F5F7FC"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-video",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F7FC"
+        }
+      ]
+    ]
+  }
+}
