@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  ClipboardCopy,
-  Info,
-  RotateCcw,
-  Save,
-  ShieldCheck,
-} from 'lucide-react';
+import { ClipboardCopy, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { Confirm, Field, PageHeader } from '@/components/ui';
 import { useAction, useStore } from '@/store/DemoStore';
 
@@ -30,16 +24,13 @@ export default function Settings() {
     <>
       <PageHeader
         title="الإعدادات"
-        description="بيانات المُدرّس التي تظهر للطلاب، وأدوات بيانات العرض التجريبي."
+        description="بياناتك التي تظهر للطلاب وأدوات البيانات التجريبية."
       />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         {/* ---- profile ---- */}
         <section className="card p-5">
           <h2 className="text-lg">الملف الشخصي</h2>
-          <p className="mt-1 text-sm text-muted">
-            يظهر الاسم والمركز لطالبك في شاشة الملف داخل التطبيق.
-          </p>
 
           <div className="mt-5 space-y-4">
             <Field
@@ -160,24 +151,24 @@ export default function Settings() {
         <section className="card h-fit p-5">
           <h2 className="text-lg">بيانات العرض التجريبي</h2>
           <p className="mt-1 text-sm text-muted">
-            نسختك الحالية تحتوي {state.courses.length} دورات، {state.students.length} تلميذاً،{' '}
-            {state.announcements.length} إعلانات.
-            {isDirty ? ' عدّلت بيانات العرض الأصلية.' : ' ما زالت كما وصلت من العرض الأصلي.'}
+            {state.courses.length} دورات · {state.students.length} تلميذاً
+            {isDirty ? ' · عُدّلت' : ''}
           </p>
 
           <div className="mt-4 space-y-3">
-            <div className="rounded-xl border border-line bg-surface-alt/60 p-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-ink">
-                <ClipboardCopy size={16} />
-                نقل البيانات إلى تطبيق التلاميذ
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-alt/60 p-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-bold text-ink">
+                  <ClipboardCopy size={16} />
+                  نقل البيانات إلى تطبيق التلاميذ
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  انسخ رمز المزامنة والصقه في تطبيق التلاميذ.
+                </p>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                اضغط الزر لنسخ رمز مزامنة، ثم الصقه داخل تطبيق التلاميذ (الملف الشخصي ← استيراد
-                البيانات) ليتطابق محتوى الدورات والإعلانات في كلا التطبيقين.
-              </p>
               <button
                 type="button"
-                className="btn btn-soft btn-sm mt-3"
+                className="btn btn-soft btn-sm"
                 disabled={copying}
                 onClick={async () => {
                   try {
@@ -197,30 +188,26 @@ export default function Settings() {
               </button>
             </div>
 
-            <div className="rounded-xl border border-line p-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-ink">
-                <RotateCcw size={16} />
-                إعادة ضبط العرض
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-bold text-ink">
+                  <RotateCcw size={16} />
+                  إعادة ضبط العرض
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  يحذف تعديلاتك ويعيد البيانات الأصلية.
+                </p>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                يحذف كل تعديلاتك ويعيد الدورات والتلاميذ والإعلانات إلى الحالة الأصلية.
-              </p>
               <button
                 type="button"
-                className="btn btn-outline btn-sm mt-3"
+                className="btn btn-outline btn-sm"
                 style={{ color: 'var(--color-danger)' }}
                 onClick={() => setResetOpen(true)}
               >
                 <RotateCcw size={15} />
-                إعادة ضبط البيانات
+                إعادة الضبط
               </button>
             </div>
-
-            <p className="inline-flex items-start gap-1.5 text-xs text-faint">
-              <Info size={14} className="mt-0.5 shrink-0" />
-              العرض لا يحتاج إنترنتاً ولا خادماً — كل شيء محفوظ محلياً (localStorage) ويمكن
-              إعادة تشغيله في أي وقت.
-            </p>
           </div>
         </section>
       </div>
@@ -228,7 +215,7 @@ export default function Settings() {
       <Confirm
         open={resetOpen}
         title="إعادة ضبط بيانات العرض؟"
-        message="سيُحذف كل ما عدّلته (دورات، تلاميذ، إعلانات، تقدّم) وتعود البيانات الأصلية."
+        message="سيُحذف كل ما عدّلته (دورات، تلاميذ، تقدّم) وتعود البيانات الأصلية."
         confirmLabel="إعادة الضبط"
         onConfirm={() => {
           dispatch({ type: 'reset' }, 'عادت بيانات العرض إلى حالتها الأصلية');

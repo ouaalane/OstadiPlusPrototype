@@ -4,7 +4,7 @@ import Overview from './pages/Overview';
 import Courses from './pages/Courses';
 import CourseEditor from './pages/CourseEditor';
 import Students from './pages/Students';
-import Announcements from './pages/Announcements';
+import Reception from './pages/Reception';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
@@ -16,7 +16,7 @@ export default function App() {
         <Route path="courses" element={<Courses />} />
         <Route path="courses/:courseId" element={<CourseEditor />} />
         <Route path="students" element={<Students />} />
-        <Route path="announcements" element={<Announcements />} />
+        <Route path="reception" element={<Reception />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Route>

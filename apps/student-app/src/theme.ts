@@ -1,42 +1,55 @@
 /**
  * OstadiPlus — mobile design tokens.
  *
- * Mirrors the dashboard (`apps/teacher-dashboard/src/styles/theme.css`) and
- * the source of truth in `packages/shared/src/tokens.ts`, so the two apps
- * read as one product.
+ * Rebuilt to match the reference design system (white surfaces + hairline
+ * borders, a single vivid blue, uppercase letter-spaced eyebrows, generous
+ * corner radii and very soft shadows). The brand blue is also mirrored into
+ * `packages/shared/src/tokens.ts` and the teacher dashboard.
+ *
+ * Typography switches family by language: Arabic → IBM Plex Sans Arabic,
+ * French (LTR) → Inter. Both are loaded in `App.tsx`.
  */
 
 import { StyleSheet } from 'react-native';
+import type { Lang } from '@ostadiplus/shared';
 
 export const colors = {
-  brand: '#2F5BFF',
-  brandDark: '#1E3FCC',
-  brandSoft: '#E6ECFF',
-  brandSofter: '#F1F4FF',
+  /** Primary interactive blue — buttons, links, active states. */
+  brand: '#0B5CFF',
+  brandDark: '#0546C8',
+  brandSoft: '#E7F0FF',
+  brandSofter: '#F2F6FF',
 
-  canvas: '#F5F7FC',
+  /** Page + surface. The reference is white-on-white with hairline borders. */
+  canvas: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#EEF2FA',
+  /** Inset panels: progress cards, storage cards, quiz hero, notices. */
+  surfaceAlt: '#F4F6F8',
 
-  ink: '#0E1B33',
-  body: '#334066',
-  muted: '#6C7A99',
-  faint: '#9AA6BF',
+  ink: '#0B1220',
+  body: '#4B5563',
+  muted: '#6B7280',
+  faint: '#9CA3AF',
 
-  line: '#E3E8F4',
-  lineStrong: '#CBD4E8',
+  line: '#E5E7EB',
+  lineStrong: '#D1D5DB',
 
   accent: '#FFB400',
-  accentSoft: '#FFF3D1',
+  accentSoft: '#FFF4D6',
 
-  success: '#12A66A',
-  successSoft: '#DFF5EA',
+  success: '#12B76A',
+  successSoft: '#E7F8F0',
 
   danger: '#E5484D',
-  dangerSoft: '#FCE6E7',
+  dangerSoft: '#FDECEC',
 
-  info: '#22B8F5',
-  infoSoft: '#DFF2FC',
+  info: '#0EA5E9',
+  infoSoft: '#E4F4FE',
+
+  /** Translucent circles that sit on top of photo heroes. */
+  scrim: 'rgba(11,18,32,0.38)',
+  glass: 'rgba(255,255,255,0.92)',
+  glassSoft: 'rgba(255,255,255,0.22)',
 
   black: '#000000',
   white: '#FFFFFF',
@@ -44,8 +57,10 @@ export const colors = {
 
 export const radius = {
   sm: 10,
-  md: 14,
-  lg: 18,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  sheet: 24,
   pill: 999,
 } as const;
 
@@ -55,7 +70,8 @@ export const spacing = {
   md: 12,
   lg: 16,
   xl: 20,
-  xxl: 28,
+  xxl: 24,
+  xxxl: 32,
 } as const;
 
 /** Font family names loaded in App.tsx. */
@@ -66,17 +82,58 @@ export const fonts = {
   bold: 'IBMPlexArabic_700Bold',
 } as const;
 
+/** Latin family used for the French (LTR) UI. */
+export const fontsLatin = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+} as const;
+
+export type FontWeight = keyof typeof fonts;
+
+/** Picks the right font family for the active language. */
+export function familyFor(lang: Lang, weight: FontWeight = 'regular'): string {
+  return lang === 'fr' ? fontsLatin[weight] : fonts[weight];
+}
+
+/** Reference type scale. */
+export const type = {
+  eyebrow: 11,
+  micro: 11.5,
+  meta: 12.5,
+  body: 14.5,
+  title: 16,
+  h3: 17,
+  h2: 20,
+  h1: 24,
+  display: 28,
+  stat: 30,
+} as const;
+
+export const tracking = {
+  eyebrow: 0.9,
+} as const;
+
 export const shadow = {
+  /** Reference cards are border-first, shadow-second. */
   card: {
-    shadowColor: '#0E1B33',
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
+    shadowColor: '#0B1220',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  raised: {
+    shadowColor: '#0B1220',
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   overlay: {
-    shadowColor: '#0E1B33',
-    shadowOpacity: 0.18,
+    shadowColor: '#0B1220',
+    shadowOpacity: 0.2,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
     elevation: 10,
@@ -86,6 +143,7 @@ export const shadow = {
 /**
  * The prototype is laid out explicitly right-to-left (no `I18nManager`
  * restart gymnastics): rows run right → left, text is right aligned.
+ * Screens that support French use `useLayout(lang)` instead of these.
  */
 export const rtl = StyleSheet.create({
   row: { flexDirection: 'row-reverse', alignItems: 'center' },

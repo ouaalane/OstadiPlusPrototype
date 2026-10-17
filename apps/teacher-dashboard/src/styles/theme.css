@@ -6,13 +6,13 @@
 
 @theme {
   /* Brand */
-  --color-brand: #2f5bff;
-  --color-brand-dark: #1e3fcc;
-  --color-brand-soft: #e8eeff;
-  --color-brand-softer: #f2f5ff;
-  --color-brand-from: #2e7bff;
-  --color-brand-via: #3b5bf0;
-  --color-brand-to: #4b2fe0;
+  --color-brand: #0b5cff;
+  --color-brand-dark: #0546c8;
+  --color-brand-soft: #e7f0ff;
+  --color-brand-softer: #f2f6ff;
+  --color-brand-from: #3d82ff;
+  --color-brand-via: #0b5cff;
+  --color-brand-to: #0546c8;
 
   /* Status */
   --color-accent: #ffb400;
@@ -184,6 +184,13 @@
   --btn-fg: var(--color-danger);
 }
 
+/* Solid dark button — primary action in toolbars (matches the reference table). */
+@utility btn-dark {
+  --btn-bg: var(--color-ink);
+  --btn-bg-hover: #1c2b4a;
+  --btn-fg: #ffffff;
+}
+
 @utility btn-lg {
   --btn-h: 52px;
   --btn-px: 26px;
@@ -283,6 +290,16 @@
     var(--color-brand-from) 0%,
     var(--color-brand-via) 52%,
     var(--color-brand-to) 100%
+  );
+}
+
+/* Stitch Atlas Academic hero — matches the mobile GradientHeader. */
+@utility hero-gradient {
+  background-image: linear-gradient(
+    135deg,
+    #0546c8 0%,
+    #0b5cff 45%,
+    #3d82ff 100%
   );
 }
 

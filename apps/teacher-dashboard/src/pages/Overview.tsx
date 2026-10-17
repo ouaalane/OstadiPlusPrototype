@@ -1,37 +1,20 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  BookOpen,
-  Clock3,
-  Megaphone,
-  Plus,
-  UserPlus,
-  Users,
-} from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock3, Plus, Users } from 'lucide-react';
 import {
   activeStudentCount,
   allLessons,
   courseDurationSec,
   countLessons,
-  formatDate,
   relativeTime,
 } from '@ostadiplus/shared';
-import {
-  Avatar,
-  CourseCover,
-  EmptyState,
-  PageHeader,
-  Pill,
-  StatCard,
-} from '@/components/ui';
+import { CourseCover, EmptyState, Pill, StatCard } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 
 const ACTIVITY_ICON = {
   course: BookOpen,
   lesson: BookOpen,
   student: Users,
-  announcement: Megaphone,
 } as const;
 
 export default function Overview() {
@@ -71,84 +54,55 @@ export default function Overview() {
 
   return (
     <>
-      <PageHeader
-        title={`${greeting}، ${state.teacher.name}`}
-        description={`${today} · ${state.teacher.centerName}، ${state.teacher.centerCity}`}
-        actions={
-          <>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => navigate('/announcements?action=new')}
-            >
-              <Megaphone size={17} />
-              إعلان جديد
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => navigate('/courses?action=new')}
-            >
-              <Plus size={17} />
-              إنشاء دورة
-            </button>
-          </>
-        }
-      />
+      {/* Stitch gradient hero */}
+      <section className="hero-gradient relative overflow-hidden rounded-2xl px-6 py-6 text-white sm:px-7 sm:py-7">
+        <span className="pointer-events-none absolute -start-10 -top-16 h-44 w-44 rounded-full bg-white/10" />
+        <span className="pointer-events-none absolute -end-14 -bottom-20 h-44 w-44 rounded-full bg-white/5" />
+
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm text-white/85">{today}</p>
+            <h1 className="mt-1 text-2xl font-bold sm:text-[26px]">
+              {greeting}، {state.teacher.name}
+            </h1>
+            <p className="mt-1 text-sm text-white/85">
+              {state.teacher.centerName}، {state.teacher.centerCity}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn bg-white text-brand-dark hover:bg-white/90"
+                onClick={() => navigate('/courses?action=new')}
+              >
+                <Plus size={17} />
+                إنشاء دورة
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Metrics */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           label="دورات منشورة"
           value={published.length}
-          hint={`من أصل ${state.courses.length} دورات`}
+          hint={`من أصل ${state.courses.length}`}
           icon={<BookOpen size={20} />}
         />
         <StatCard
           label="تلاميذ نشطون"
           value={activeStudents}
-          hint={
-            pending > 0
-              ? `${pending} طلب في انتظار التفعيل`
-              : 'كل الطلبات معالَجة'
-          }
+          hint={pending > 0 ? `${pending} بانتظار التفعيل` : undefined}
           tone="success"
           icon={<Users size={20} />}
         />
         <StatCard
           label="دروس متاحة"
           value={lessonCount}
-          hint="فيديو ومستندات داخل الدورات المنشورة"
           tone="accent"
           icon={<Clock3 size={20} />}
-        />
-      </section>
-
-      {/* Shortcuts */}
-      <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <ShortcutCard
-          icon={<Plus size={18} />}
-          title="إنشاء دورة"
-          hint="ابدأ بعنوان وفصول"
-          onClick={() => navigate('/courses?action=new')}
-        />
-        <ShortcutCard
-          icon={<UserPlus size={18} />}
-          title="تفعيل طالب"
-          hint="امنح تلميذاً وصولاً"
-          onClick={() => navigate('/students?action=new')}
-        />
-        <ShortcutCard
-          icon={<Megaphone size={18} />}
-          title="نشر إعلان"
-          hint="يصل لتطبيق التلاميذ"
-          onClick={() => navigate('/announcements?action=new')}
-        />
-        <ShortcutCard
-          icon={<BookOpen size={18} />}
-          title="إدارة المحتوى"
-          hint="فصول ودروس وملفات"
-          onClick={() => navigate('/courses')}
         />
       </section>
 
@@ -170,7 +124,7 @@ export default function Overview() {
             <EmptyState
               icon={<BookOpen size={24} />}
               title="لا توجد دورات بعد"
-              description="أنشئ أول دورة وأضف فصولها ودروسها لتبدأ في نشرها لتلاميذك."
+              description="أنشئ أول دورة لتبدأ في نشرها لتلاميذك."
               action={
                 <button
                   type="button"
@@ -245,9 +199,12 @@ export default function Overview() {
               </p>
             ) : (
               <ol className="relative space-y-4">
-                {state.activity.slice(0, 7).map((event) => {
-                  const Icon = ACTIVITY_ICON[event.kind];
-                  return (
+                {state.activity
+                  .slice(0, 7)
+                  .map((event) => {
+                    const Icon =
+                      ACTIVITY_ICON[event.kind as keyof typeof ACTIVITY_ICON] ?? BookOpen;
+                    return (
                     <li key={event.id} className="flex gap-3">
                       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-softer text-brand">
                         <Icon size={15} />
@@ -266,55 +223,8 @@ export default function Overview() {
               </ol>
             )}
           </div>
-
-          <div className="card mt-4 flex items-center gap-3 p-4">
-            <Avatar label={state.teacher.monogram} size={44} seed={2} />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-bold text-ink">
-                {state.teacher.name}
-              </div>
-              <div className="truncate text-xs text-muted">
-                {state.teacher.subject} · {state.teacher.level}
-              </div>
-            </div>
-            <Link to="/settings" className="btn btn-ghost btn-sm">
-              تعديل
-            </Link>
-          </div>
         </section>
       </div>
-
-      <p className="mt-6 text-center text-xs text-faint">
-        آخر تحديث: {formatDate(new Date().toISOString())}
-      </p>
     </>
-  );
-}
-
-function ShortcutCard({
-  icon,
-  title,
-  hint,
-  onClick,
-}: {
-  icon: ReactNode;
-  title: string;
-  hint: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="card group flex items-center gap-3 px-4 py-3.5 text-start transition-shadow hover:shadow-raised"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-dark transition-colors group-hover:bg-brand group-hover:text-white">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-bold text-ink">{title}</span>
-        <span className="block truncate text-xs text-muted">{hint}</span>
-      </span>
-    </button>
   );
 }

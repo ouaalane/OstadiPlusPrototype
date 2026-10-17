@@ -1,15 +1,16 @@
 /**
- * Document lesson — the teacher's PDF, shown page by page.
+ * Document lesson — the teacher's PDF, shown page by page (spec Screen 8).
  *
  * The pages are rasterised at build time (`npm run media:sync`) and bundled
  * with the app, which keeps the reader deterministic and fully offline.
+ *
+ * Bilingual: strings from the shared dictionary, layout flips RTL↔LTR.
  */
 
 import React, { useRef, useState } from 'react';
 import {
   FlatList,
   Image,
-  Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -17,20 +18,25 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 
-import { allLessons, type Lesson } from '@ostadiplus/shared';
+import { allLessons } from '@ostadiplus/shared';
 
-import { AppText, Card, Pill, PrimaryButton } from '../components/ui';
+import { useI18n } from '../i18n/useI18n';
+import { useLayout } from '../i18n/layout';
+import { AppText, Pill, PrimaryButton, TopBar } from '../components/ui';
+import { lessonRoute } from '../lib/lesson';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
-import { colors, radius, rtl, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 export default function PdfScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Pdf'>>();
   const { state, progressOf, markCompleted } = useStore();
+  const { lang, t } = useI18n();
+  const l = useLayout(lang);
+  const rtl = lang === 'ar';
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<number>>(null);
   const [page, setPage] = useState(0);
@@ -51,9 +57,13 @@ export default function PdfScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.missing}>
           <AppText size={15} tone="muted">
-            تعذّر تحميل المستند في هذا الجهاز.
+            {rtl ? 'تعذّر تحميل المستند في هذا الجهاز.' : 'Impossible de charger le document sur cet appareil.'}
           </AppText>
-          <PrimaryButton label="رجوع" variant="soft" onPress={() => navigation.goBack()} />
+          <PrimaryButton
+            label={rtl ? 'رجوع' : 'Retour'}
+            variant="soft"
+            onPress={() => navigation.goBack()}
+          />
         </View>
       </SafeAreaView>
     );
@@ -69,28 +79,21 @@ export default function PdfScreen() {
 
   const openNext = () => {
     if (!next) return navigation.goBack();
-    if (next.kind === 'video') navigation.replace('Video', { lessonId: next.id });
-    else navigation.replace('Pdf', { lessonId: next.id });
+    navigation.replace(lessonRoute(next.kind), { lessonId: next.id });
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <View style={styles.topBar}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={10} style={rtl.row}>
-          <Ionicons name="chevron-forward" size={22} color={colors.ink} />
-          <AppText size={14} weight="semibold" tone="ink">
-            رجوع
-          </AppText>
-        </Pressable>
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <AppText size={13} weight="bold" tone="ink" numberOfLines={1}>
-            {lesson.title}
-          </AppText>
-          <AppText size={11.5} tone="muted">
-            صفحة {page + 1} من {pages.length}
-          </AppText>
-        </View>
-        <View style={{ width: 56 }} />
+      <View style={styles.topBarWrap}>
+        <TopBar
+          onBack={() => navigation.goBack()}
+          backLabel={t('back')}
+          title={lesson.title}
+          bordered={false}
+        />
+        <AppText size={11.5} tone="muted" style={styles.pageCaption}>
+          {rtl ? `صفحة ${page + 1} من ${pages.length}` : `Page ${page + 1} sur ${pages.length}`}
+        </AppText>
       </View>
 
       <FlatList
@@ -119,12 +122,20 @@ export default function PdfScreen() {
       />
 
       <View style={styles.footer}>
-        <View style={rtl.rowBetween}>
-          <Pill label={`${pages.length} صفحات`} tone="neutral" />
-          {completed ? <Pill label="مكتمل ✓" tone="success" dot /> : null}
+        <View style={[l.rowBetween]}>
+          <Pill label={rtl ? `${pages.length} صفحة` : `${pages.length} pages`} tone="neutral" />
+          {completed ? <Pill label={rtl ? 'مكتمل ✓' : 'Terminé ✓'} tone="success" dot /> : null}
         </View>
         <PrimaryButton
-          label={completed ? 'أنهيت هذا المستند ✓' : 'تمت قراءة المستند'}
+          label={
+            completed
+              ? rtl
+                ? 'أنهيت هذا المستند ✓'
+                : 'Document terminé ✓'
+              : rtl
+                ? 'تمت قراءة المستند'
+                : 'Document lu'
+          }
           variant={completed ? 'outline' : 'primary'}
           onPress={() => {
             markCompleted(lesson.id);
@@ -139,15 +150,13 @@ export default function PdfScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
-  topBar: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  topBarWrap: {
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
+    paddingBottom: spacing.sm,
   },
+  pageCaption: { textAlign: 'center', paddingHorizontal: spacing.lg },
   page: {
     height: '100%',
     borderRadius: radius.sm,
@@ -167,5 +176,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.md,
     padding: spacing.xl,
+    backgroundColor: colors.canvas,
   },
 });

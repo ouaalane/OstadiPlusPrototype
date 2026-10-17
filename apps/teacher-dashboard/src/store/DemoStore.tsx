@@ -12,11 +12,13 @@ import {
 } from 'react';
 import {
   createDemoState,
-  type Announcement,
+  type Center,
+  type CenterMembership,
   type Course,
   type CourseStatus,
   type DemoState,
   type EnrollmentStatus,
+  type Lang,
   type Lesson,
   type TeacherProfile,
 } from '@ostadiplus/shared';
@@ -28,11 +30,15 @@ import {
 export type Action =
   | { type: 'replace'; state: DemoState }
   | { type: 'reset' }
+  | { type: 'setLang'; lang: Lang }
   | { type: 'course/create'; payload: NewCourse }
   | { type: 'course/update'; payload: { id: string; patch: Partial<Course> } }
   | { type: 'course/setStatus'; payload: { id: string; status: CourseStatus } }
   | { type: 'course/delete'; payload: { id: string } }
-  | { type: 'chapter/add'; payload: { courseId: string; title: string } }
+  | {
+      type: 'chapter/add';
+      payload: { courseId: string; semesterId: string; title: string };
+    }
   | {
       type: 'chapter/update';
       payload: { courseId: string; chapterId: string; title: string };
@@ -82,7 +88,16 @@ export type Action =
     }
   | {
       type: 'enrollment/setStatus';
-      payload: { studentId: string; courseId: string; status: EnrollmentStatus };
+      payload: {
+        studentId: string;
+        courseId: string;
+        status: EnrollmentStatus;
+        durationMonths?: number;
+      };
+    }
+  | {
+      type: 'enrollment/renew';
+      payload: { studentId: string; courseId: string; durationMonths: number };
     }
   | {
       type: 'student/create';
@@ -92,11 +107,13 @@ export type Action =
         level: string;
         courseId: string | null;
         authorize: boolean;
+        durationMonths?: number;
       };
     }
-  | { type: 'announcement/create'; payload: NewAnnouncement }
-  | { type: 'announcement/delete'; payload: { id: string } }
-  | { type: 'teacher/update'; payload: Partial<TeacherProfile> };
+  | { type: 'teacher/update'; payload: Partial<TeacherProfile> }
+  | { type: 'membership/approve'; payload: { membershipId: string } }
+  | { type: 'membership/reject'; payload: { membershipId: string } }
+  | { type: 'membership/request'; payload: { studentId: string; centerId: string } };
 
 export interface NewCourse {
   id: string;
@@ -115,19 +132,16 @@ export interface NewLesson {
   pages: number;
   sizeMb: number;
   published: boolean;
-}
-
-export interface NewAnnouncement {
-  title: string;
-  body: string;
-  courseId: string | null;
+  description?: string;
+  body?: string;
+  questions?: Lesson['questions'];
 }
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-const STORAGE_KEY = 'ostadiplus.demo.v1';
+const STORAGE_KEY = 'ostadiplus.demo.v3';
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -136,6 +150,27 @@ function clone<T>(value: T): T {
 let counter = 0;
 export const newId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}-${(++counter).toString(36)}`;
+
+/** Generates a short readable student code. */
+function makeStudentCode(seed: string): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  let code = '';
+  for (let i = 0; i < 5; i++) {
+    code += chars[hash % chars.length];
+    hash = (hash * 1664525 + 1013904223) >>> 0;
+  }
+  return `UST-${code}`;
+}
+
+function expiresAt(durationMonths: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + durationMonths);
+  return d.toISOString();
+}
 
 function touch(state: DemoState, courseId?: string) {
   if (!courseId) return;
@@ -168,9 +203,13 @@ function requireCourse(state: DemoState, id: string): Course {
 /* ------------------------------------------------------------------ */
 
 function findChapter(course: Course, chapterId: string) {
-  const index = course.chapters.findIndex((c) => c.id === chapterId);
-  if (index < 0) throw new Error('الفصل غير موجود');
-  return { chapter: course.chapters[index], index };
+  for (const semester of course.semesters) {
+    const index = semester.chapters.findIndex((c) => c.id === chapterId);
+    if (index >= 0) {
+      return { chapter: semester.chapters[index], semester, index };
+    }
+  }
+  throw new Error('الفصل غير موجود');
 }
 
 function swap<T>(list: T[], index: number, dir: -1 | 1) {
@@ -189,6 +228,12 @@ export function reducer(state: DemoState, action: Action): DemoState {
     case 'reset':
       return createDemoState();
 
+    case 'setLang': {
+      const next = clone(state);
+      next.lang = action.lang;
+      return next;
+    }
+
     /* ---------------- courses ---------------- */
 
     case 'course/create': {
@@ -199,7 +244,18 @@ export function reducer(state: DemoState, action: Action): DemoState {
         status: 'draft',
         createdAt: nowIso,
         updatedAt: nowIso,
-        chapters: [],
+        /* The teacher who creates a course owns it. */
+        teacher: {
+          name: next.teacher.name,
+          subject: next.teacher.subject,
+          monogram: next.teacher.monogram,
+        },
+        /* The school year always ships as two semesters — the teacher
+           only fills them with topics. */
+        semesters: [
+          { id: newId('sem'), title: 'الدورة الأولى', chapters: [] },
+          { id: newId('sem'), title: 'الدورة الثانية', chapters: [] },
+        ],
       });
       logActivity(next, 'course', `تم إنشاء دورة «${action.payload.title}»`);
       return next;
@@ -243,7 +299,11 @@ export function reducer(state: DemoState, action: Action): DemoState {
     case 'chapter/add': {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
-      course.chapters.push({
+      const semester =
+        course.semesters.find((s) => s.id === action.payload.semesterId) ??
+        course.semesters[0];
+      if (!semester) throw new Error('الدورة بلا دورات دراسية');
+      semester.chapters.push({
         id: newId('chp'),
         title: action.payload.title,
         lessons: [],
@@ -264,9 +324,11 @@ export function reducer(state: DemoState, action: Action): DemoState {
     case 'chapter/delete': {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
-      course.chapters = course.chapters.filter(
-        (c) => c.id !== action.payload.chapterId,
-      );
+      course.semesters.forEach((semester) => {
+        semester.chapters = semester.chapters.filter(
+          (c) => c.id !== action.payload.chapterId,
+        );
+      });
       touch(next, course.id);
       return next;
     }
@@ -274,8 +336,8 @@ export function reducer(state: DemoState, action: Action): DemoState {
     case 'chapter/move': {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
-      const { index } = findChapter(course, action.payload.chapterId);
-      swap(course.chapters, index, action.payload.dir);
+      const { semester, index } = findChapter(course, action.payload.chapterId);
+      swap(semester.chapters, index, action.payload.dir);
       touch(next, course.id);
       return next;
     }
@@ -344,10 +406,11 @@ export function reducer(state: DemoState, action: Action): DemoState {
       return next;
     }
 
-    /* ---------------- students ---------------- */
+    /* ---------------- enrollment ---------------- */
 
     case 'enrollment/setStatus': {
       const next = clone(state);
+      const dur = action.payload.durationMonths ?? 6;
       const enrollment = next.enrollments.find(
         (e) =>
           e.studentId === action.payload.studentId &&
@@ -363,6 +426,8 @@ export function reducer(state: DemoState, action: Action): DemoState {
         if (action.payload.status === 'active') {
           enrollment.authorizedAt = new Date().toISOString();
           enrollment.authorizedBy = next.teacher.name;
+          enrollment.expiresAt = expiresAt(dur);
+          enrollment.durationMonths = dur;
         }
       } else if (action.payload.status !== 'pending') {
         next.enrollments.push({
@@ -372,7 +437,8 @@ export function reducer(state: DemoState, action: Action): DemoState {
           status: action.payload.status,
           authorizedAt: new Date().toISOString(),
           authorizedBy: next.teacher.name,
-          expiresAt: new Date(Date.now() + 214 * 86400000).toISOString(),
+          expiresAt: expiresAt(dur),
+          durationMonths: dur,
         });
       }
 
@@ -390,12 +456,39 @@ export function reducer(state: DemoState, action: Action): DemoState {
       return next;
     }
 
+    case 'enrollment/renew': {
+      const next = clone(state);
+      const enrollment = next.enrollments.find(
+        (e) =>
+          e.studentId === action.payload.studentId &&
+          e.courseId === action.payload.courseId,
+      );
+      if (enrollment) {
+        // Renew from today (not from current expiresAt, so it doesn't stack)
+        enrollment.expiresAt = expiresAt(action.payload.durationMonths);
+        enrollment.durationMonths = action.payload.durationMonths;
+        enrollment.status = 'active';
+        enrollment.authorizedAt = new Date().toISOString();
+      }
+      const student = next.students.find((s) => s.id === action.payload.studentId);
+      const course = next.courses.find((c) => c.id === action.payload.courseId);
+      logActivity(
+        next,
+        'student',
+        `تم تجديد اشتراك «${student?.fullName ?? ''}» في دورة ${course?.title ?? ''}`,
+      );
+      return next;
+    }
+
+    /* ---------------- students ---------------- */
+
     case 'student/create': {
       const next = clone(state);
       const nowIso = new Date().toISOString();
       const id = newId('st');
       const parts = action.payload.fullName.trim().split(/\s+/);
       const monogram = parts.slice(0, 2).map((p) => p[0]).join('');
+      const studentCode = makeStudentCode(id);
       next.students.unshift({
         id,
         fullName: action.payload.fullName.trim(),
@@ -404,7 +497,10 @@ export function reducer(state: DemoState, action: Action): DemoState {
         level: action.payload.level,
         joinedAt: nowIso,
         monogram: monogram || 'ط',
+        studentCode,
+        studentType: 'moutamadris',
       });
+      const dur = action.payload.durationMonths ?? 6;
       if (action.payload.courseId) {
         next.enrollments.push({
           id: newId('enr'),
@@ -413,7 +509,8 @@ export function reducer(state: DemoState, action: Action): DemoState {
           status: action.payload.authorize ? 'active' : 'pending',
           authorizedAt: nowIso,
           authorizedBy: next.teacher.name,
-          expiresAt: new Date(Date.now() + 214 * 86400000).toISOString(),
+          expiresAt: expiresAt(dur),
+          durationMonths: dur,
         });
       }
       logActivity(
@@ -428,30 +525,74 @@ export function reducer(state: DemoState, action: Action): DemoState {
       return next;
     }
 
-    /* ---------------- announcements ---------------- */
+    /* ---------------- memberships ---------------- */
 
-    case 'announcement/create': {
+    case 'membership/approve': {
       const next = clone(state);
-      const announcement: Announcement = {
-        id: newId('an'),
-        title: action.payload.title.trim(),
-        body: action.payload.body.trim(),
-        courseId: action.payload.courseId,
-        publishedAt: new Date().toISOString(),
-      };
-      next.announcements.unshift(announcement);
-      logActivity(
-        next,
-        'announcement',
-        `تم نشر إعلان «${announcement.title}»`,
+      const membership = (next.memberships ?? []).find(
+        (m) => m.id === action.payload.membershipId,
       );
+      if (membership) {
+        membership.status = 'active';
+        membership.respondedAt = new Date().toISOString();
+      }
       return next;
     }
 
-    case 'announcement/delete': {
+    case 'membership/reject': {
       const next = clone(state);
-      next.announcements = next.announcements.filter(
-        (a) => a.id !== action.payload.id,
+      const membership = (next.memberships ?? []).find(
+        (m) => m.id === action.payload.membershipId,
+      );
+      if (membership) {
+        membership.status = 'rejected';
+        membership.respondedAt = new Date().toISOString();
+      }
+      return next;
+    }
+
+    case 'membership/request': {
+      const next = clone(state);
+      const { studentId, centerId } = action.payload;
+      const existing = (next.memberships ?? []).find(
+        (m) =>
+          m.studentId === studentId &&
+          m.centerId === centerId &&
+          (m.status === 'active' || m.status === 'requested'),
+      );
+      if (existing) return next; // duplicate guard
+      const center = next.centers.find((c) => c.id === centerId);
+      const student = next.students.find((s) => s.id === studentId);
+      const membership: CenterMembership = {
+        id: newId('mbr'),
+        studentId,
+        centerId,
+        status: 'requested',
+        requestedAt: new Date().toISOString(),
+      };
+      next.memberships = [...(next.memberships ?? []), membership];
+      // Notification for the student (delivered when the student imports the
+      // dashboard's sync payload).
+      next.notifications = [
+        ...(next.notifications ?? []),
+        {
+          id: newId('notif'),
+          studentId,
+          kind: 'center-request',
+          payload: {
+            centerId,
+            centerName: center?.name ?? 'مركزك',
+          },
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      logActivity(
+        next,
+        'student',
+        `تم إرسال طلب انضمام إلى مركز ${center?.name ?? ''} للتلميذ «${
+          student?.fullName ?? ''
+        }»`,
       );
       return next;
     }
@@ -486,6 +627,10 @@ interface StoreValue {
   /** Serialize the current state for transfer to the phone app. */
   exportPayload: () => Promise<string>;
   isDirty: boolean;
+  /** Active center memberships awaiting approval. */
+  pendingMemberships: DemoState['memberships'];
+  /** Look up a student by their unique studentCode. */
+  findStudentByCode: (code: string) => DemoState['students'][number] | undefined;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -495,7 +640,15 @@ function loadInitial(): DemoState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as DemoState;
-      if (parsed && Array.isArray(parsed.courses)) return parsed;
+      // Payloads written by an older data model (before courses gained
+      // semesters) would crash the curriculum screens — reseed instead.
+      if (
+        parsed &&
+        parsed.version === createDemoState().version &&
+        Array.isArray(parsed.courses)
+      ) {
+        return parsed;
+      }
     }
   } catch {
     /* fall through to seed */
@@ -551,9 +704,41 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
     return encodeDemoState(state);
   }, [state]);
 
+  const pendingMemberships = useMemo(
+    () => (state.memberships ?? []).filter((m) => m.status === 'requested'),
+    [state.memberships],
+  );
+
+  const findStudentByCode = useCallback(
+    (code: string) =>
+      state.students.find(
+        (s) => s.studentCode?.toLowerCase() === code.toLowerCase(),
+      ),
+    [state.students],
+  );
+
   const value = useMemo<StoreValue>(
-    () => ({ state, dispatch, notify, toasts, dismissToast, exportPayload, isDirty }),
-    [state, notify, toasts, dismissToast, exportPayload, isDirty],
+    () => ({
+      state,
+      dispatch,
+      notify,
+      toasts,
+      dismissToast,
+      exportPayload,
+      isDirty,
+      pendingMemberships,
+      findStudentByCode,
+    }),
+    [
+      state,
+      notify,
+      toasts,
+      dismissToast,
+      exportPayload,
+      isDirty,
+      pendingMemberships,
+      findStudentByCode,
+    ],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -576,3 +761,7 @@ export function useAction() {
     [dispatch, notify],
   );
 }
+
+// Re-export Center for convenience
+export type { Center, CenterMembership };
+

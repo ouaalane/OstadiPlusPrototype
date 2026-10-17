@@ -2,15 +2,68 @@
  * OstadiPlus — domain model shared by the teacher dashboard (React web)
  * and the student application (React Native / Android).
  *
- * The model is intentionally a subset of the PRD (Cahier des Charges v1.0):
- * courses → chapters → lessons, enrollment/access, announcements, progress.
- * Everything else (payments gateway, quizzes, offline licences) is out of
- * prototype scope.
+ * v2 — adds: Center, CenterMembership, Notification, StudentType, Role,
+ * expanded LessonKind & EnrollmentStatus, Lesson.description,
+ * Enrollment.durationMonths, Lang/Dir for i18n.
  */
 
+/* ------------------------------------------------------------------ */
+/* Primitive enumerations                                              */
+/* ------------------------------------------------------------------ */
+
 export type CourseStatus = 'draft' | 'published';
-export type LessonKind = 'video' | 'pdf';
-export type EnrollmentStatus = 'active' | 'pending' | 'suspended';
+
+export type LessonKind =
+  | 'video'
+  | 'pdf'
+  | 'image'
+  | 'exercise'
+  | 'exam'
+  | 'text'
+  | 'quiz';
+
+/** One multiple-choice question inside a quiz lesson. */
+export interface QuizQuestion {
+  id: string;
+  prompt: string;
+  /** Answer options (at least 2). */
+  options: { id: string; text: string }[];
+  /** Ids of the correct option(s) — single or multiple choice. */
+  correctIds: string[];
+}
+
+/** All possible states in the enrollment lifecycle. */
+export type EnrollmentStatus =
+  | 'active'     // access granted and not expired
+  | 'pending'    // waiting for teacher/receptionist to activate
+  | 'suspended'  // explicitly deactivated by staff
+  | 'requested'  // student has sent a join request, staff not yet responded
+  | 'rejected'   // staff rejected the request
+  | 'cancelled'; // student cancelled the request
+
+export type StudentType = 'bac-libre' | 'moutamadris';
+
+export type Role = 'teacher' | 'receptionist' | 'student';
+
+/** Supported UI languages. */
+export type Lang = 'fr' | 'ar';
+
+/** Text direction derived from the selected language. */
+export type Dir = 'ltr' | 'rtl';
+
+export type CoverKey =
+  | 'blue'
+  | 'indigo'
+  | 'violet'
+  | 'cyan'
+  | 'teal'
+  | 'amber'
+  | 'rose'
+  | 'slate';
+
+/* ------------------------------------------------------------------ */
+/* Teacher / center                                                    */
+/* ------------------------------------------------------------------ */
 
 export interface TeacherProfile {
   id: string;
@@ -28,10 +81,35 @@ export interface TeacherProfile {
   monogram: string;
 }
 
+/**
+ * A teaching center entity. One teacher may run one or more centers.
+ * Students associate with a center (not directly with a teacher) through
+ * the consent-based enrollment flow.
+ */
+export interface Center {
+  id: string;
+  /** Center display name. */
+  name: string;
+  city: string;
+  /**
+   * Short human-readable invitation code that students enter to join
+   * (e.g. "ATLAS-23"). Not a secret — authorization is enforced by the
+   * backend / store, not by possession of the code alone.
+   */
+  inviteCode: string;
+  teacherId: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Course / chapter / lesson                                           */
+/* ------------------------------------------------------------------ */
+
 export interface Lesson {
   id: string;
   title: string;
   kind: LessonKind;
+  /** Optional teacher-written description shown below the lesson title. */
+  description?: string;
   /** Video length in seconds (0 for documents). */
   durationSec: number;
   /** Page count for documents. */
@@ -41,12 +119,42 @@ export interface Lesson {
   /** File name of the bundled media asset. */
   file: string;
   published: boolean;
+  /** Rich-text body for `text` lessons (markdown-lite: **bold**, *italic*, - lists). */
+  body?: string;
+  /** Questions for `quiz` lessons. */
+  questions?: QuizQuestion[];
 }
 
 export interface Chapter {
   id: string;
   title: string;
   lessons: Lesson[];
+}
+
+/**
+ * One school semester of a course program («الدورة الأولى» / «الدورة الثانية»).
+ * A semester groups the topics taught during that half of the year, exactly
+ * the way the official program is published.
+ */
+export interface Semester {
+  id: string;
+  /** Display title, e.g. «الدورة الأولى». */
+  title: string;
+  /** Topics (chapters) taught during this semester. */
+  chapters: Chapter[];
+}
+
+/**
+ * The teacher who owns a course. Stored on the course itself so a student
+ * always sees the prof who actually teaches that module.
+ */
+export interface CourseTeacher {
+  /** Full display name, e.g. «أ. جواد العلمي». */
+  name: string;
+  /** Module the teacher teaches, e.g. «الفيزياء». */
+  subject: string;
+  /** Two-letter monogram used when no photo is available. */
+  monogram: string;
 }
 
 export interface Course {
@@ -61,8 +169,15 @@ export interface Course {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
-  chapters: Chapter[];
+  /** Owning teacher; falls back to the platform teacher profile when absent. */
+  teacher?: CourseTeacher;
+  /** The program, split by semester. */
+  semesters: Semester[];
 }
+
+/* ------------------------------------------------------------------ */
+/* Student                                                             */
+/* ------------------------------------------------------------------ */
 
 export interface Student {
   id: string;
@@ -73,7 +188,44 @@ export interface Student {
   joinedAt: string;
   /** Two-letter monogram. */
   monogram: string;
+  /**
+   * Short opaque code displayed as a QR and typed at the center desk.
+   * Format: "UST-XXXXX" (5 alphanumeric chars). Used only as an
+   * identifier — authorization is always verified by the store.
+   */
+  studentCode: string;
+  /** Moroccan student type: independent ("Bac Libre") or enrolled in school. */
+  studentType: StudentType;
 }
+
+/* ------------------------------------------------------------------ */
+/* Center membership (consent-based join flow)                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Records the relationship between a student and a center.
+ * Separate from Enrollment so that "joined a center" and
+ * "has access to a course" are independent states.
+ */
+export interface CenterMembership {
+  id: string;
+  studentId: string;
+  centerId: string;
+  /**
+   * Lifecycle:
+   *   requested  — student has not yet accepted the center's scan
+   *   active     — student accepted; center can see profile & assign courses
+   *   rejected   — student rejected
+   *   cancelled  — student or staff cancelled
+   */
+  status: 'requested' | 'active' | 'rejected' | 'cancelled';
+  requestedAt: string;
+  respondedAt?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Enrollment                                                          */
+/* ------------------------------------------------------------------ */
 
 export interface Enrollment {
   id: string;
@@ -83,6 +235,8 @@ export interface Enrollment {
   authorizedAt: string;
   authorizedBy: string;
   expiresAt: string;
+  /** Subscription length chosen at activation time (months). */
+  durationMonths?: number;
   /** Cash payment recorded at the centre — never gates access (PRD ENR-03). */
   payment?: {
     amount: number;
@@ -91,21 +245,39 @@ export interface Enrollment {
   };
 }
 
-export interface Announcement {
+
+/* ------------------------------------------------------------------ */
+/* Notifications                                                       */
+/* ------------------------------------------------------------------ */
+
+export type NotificationKind =
+  | 'center-request'   // center wants to connect to this student
+  | 'access-granted';  // teacher activated a course for the student
+
+export interface AppNotification {
   id: string;
-  title: string;
-  body: string;
-  /** null = every enrolled student. */
-  courseId: string | null;
-  publishedAt: string;
+  studentId: string;
+  kind: NotificationKind;
+  /** JSON-serialisable context depending on kind. */
+  payload: Record<string, string>;
+  read: boolean;
+  createdAt: string;
 }
+
+/* ------------------------------------------------------------------ */
+/* Activity                                                             */
+/* ------------------------------------------------------------------ */
 
 export interface ActivityEvent {
   id: string;
-  kind: 'course' | 'student' | 'announcement' | 'lesson';
+  kind: 'course' | 'student' | 'lesson';
   text: string;
   at: string;
 }
+
+/* ------------------------------------------------------------------ */
+/* Progress                                                            */
+/* ------------------------------------------------------------------ */
 
 export interface LessonProgress {
   lessonId: string;
@@ -114,26 +286,25 @@ export interface LessonProgress {
   updatedAt: string;
 }
 
+/* ------------------------------------------------------------------ */
+/* Root state                                                          */
+/* ------------------------------------------------------------------ */
+
 export interface DemoState {
+  /** Increment when the shape changes to invalidate old localStorage. */
   version: number;
-  /** Signed-in student used by the Android app. */
+  /** Signed-in student used by the Android app (empty = not signed in). */
   activeStudentId: string;
+  /** Currently selected UI language (used by both apps). */
+  lang: Lang;
   teacher: TeacherProfile;
+  centers: Center[];
   courses: Course[];
   students: Student[];
   enrollments: Enrollment[];
-  announcements: Announcement[];
+  memberships: CenterMembership[];
+  notifications: AppNotification[];
   activity: ActivityEvent[];
   /** studentId → per-lesson progress. */
   progress: Record<string, LessonProgress[]>;
 }
-
-export type CoverKey =
-  | 'blue'
-  | 'indigo'
-  | 'violet'
-  | 'cyan'
-  | 'teal'
-  | 'amber'
-  | 'rose'
-  | 'slate';

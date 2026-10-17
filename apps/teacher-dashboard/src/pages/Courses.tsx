@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import {
   activeStudentCount,
+  countChapters,
   countLessons,
   courseDurationSec,
   coverGradients,
@@ -67,7 +68,6 @@ export default function Courses() {
     <>
       <PageHeader
         title="الدورات"
-        description="أنشئ دورتك، رتّب الفصول والدروس، ثم انشرها لتظهر في تطبيق التلاميذ."
         actions={
           <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
             <Plus size={17} />
@@ -172,7 +172,7 @@ export default function Courses() {
                   <div className="mt-auto flex items-center justify-between gap-2 border-t border-line pt-3 text-xs text-muted">
                     <span className="inline-flex items-center gap-1.5">
                       <Layers size={14} />
-                      <span className="num">{course.chapters.length}</span>
+                      <span className="num">{countChapters(course)}</span>
                       فصل
                     </span>
                     <span className="inline-flex items-center gap-1.5">
@@ -257,7 +257,7 @@ function CreateCourseModal({
       open={open}
       onClose={onClose}
       title="إنشاء دورة جديدة"
-      description="ستُحفظ الدورة كمسودة حتى تضيف المحتوى وتقرر نشرها."
+      description="تُحفظ كمسودة حتى تنشرها."
       footer={
         <>
           <button type="button" className="btn btn-outline" onClick={onClose}>

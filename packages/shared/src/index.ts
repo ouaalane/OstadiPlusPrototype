@@ -5,3 +5,4 @@ export * from './mediaLibrary';
 export * from './seed';
 export * from './selectors';
 export * from './demoSync';
+export * from './i18n';

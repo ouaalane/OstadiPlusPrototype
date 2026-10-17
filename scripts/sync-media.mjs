@@ -36,6 +36,15 @@ async function exists(dir) {
 async function copyFolder(from, to) {
   await fs.mkdir(to, { recursive: true });
   const entries = await fs.readdir(from);
+  const wanted = new Set(entries);
+  /* Mirror the generated folder: drop files this run no longer produces
+     (e.g. an older page-numbering scheme) so the bundled asset folder never
+     accumulates stale images that Metro still tries to resolve. */
+  for (const stale of await fs.readdir(to)) {
+    if (wanted.has(stale)) continue;
+    const full = path.join(to, stale);
+    if ((await fs.stat(full)).isFile()) await fs.rm(full, { force: true });
+  }
   for (const entry of entries) {
     await fs.copyFile(path.join(from, entry), path.join(to, entry));
   }

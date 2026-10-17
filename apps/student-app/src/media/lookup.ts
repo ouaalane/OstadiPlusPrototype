@@ -32,6 +32,15 @@ export function resolveLessonMedia(
   return { kind: 'pages', pages };
 }
 
+/**
+ * Resolve just the poster art for a lesson file — used by list thumbnails
+ * (Home «أحدث الدروس» and «الدروس» rows) so they show the real video cover
+ * instead of the generic course gradient.
+ */
+export function resolvePoster(file: string): number | undefined {
+  return posterAssets[file.replace(/\.(mp4|pdf)$/, '.jpg')];
+}
+
 /** Every file bundled with the app — used by the profile screen diagnostics. */
 export function bundledAssetCount(): number {
   const videos = Object.keys(videoAssets).length;

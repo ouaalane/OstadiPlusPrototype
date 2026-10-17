@@ -9,15 +9,15 @@
 
 export const palette = {
   /** Primary interactive blue — buttons, links, active states. */
-  brand: '#2F5BFF',
-  brandDark: '#1E3FCC',
-  brandSoft: '#E8EEFF',
-  brandSofter: '#F2F5FF',
+  brand: '#0B5CFF',
+  brandDark: '#0546C8',
+  brandSoft: '#E7F0FF',
+  brandSofter: '#F2F6FF',
 
   /** Logo gradient (graduation cap → play button). */
-  gradientFrom: '#2E7BFF',
-  gradientVia: '#3B5BF0',
-  gradientTo: '#4B2FE0',
+  gradientFrom: '#3D82FF',
+  gradientVia: '#0B5CFF',
+  gradientTo: '#0546C8',
 
   accent: '#FFB400',
   accentSoft: '#FFF4D6',
@@ -44,7 +44,7 @@ export const palette = {
 } as const;
 
 export const coverGradients: Record<string, [string, string]> = {
-  blue: ['#2E7BFF', '#1E3FCC'],
+  blue: ['#3D82FF', '#0546C8'],
   indigo: ['#4F6BFF', '#2F3ED8'],
   violet: ['#6D5BF5', '#4226C8'],
   cyan: ['#22B8F5', '#0C7BD6'],

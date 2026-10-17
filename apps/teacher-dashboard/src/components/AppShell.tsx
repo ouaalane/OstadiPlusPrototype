@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  BookOpen,
+  BadgeCheck,
+  Layout,
   LayoutDashboard,
-  Megaphone,
   Menu,
+  Plus,
   Settings,
   Users,
+  Video,
   X,
 } from 'lucide-react';
 import { Wordmark } from './Logo';
@@ -16,16 +18,19 @@ import { useStore } from '@/store/DemoStore';
 interface NavItem {
   to: string;
   label: string;
+  /** Compact label for the mobile bottom bar. */
+  short: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
 }
 
+/** Stitch teacher shell navigation («فضاء الأستاذ الموحد»). */
 const NAV: NavItem[] = [
-  { to: '/', label: 'نظرة عامة', icon: LayoutDashboard, end: true },
-  { to: '/courses', label: 'الدورات', icon: BookOpen },
-  { to: '/students', label: 'الطلاب', icon: Users },
-  { to: '/announcements', label: 'الإعلانات', icon: Megaphone },
-  { to: '/settings', label: 'الإعدادات', icon: Settings },
+  { to: '/', label: 'الرئيسية', short: 'الرئيسية', icon: LayoutDashboard, end: true },
+  { to: '/courses', label: 'دروسي وفيديوهاتي', short: 'دروسي', icon: Video },
+  { to: '/students', label: 'التلاميذ والاشتراكات', short: 'التلاميذ', icon: Users },
+  { to: '/reception', label: 'استقبال التلاميذ', short: 'الاستقبال', icon: Layout },
+  { to: '/settings', label: 'الإعدادات', short: 'الإعدادات', icon: Settings },
 ];
 
 function navClass(isActive: boolean) {
@@ -42,7 +47,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="px-5 py-5">
-        <Wordmark size={34} subtitle="لوحة الأستاذ" />
+        <Wordmark size={34} subtitle="فضاء الأستاذ" />
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1.5">
+          <BadgeCheck size={14} className="text-success" />
+          <span className="text-[11px] font-bold text-success">منهاج وزارة التربية 2025</span>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 px-3" aria-label="التنقل الرئيسي">
@@ -80,6 +89,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
+  const { state } = useStore();
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -138,6 +148,28 @@ export function AppShell() {
       </header>
 
       <main className="lg:ps-[268px]">
+        {/* Desktop top bar */}
+        <header className="sticky top-0 z-20 hidden items-center gap-3 border-b border-line bg-surface/95 px-6 py-3 backdrop-blur lg:flex">
+          <div className="flex-1" />
+
+          <NavLink to="/courses?action=new" className="btn btn-primary btn-sm">
+            <Plus size={16} />
+            إضافة محتوى جديد
+          </NavLink>
+
+          <div className="hidden items-center gap-2.5 border-s border-line ps-3 md:flex">
+            <Avatar label={state.teacher.monogram} size={34} seed={2} />
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-bold text-ink">
+                {state.teacher.name}
+              </div>
+              <div className="truncate text-[11px] text-muted">
+                مادة {state.teacher.subject} • {state.teacher.level}
+              </div>
+            </div>
+          </div>
+        </header>
+
         <div className="mx-auto w-full max-w-[1200px] px-4 pb-28 pt-5 sm:px-6 lg:pb-12 lg:pt-8">
           <Outlet />
         </div>
@@ -163,7 +195,7 @@ export function AppShell() {
                 }
               >
                 <item.icon size={20} strokeWidth={2} />
-                <span>{item.label}</span>
+                <span>{item.short}</span>
               </NavLink>
             </li>
           ))}

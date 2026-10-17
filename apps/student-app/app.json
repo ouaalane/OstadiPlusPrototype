@@ -8,13 +8,15 @@
     "scheme": "ostadiplus",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "primaryColor": "#2F5BFF",
+    "primaryColor": "#0B5CFF",
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#F5F7FC"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ma.atlas.ostadiplus.student"
@@ -39,7 +41,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#F5F7FC"
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }

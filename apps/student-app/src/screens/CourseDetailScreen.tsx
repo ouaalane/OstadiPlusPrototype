@@ -1,52 +1,109 @@
 /**
- * Course detail — chapters → lessons, with the access banner that explains
- * why a lesson cannot be opened (pending / suspended / unpublished).
+ * Course detail — hero, instructor, stats, resume CTA, progress, about, then
+ * the chapters → lessons list, with the access banner that explains why a
+ * lesson cannot be opened (pending / suspended / unpublished).
+ *
+ * Bilingual: strings are authored inline per language, layout flips RTL↔LTR.
  */
 
-import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   allLessons,
   courseDurationSec,
   courseProgress,
-  formatDuration,
+  courseTeacher,
   type Lesson,
 } from '@ostadiplus/shared';
 
-import { AppText, Card, CourseCover, Pill, PrimaryButton, ProgressBar } from '../components/ui';
+import { useI18n } from '../i18n/useI18n';
+import { useLayout } from '../i18n/layout';
+import {
+  AppText,
+  Avatar,
+  Card,
+  Eyebrow,
+  IconButton,
+  NoticeCard,
+  Pill,
+  PrimaryButton,
+  ProgressBar,
+  TopBar,
+} from '../components/ui';
+import { LESSON_ICONS, lessonMetaText, lessonRoute, lessonTint } from '../lib/lesson';
+import { coverAssets } from '../assets/covers';
 import { useStore } from '../store/StudentStore';
-import { colors, radius, rtl, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
+
+/** Minutes label helper — «3h 20m» / «3 س 20 د». */
+function durationLabel(seconds: number, rtl: boolean): string {
+  const total = Math.round(seconds / 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h <= 0) return `${m} ${rtl ? 'دقيقة' : 'min'}`;
+  if (m === 0) return `${h} ${rtl ? 'ساعة' : 'h'}`;
+  return rtl ? `${h} س ${m} د` : `${h}h ${m}m`;
+}
 
 export default function CourseDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'CourseDetail'>>();
   const { state, me, statusOf, progressOf } = useStore();
+  const { lang, t, dir } = useI18n();
+  const l = useLayout(lang);
+  const rtl = dir === 'rtl';
+  const [bookmarked, setBookmarked] = useState(false);
+  const [openChapter, setOpenChapter] = useState<string | null>(null);
 
   const course = state.courses.find((c) => c.id === params.courseId);
 
-  const chapters = useMemo(
+  /** Published lessons only, grouped semester → topic. */
+  const semesters = useMemo(
     () =>
       course
-        ? course.chapters.map((chapter) => ({
-            ...chapter,
-            lessons: chapter.lessons.filter((l) => l.published),
+        ? course.semesters.map((semester) => ({
+            ...semester,
+            chapters: semester.chapters.map((chapter) => ({
+              ...chapter,
+              lessons: chapter.lessons.filter((les) => les.published),
+            })),
           }))
         : [],
     [course],
   );
 
+  /** Flat list of the topics, in program order. */
+  const chapters = useMemo(
+    () => semesters.flatMap((semester) => semester.chapters),
+    [semesters],
+  );
+
+  const progress = useMemo(
+    () => (course && me ? courseProgress(state, me.id, course) : null),
+    [course, me, state],
+  );
+
+  /** Default-open the section that holds the next lesson. */
+  const initialChapter = useMemo(() => {
+    if (!course || !progress) return chapters[0]?.id ?? null;
+    const found = chapters.find((c) => c.lessons.some((les) => les.id === progress.nextLessonId));
+    return found?.id ?? chapters[0]?.id ?? null;
+  }, [course, chapters, progress]);
+
   if (!course) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.content}>
+        <TopBar title={t('course_details')} onBack={() => navigation.goBack()} />
+        <View style={styles.missingWrap}>
           <AppText size={15} tone="muted">
-            هذه الدورة لم تعد متاحة.
+            {rtl ? 'هذه الدورة لم تعد متاحة.' : "Ce cours n'est plus disponible."}
           </AppText>
         </View>
       </SafeAreaView>
@@ -55,187 +112,463 @@ export default function CourseDetailScreen() {
 
   const status = statusOf(course.id);
   const accessible = status === 'active' && course.status === 'published';
-  const progress = me ? courseProgress(state, me.id, course) : null;
-  const minutes = Math.round(courseDurationSec(course) / 60);
-  const publishedCount = allLessons(course).filter((l) => l.published).length;
+  const durationSec = courseDurationSec(course);
+  const minutes = Math.round(durationSec / 60);
+  const lessons = allLessons(course).filter((les) => les.published);
+  const publishedCount = lessons.length;
+  const openId = openChapter ?? initialChapter;
+
+  /** 1-based index of the lesson the student should resume. */
+  const resumeIndex = progress?.nextLessonId
+    ? Math.max(1, lessons.findIndex((les) => les.id === progress.nextLessonId) + 1)
+    : 1;
+  const resumeLesson = lessons.find((les) => les.id === progress?.nextLessonId) ?? lessons[0];
+
+  /** The prof who owns this course (fallback: the platform teacher). */
+  const instructor = courseTeacher(state, course);
 
   const openLesson = (lesson: Lesson) => {
     if (!accessible) return;
-    navigation.navigate(lesson.kind === 'video' ? 'Video' : 'Pdf', { lessonId: lesson.id });
+    navigation.navigate(lessonRoute(lesson.kind), { lessonId: lesson.id });
   };
 
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <CourseCover cover={course.cover} subject={course.subject} height={132}>
-          <AppText size={19} weight="bold" tone="white">
-            {course.title}
-          </AppText>
-        </CourseCover>
+  const heroSource = coverAssets[course.cover];
 
-        <View style={[rtl.row, { marginTop: spacing.md, gap: spacing.sm }]}>
-          <Pill
-            label={accessible ? 'متاحة لك' : status === 'pending' ? 'بانتظار التفعيل' : 'وصول موقوف'}
-            tone={accessible ? 'success' : status === 'pending' ? 'warning' : 'danger'}
-            dot
+  return (
+    <View style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* ---- hero ---- */}
+        <View style={styles.hero}>
+          {heroSource ? (
+            <Image source={heroSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={['#3D82FF', '#0546C8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <LinearGradient
+            colors={['rgba(11,18,32,0.45)', 'rgba(11,18,32,0.70)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
           />
-          <AppText size={12} tone="muted">
-            {publishedCount} درس · {minutes} دقيقة
-          </AppText>
+
+          <SafeAreaView edges={['top']}>
+            <View style={[styles.heroBar, l.row]}>
+              <IconButton
+                icon={rtl ? 'chevron-forward' : 'chevron-back'}
+                variant="onPhoto"
+                size={38}
+                label={t('back')}
+                onPress={() => navigation.goBack()}
+              />
+              <View style={{ flex: 1 }} />
+              <IconButton
+                icon={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                variant="onPhoto"
+                size={38}
+                label={
+                  bookmarked
+                    ? rtl
+                      ? 'إزالة الدورة من المحفوظات'
+                      : 'Retirer le cours des favoris'
+                    : rtl
+                      ? 'حفظ الدورة'
+                      : 'Ajouter le cours aux favoris'
+                }
+                onPress={() => setBookmarked((b) => !b)}
+              />
+            </View>
+
+            <View style={styles.heroBody}>
+              <AppText
+                size={11}
+                weight="bold"
+                tone="white"
+                style={{ letterSpacing: 0.9, textTransform: 'uppercase', opacity: 0.9 }}
+              >
+                {course.subject} · {course.level}
+              </AppText>
+              <AppText size={24} weight="bold" tone="white" numberOfLines={3}>
+                {course.title}
+              </AppText>
+              <View style={l.row}>
+                <Pill
+                  label={
+                    accessible
+                      ? rtl
+                        ? 'متاحة لك'
+                        : 'Disponible pour vous'
+                      : status === 'pending'
+                        ? rtl
+                          ? 'بانتظار التفعيل'
+                          : "En attente d'activation"
+                        : rtl
+                          ? 'وصول موقوف'
+                          : 'Accès suspendu'
+                  }
+                  tone={accessible ? 'success' : status === 'pending' ? 'warning' : 'danger'}
+                  dot
+                />
+                <Pill
+                  label={`${publishedCount} ${rtl ? 'درس' : 'leçons'}`}
+                  tone="neutral"
+                />
+                {durationSec > 0 ? (
+                  <Pill label={durationLabel(durationSec, rtl)} tone="neutral" />
+                ) : null}
+              </View>
+            </View>
+          </SafeAreaView>
         </View>
 
-        <AppText size={13} tone="body" style={{ marginTop: spacing.sm, lineHeight: 21 }}>
-          {course.summary}
-        </AppText>
-
-        {progress ? (
-          <Card style={{ marginTop: spacing.lg, gap: spacing.sm }}>
-            <View style={rtl.rowBetween}>
-              <AppText size={13.5} weight="semibold" tone="ink">
-                تقدّمك
+        <View style={styles.body}>
+          {/* ---- instructor ---- */}
+          <View style={[l.row, styles.instructor]}>
+            <Avatar monogram={instructor.monogram} size={44} tone="brand" square />
+            <View style={{ flex: 1, gap: 1 }}>
+              <AppText size={14.5} weight="semibold" tone="ink" numberOfLines={1}>
+                {instructor.name}
               </AppText>
-              <AppText size={13} weight="bold" tone="brand">
-                {progress.percent}%
+              <AppText size={12.5} tone="muted" numberOfLines={1}>
+                {instructor.subject}
+                {state.teacher.centerName ? ` · ${state.teacher.centerName}` : ''}
               </AppText>
             </View>
-            <ProgressBar value={progress.percent} />
-            <AppText size={11.5} tone="muted">
-              {progress.completed} من {progress.total} دروس مكتملة
-            </AppText>
-          </Card>
-        ) : null}
+          </View>
 
-        {!accessible ? (
-          <Card style={[styles.notice, { marginTop: spacing.lg }]}>
-            <AppText size={14} weight="bold" tone={status === 'pending' ? 'ink' : 'danger'}>
-              {status === 'pending' ? 'الوصول قيد المراجعة' : 'الوصول موقوف'}
-            </AppText>
-            <AppText size={12.5} tone="muted" style={{ lineHeight: 20 }}>
-              {status === 'pending'
-                ? 'سجّلت في هذه الدورة، ويفعّل الأستاذ وصولك من لوحة التحكم. بمجرد التفعيل تظهر لك الدروس مباشرة.'
-                : 'أوقف الأستاذ وصولك إلى هذه الدورة. تواصل مع المركز لاستعادة الوصول.'}
-            </AppText>
-          </Card>
-        ) : null}
-
-        <View style={{ marginTop: spacing.xl, gap: spacing.md }}>
-          {chapters.map((chapter, ci) => (
-            <Card key={chapter.id} style={{ padding: 0, overflow: 'hidden' }}>
-              <View style={styles.chapterHeader}>
-                <View style={styles.chapterIndex}>
-                  <AppText size={12} weight="bold" tone="brand">
-                    {ci + 1}
-                  </AppText>
-                </View>
-                <AppText size={14.5} weight="bold" tone="ink" style={{ flex: 1 }}>
-                  {chapter.title}
+          {/* ---- stats ---- */}
+          <View style={[l.row, styles.statsRow]}>
+            <View style={styles.statBox}>
+              <Ionicons name="play-circle-outline" size={17} color={colors.brand} />
+              <View>
+                <AppText size={15} weight="bold" tone="ink">
+                  {publishedCount}
                 </AppText>
-                <AppText size={11.5} tone="muted">
-                  {chapter.lessons.length} دروس
+                <AppText size={11} tone="muted">
+                  {rtl ? 'دروس' : 'leçons'}
                 </AppText>
               </View>
+            </View>
+            {durationSec > 0 ? (
+              <View style={styles.statBox}>
+                <Ionicons name="time-outline" size={17} color={colors.brand} />
+                <View>
+                  <AppText size={15} weight="bold" tone="ink">
+                    {minutes}
+                  </AppText>
+                  <AppText size={11} tone="muted">
+                    {rtl ? 'دقيقة' : 'minutes'}
+                  </AppText>
+                </View>
+              </View>
+            ) : null}
+          </View>
 
-              {chapter.lessons.length === 0 ? (
-                <AppText size={12.5} tone="muted" style={{ padding: spacing.lg }}>
-                  لا دروس في هذا الفصل بعد.
+          {/* ---- resume CTA ---- */}
+          {accessible && resumeLesson ? (
+            <PrimaryButton
+              label={
+                progress && progress.percent > 0
+                  ? `${rtl ? 'متابعة' : 'Continuer'} · ${rtl ? 'الدرس' : 'Leçon'} ${resumeIndex}`
+                  : rtl
+                    ? 'ابدأ الدورة'
+                    : 'Commencer le cours'
+              }
+              leadingIcon="play"
+              onPress={() => openLesson(resumeLesson)}
+            />
+          ) : null}
+
+          {/* ---- access notice ---- */}
+          {!accessible ? (
+            <NoticeCard
+              icon={status === 'pending' ? 'hourglass-outline' : 'lock-closed-outline'}
+              tone={status === 'pending' ? 'warning' : 'danger'}
+              title={
+                status === 'pending'
+                  ? rtl
+                    ? 'الوصول قيد المراجعة. '
+                    : "Accès en cours d'activation. "
+                  : rtl
+                    ? 'الوصول موقوف. '
+                    : 'Accès suspendu. '
+              }
+              body={
+                status === 'pending'
+                  ? rtl
+                    ? 'سجّلت في هذه الدورة، ويفعّل الأستاذ وصولك من لوحة التحكم. بمجرد التفعيل تظهر لك الدروس مباشرة.'
+                    : "Vous vous êtes inscrit à ce cours, votre enseignant active votre accès depuis le tableau de bord. Une fois activé, les leçons s'affichent."
+                  : rtl
+                    ? 'أوقف الأستاذ وصولك إلى هذه الدورة. تواصل مع المركز لاستعادة الوصول.'
+                    : 'Votre enseignant a suspendu votre accès à ce cours. Contactez le centre pour le rétablir.'
+              }
+            />
+          ) : null}
+
+          {/* ---- progress ---- */}
+          {progress ? (
+            <Card style={styles.progressCard}>
+              <View style={l.rowBetween}>
+                <Eyebrow>{rtl ? 'تقدّمك' : 'Votre progression'}</Eyebrow>
+                <AppText size={14} weight="bold" tone="brand">
+                  {progress.percent}%
                 </AppText>
-              ) : (
-                chapter.lessons.map((lesson, li) => {
-                  const p = progressOf(lesson.id);
-                  return (
-                    <Pressable
-                      key={lesson.id}
-                      onPress={() => openLesson(lesson)}
-                      disabled={!accessible}
-                      style={({ pressed }) => [styles.lessonRow, pressed && accessible && { backgroundColor: colors.brandSofter }]}
-                    >
-                      <View
-                        style={[
-                          styles.lessonIcon,
-                          {
-                            backgroundColor:
-                              lesson.kind === 'video' ? colors.brandSoft : colors.dangerSoft,
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={lesson.kind === 'video' ? 'play' : 'document-text'}
-                          size={15}
-                          color={lesson.kind === 'video' ? colors.brandDark : colors.danger}
-                        />
-                      </View>
-
-                      <View style={{ flex: 1, gap: 3 }}>
-                        <AppText size={14} weight="semibold" tone={accessible ? 'ink' : 'faint'}>
-                          {li + 1}. {lesson.title}
-                        </AppText>
-                        <AppText size={11.5} tone="muted">
-                          {lesson.kind === 'video'
-                            ? formatDuration(lesson.durationSec)
-                            : `${lesson.pages} صفحات`}
-                          {p?.completed ? ' · مكتمل ✓' : p && p.positionSec > 5 ? ' · قيد المشاهدة' : ''}
-                        </AppText>
-                      </View>
-
-                      {p?.completed ? (
-                        <Pill label="✓" tone="success" />
-                      ) : (
-                        <Ionicons
-                          name="chevron-back"
-                          size={18}
-                          color={accessible ? colors.faint : colors.lineStrong}
-                        />
-                      )}
-                    </Pressable>
-                  );
-                })
-              )}
+              </View>
+              <ProgressBar value={progress.percent} />
+              <AppText size={12} tone="muted">
+                {progress.completed} {rtl ? 'من' : 'sur'} {progress.total}{' '}
+                {rtl ? 'دروس مكتملة' : 'leçons terminées'}
+              </AppText>
             </Card>
-          ))}
-        </View>
+          ) : null}
 
-        {!accessible && status === 'pending' ? (
-          <PrimaryButton
-            label="تحديث حالة الوصول"
-            variant="outline"
-            style={{ marginTop: spacing.lg }}
-            onPress={() => navigation.goBack()}
-          />
-        ) : null}
+          {/* ---- about ---- */}
+          <View style={styles.about}>
+            <Eyebrow>{rtl ? 'عن هذه الدورة' : 'À propos de ce cours'}</Eyebrow>
+            <AppText size={14.5} tone="body" style={{ lineHeight: 23 }}>
+              {course.summary}
+            </AppText>
+          </View>
+
+          {/* ---- program: semesters → topics → lessons ---- */}
+          <View style={{ marginTop: spacing.xl, gap: spacing.xxl }}>
+            {semesters.map((semester, si) => {
+              const semesterLessons = semester.chapters.flatMap((c) => c.lessons);
+              const semesterSeconds = semesterLessons.reduce((sum, x) => sum + x.durationSec, 0);
+              const semesterDone = semesterLessons.filter((les) => progressOf(les.id)?.completed).length;
+              /** Topics already listed by the previous semesters. */
+              const offset = semesters
+                .slice(0, si)
+                .reduce((sum, s) => sum + s.chapters.length, 0);
+              return (
+                <View key={semester.id} style={{ gap: spacing.md }}>
+                  <View style={[styles.semesterHead, l.rowBetween]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText size={16.5} weight="bold" tone="ink">
+                        {semester.title}
+                      </AppText>
+                      <AppText size={11.5} tone="muted">
+                        {semester.chapters.length} {rtl ? 'فصول' : 'chapitres'} ·{' '}
+                        {semesterLessons.length} {rtl ? 'دروس' : 'leçons'}
+                        {semesterSeconds > 0 ? ` · ${durationLabel(semesterSeconds, rtl)}` : ''}
+                      </AppText>
+                    </View>
+                    {semesterLessons.length > 0 ? (
+                      <Pill
+                        label={`${semesterDone}/${semesterLessons.length}`}
+                        tone={semesterDone === semesterLessons.length ? 'success' : 'neutral'}
+                      />
+                    ) : null}
+                  </View>
+
+                  {semester.chapters.map((chapter, ciLocal) => {
+                    const ci = offset + ciLocal;
+                    const isOpen = openId === chapter.id;
+                    const chapterSeconds = chapter.lessons.reduce((sum, x) => sum + x.durationSec, 0);
+                    return (
+                      <Card key={chapter.id} flush>
+                        <Pressable
+                          onPress={() => setOpenChapter(isOpen ? '' : chapter.id)}
+                          accessibilityRole="button"
+                          accessibilityState={{ expanded: isOpen }}
+                          accessibilityLabel={`${semester.title} — ${chapter.title}`}
+                          style={({ pressed }) => [
+                            styles.chapterHeader,
+                            l.row,
+                            pressed && { opacity: 0.85 },
+                          ]}
+                        >
+                          <View style={styles.chapterIndex} importantForAccessibility="no">
+                            <AppText size={12} weight="bold" tone="brand">
+                              {ci + 1}
+                            </AppText>
+                          </View>
+                          <View style={{ flex: 1, gap: 2 }}>
+                            <AppText size={14.5} weight="bold" tone="ink" numberOfLines={2}>
+                              {chapter.title}
+                            </AppText>
+                            <AppText size={11.5} tone="muted">
+                              {chapter.lessons.length} {rtl ? 'دروس' : 'leçons'}
+                              {chapterSeconds > 0 ? ` · ${durationLabel(chapterSeconds, rtl)}` : ''}
+                            </AppText>
+                          </View>
+                          <Ionicons
+                            name={isOpen ? 'chevron-up' : 'chevron-down'}
+                            size={18}
+                            color={colors.faint}
+                            importantForAccessibility="no"
+                          />
+                        </Pressable>
+
+                        {isOpen ? (
+                          chapter.lessons.length === 0 ? (
+                            <View style={[styles.emptyRow, l.row]}>
+                              <Ionicons name="documents-outline" size={18} color={colors.faint} />
+                              <AppText size={12.5} tone="muted" style={{ flex: 1 }}>
+                                {rtl
+                                  ? 'لا دروس في هذا الفصل بعد.'
+                                  : 'Aucune leçon dans ce chapitre pour le moment.'}
+                              </AppText>
+                            </View>
+                          ) : (
+                            chapter.lessons.map((lesson, li) => {
+                              const p = progressOf(lesson.id);
+                              const tint = lessonTint(lesson.kind);
+                              const meta = lessonMetaText(lesson, lang);
+                              return (
+                                <Pressable
+                                  key={lesson.id}
+                                  onPress={() => openLesson(lesson)}
+                                  disabled={!accessible}
+                                  style={({ pressed }) => [
+                                    styles.lessonRow,
+                                    l.row,
+                                    pressed && accessible && { backgroundColor: colors.brandSofter },
+                                  ]}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`الدرس ${li + 1}: ${lesson.title} — ${
+                                    meta ?? ''
+                                  }${
+                                    p?.completed
+                                      ? '، مكتمل'
+                                      : p && p.positionSec > 5
+                                        ? '، قيد المشاهدة'
+                                        : ''
+                                  }${accessible ? '' : '، مقفل بانتظار التفعيل'}`}
+                                  accessibilityHint={
+                                    accessible ? 'يفتح الدرس' : 'الدرس مقفل — انتظر تفعيل الوصول'
+                                  }
+                                >
+                                  <View style={[styles.lessonIcon, { backgroundColor: tint.soft }]}>
+                                    <Ionicons
+                                      name={LESSON_ICONS[lesson.kind]}
+                                      size={15}
+                                      color={tint.dark}
+                                    />
+                                  </View>
+
+                                  <View style={{ flex: 1, gap: 3 }}>
+                                    <AppText
+                                      size={14}
+                                      weight="semibold"
+                                      tone={accessible ? 'ink' : 'faint'}
+                                      numberOfLines={2}
+                                    >
+                                      {li + 1}. {lesson.title}
+                                    </AppText>
+                                    <AppText size={11.5} tone="muted">
+                                      {meta ?? (rtl ? 'نص' : 'texte')}
+                                      {p?.completed
+                                        ? ` · ${rtl ? 'مكتمل ✓' : 'terminé ✓'}`
+                                        : p && p.positionSec > 5
+                                          ? ` · ${rtl ? 'قيد المشاهدة' : 'en cours'}`
+                                          : ''}
+                                    </AppText>
+                                  </View>
+
+                                  {p?.completed ? (
+                                    <Pill label="✓" tone="success" />
+                                  ) : (
+                                    <Ionicons
+                                      name={rtl ? 'chevron-back' : 'chevron-forward'}
+                                      size={18}
+                                      color={accessible ? colors.faint : colors.lineStrong}
+                                      importantForAccessibility="no"
+                                    />
+                                  )}
+                                </Pressable>
+                              );
+                            })
+                          )
+                        ) : null}
+                      </Card>
+                    );
+                  })}
+                </View>
+              );
+            })}
+          </View>
+
+          {!accessible && status === 'pending' ? (
+            <PrimaryButton
+              label={rtl ? 'تحديث حالة الوصول' : "Actualiser l'accès"}
+              variant="outline"
+              style={{ marginTop: spacing.lg }}
+              onPress={() => navigation.goBack()}
+            />
+          ) : null}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl * 2 },
-  chapterHeader: {
-    flexDirection: 'row-reverse',
+  scroll: { paddingBottom: spacing.xxl * 2 },
+  missingWrap: { padding: spacing.lg },
+  hero: { backgroundColor: '#0B1B2A' },
+  heroBar: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+  },
+  heroBody: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  body: { padding: spacing.lg, gap: spacing.lg },
+  instructor: { gap: spacing.md },
+  statsRow: { gap: spacing.md },
+  statBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  progressCard: { gap: spacing.md, backgroundColor: colors.surfaceAlt, borderColor: 'transparent' },
+  about: { gap: spacing.sm },
+  semesterHead: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.xs,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.brandSoft,
+  },
+  chapterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   chapterIndex: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 9,
     backgroundColor: colors.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lessonRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
   },
   lessonIcon: {
     width: 34,
@@ -244,5 +577,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notice: { gap: 6 },
+  emptyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
 });

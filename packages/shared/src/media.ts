@@ -25,7 +25,9 @@ export function mediaUrl(kind: MediaKind, file: string, platform: Platform): str
 /** Human friendly size label, e.g. `2.4 MB`. */
 export function formatSize(mb: number): string {
   if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-  return `${mb.toFixed(1)} MB`;
+  if (mb >= 1) return `${mb.toFixed(1)} MB`;
+  if (mb > 0) return `${Math.max(1, Math.round(mb * 1024))} KB`;
+  return '0 KB';
 }
 
 /** `12:05` / `1:02:40` */
