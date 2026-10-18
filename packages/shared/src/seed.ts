@@ -328,6 +328,53 @@ const coursePhysics: Course = {
           },
         ]),
       ]),
+      chapter('الموجات الميكانيكية والضوئية', [
+        video('phys-waves-intro'),
+        video('phys-waves-ex1'),
+        video('phys-waves-ex2'),
+        video('phys-waves-periodic'),
+        video('phys-waves-periodic-ex1'),
+        video('phys-waves-periodic-ex2'),
+        video('phys-light-waves'),
+        video('phys-light-waves-ex1'),
+        quiz('اختبر فهمك — الموجات الميكانيكية والضوئية', [
+          {
+            prompt: 'موجة ترددها 50 Hz تنتشر بسرعة 20 m/s. ما طولها الموجي؟',
+            options: ['0,4 m', '2,5 m', '1000 m', '70 m'],
+            correct: [0],
+          },
+          {
+            prompt: 'عند انتقال موجة صوتية من الهواء إلى الماء، ما المقدار الذي يبقى ثابتًا؟',
+            options: ['التردد', 'السرعة', 'الطول الموجي', 'الاستطالة'],
+            correct: [0],
+          },
+          {
+            prompt: 'ما العلاقة الصحيحة بين الطول الموجي والسرعة والدور؟',
+            options: ['λ = v · T', 'λ = v / T', 'λ = T / v', 'λ = v + T'],
+            correct: [0],
+          },
+        ]),
+      ]),
+      chapter('التحولات البطيئة والسريعة', [
+        video('phys-transforms-slow-fast'),
+        quiz('اختبر فهمك — التحولات البطيئة والسريعة', [
+          {
+            prompt: 'أي من التحولات التالية سريع؟',
+            options: ['صدأ الحديد', 'احتراق غاز الميثان', 'تخمّر السكر', 'تحلل أوراق الشجر'],
+            correct: [1],
+          },
+          {
+            prompt: 'رفع درجة حرارة الوسط المتفاعل يؤدي إلى:',
+            options: ['إنقاص سرعة التفاعل', 'زيادة سرعة التفاعل', 'عدم تغيير السرعة', 'إيقاف التفاعل'],
+            correct: [1],
+          },
+          {
+            prompt: 'زيادة تشتيت متفاعل صلب تؤدي إلى:',
+            options: ['إنقاص سرعة التفاعل', 'زيادة سرعة التفاعل', 'عدم تغيير السرعة', 'تغيير نوع الناتج'],
+            correct: [1],
+          },
+        ]),
+      ]),
       chapter('التحولات النووية', [
         text(
           'النشاط الإشعاعي والتناقص الإشعاعي',
@@ -582,13 +629,17 @@ const progress: DemoState['progress'] = {
 /* ------------------------------------------------------------------ */
 
 export const DEMO_STATE: DemoState = {
-  /* v7: the maths course gained an «الأعداد العقدية» chapter (eleven videos
+  /* v8: the physics course gained two video chapters — «الموجات الميكانيكية
+     والضوئية» (eight videos with curated poster art plus a quiz) and
+     «التحولات البطيئة والسريعة» (one video plus a quiz) — so a v7 payload is
+     stale.
+     v7: the maths course gained an «الأعداد العقدية» chapter (eleven videos
      with curated poster art plus a quiz), so a v6 payload is stale.
      v6: professors can now carry a photo — the course header brands itself
      with the prof's own imagery — so a v5 payload is stale.
      v5: documents now hold the real AlloSchool PDFs (new titles, page counts
      and page images), so any v4 payload sitting in AsyncStorage is stale. */
-  version: 7,
+  version: 8,
   /* No auto sign-in: a fresh install opens on the welcome screen and
      the student authenticates via Login / Signup (or guest account picker). */
   activeStudentId: '',

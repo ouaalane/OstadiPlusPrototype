@@ -716,7 +716,7 @@ export function CourseCover({
   if (source) {
     return (
       <View style={[styles.cover, { height, overflow: 'hidden' }]}>
-        <Image source={source} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={source} style={styles.absoluteImage} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(10,20,45,0.05)', 'rgba(10,20,45,0.38)']}
           start={{ x: 0, y: 0 }}
@@ -925,9 +925,9 @@ export function Thumb({
   return (
     <View style={{ width, height, borderRadius: radiusValue, overflow: 'hidden' }}>
       {poster ? (
-        <Image source={poster} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={poster} style={styles.absoluteImage} resizeMode="cover" />
       ) : coverSource ? (
-        <Image source={coverSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={coverSource} style={styles.absoluteImage} resizeMode="cover" />
       ) : (
         <LinearGradient
           colors={[pair[0], pair[1]]}
@@ -1632,6 +1632,12 @@ const styles = StyleSheet.create({
     bottom: -30,
     end: -20,
   },
+
+  /* An `Image` given only insets (`StyleSheet.absoluteFill`) resolves to its own
+     intrinsic pixel size in the New Architecture — a magnified slice of the art
+     painted outside the frame. Explicit percentages keep it filling the box
+     (same workaround as `CourseDetailScreen.heroArt`). */
+  absoluteImage: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
 
   searchBar: {
     flexDirection: 'row',

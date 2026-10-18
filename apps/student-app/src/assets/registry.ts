@@ -24,6 +24,15 @@ export const videoAssets: Record<string, number> = {
   'limits-intro.mp4': require('./videos/limits-intro.mp4'),
   'limits-rules.mp4': require('./videos/limits-rules.mp4'),
   'logarithm.mp4': require('./videos/logarithm.mp4'),
+  'phys-light-waves-ex1.mp4': require('./videos/phys-light-waves-ex1.mp4'),
+  'phys-light-waves.mp4': require('./videos/phys-light-waves.mp4'),
+  'phys-transforms-slow-fast.mp4': require('./videos/phys-transforms-slow-fast.mp4'),
+  'phys-waves-ex1.mp4': require('./videos/phys-waves-ex1.mp4'),
+  'phys-waves-ex2.mp4': require('./videos/phys-waves-ex2.mp4'),
+  'phys-waves-intro.mp4': require('./videos/phys-waves-intro.mp4'),
+  'phys-waves-periodic-ex1.mp4': require('./videos/phys-waves-periodic-ex1.mp4'),
+  'phys-waves-periodic-ex2.mp4': require('./videos/phys-waves-periodic-ex2.mp4'),
+  'phys-waves-periodic.mp4': require('./videos/phys-waves-periodic.mp4'),
   'vectors.mp4': require('./videos/vectors.mp4'),
 };
 
@@ -50,6 +59,15 @@ export const posterAssets: Record<string, number> = {
   'limits-intro.jpg': require('./posters/limits-intro.jpg'),
   'limits-rules.jpg': require('./posters/limits-rules.jpg'),
   'logarithm.jpg': require('./posters/logarithm.jpg'),
+  'phys-light-waves-ex1.jpg': require('./posters/phys-light-waves-ex1.jpg'),
+  'phys-light-waves.jpg': require('./posters/phys-light-waves.jpg'),
+  'phys-transforms-slow-fast.jpg': require('./posters/phys-transforms-slow-fast.jpg'),
+  'phys-waves-ex1.jpg': require('./posters/phys-waves-ex1.jpg'),
+  'phys-waves-ex2.jpg': require('./posters/phys-waves-ex2.jpg'),
+  'phys-waves-intro.jpg': require('./posters/phys-waves-intro.jpg'),
+  'phys-waves-periodic-ex1.jpg': require('./posters/phys-waves-periodic-ex1.jpg'),
+  'phys-waves-periodic-ex2.jpg': require('./posters/phys-waves-periodic-ex2.jpg'),
+  'phys-waves-periodic.jpg': require('./posters/phys-waves-periodic.jpg'),
   'vectors.jpg': require('./posters/vectors.jpg'),
 };
 

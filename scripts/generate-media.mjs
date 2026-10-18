@@ -46,7 +46,7 @@ const FONT_DIR = path.join(
 /** Seconds per slide, by video index — keeps lesson lengths varied. */
 const SLIDE_SEC = [
   34, 38, 33, 42, 44, 35, 39, 32, 37, 34, 48, 36, 41, 34, 38, 36, 33, 39, 35,
-  42, 34, 37,
+  42, 34, 37, 36, 40, 35, 38, 34, 41, 37, 39, 36,
 ];
 const XFADE = 0.8;
 const W = 1280;

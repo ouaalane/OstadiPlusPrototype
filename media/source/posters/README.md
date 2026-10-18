@@ -23,3 +23,21 @@ out, so what ships is the lesson title and the teacher's photo only.
 
 These are third-party images: the same caveat as the AlloSchool documents
 applies — using them beyond this prototype needs the rightsholder's permission.
+
+## phys-*
+
+The nine `phys-*` posters come from the thumbnail art of the YouTube playlist
+*«2ème Bac physique–chimie»* (waves and the slow/fast transformations):
+
+    https://www.youtube.com/playlist?list=PLZAeMV7lm1EO31VswGYQssZkuFSRgzHMI
+
+(The first nine videos of the playlist, in order.)
+
+The original thumbnails carry that channel's own pills — "Top physique chimie"
+on the left and "Prof Fouad" on the right of the top strip. For each poster the
+whole top strip was replaced with an OstadiPlus brand bar (the same lockup the
+generated slides carry), so what ships is the lesson title and the teacher's
+photo only.
+
+Same rights caveat: these are third-party images, so using them beyond this
+prototype needs the rightsholder's permission.
