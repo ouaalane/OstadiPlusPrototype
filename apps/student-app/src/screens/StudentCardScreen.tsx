@@ -11,7 +11,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -150,9 +150,19 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
           {/* identity row */}
           <View style={[l.row, styles.identity]}>
             <View style={styles.avatar}>
-              <AppText size={18} weight="bold" tone="white">
-                {me?.monogram ?? (rtl ? '؟' : '?')}
-              </AppText>
+              {me ? (
+                <Image
+                  source={require('../assets/student-avatar.jpg')}
+                  style={styles.avatarImg}
+                  resizeMode="cover"
+                  accessibilityIgnoresInvertColors
+                  accessibilityLabel={me.fullName}
+                />
+              ) : (
+                <AppText size={18} weight="bold" tone="white">
+                  ?
+                </AppText>
+              )}
             </View>
             <View style={{ flex: 1, gap: 3 }}>
               <AppText size={16} weight="bold" tone="white">
@@ -174,6 +184,10 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
                   }
                   tone={pending ? 'warning' : 'success'}
                   dot
+                  /* Active state sits flat on the brand gradient: white label,
+                     green dot, no chip fill. Pending keeps its amber chip so
+                     it still reads as "needs attention". */
+                  onBrand={!pending}
                 />
               </View>
             </View>
@@ -407,7 +421,9 @@ const styles = StyleSheet.create({
     borderColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  avatarImg: { width: '100%', height: '100%' },
 
   body: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
 

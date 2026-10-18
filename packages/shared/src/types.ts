@@ -252,7 +252,22 @@ export interface Enrollment {
 
 export type NotificationKind =
   | 'center-request'   // center wants to connect to this student
-  | 'access-granted';  // teacher activated a course for the student
+  | 'access-granted'   // teacher activated a course for the student
+  | 'new-lesson';      // teacher published a lesson in one of the student's courses
+
+/**
+ * Payload of a `new-lesson` notification. Kept flat and string-only so the same
+ * shape can ride along in a push payload and be handed straight to the device's
+ * notification tray.
+ */
+export interface NewLessonNotificationPayload {
+  lessonId: string;
+  lessonKind: string;
+  lessonTitle: string;
+  courseId: string;
+  courseTitle: string;
+  teacherName: string;
+}
 
 export interface AppNotification {
   id: string;

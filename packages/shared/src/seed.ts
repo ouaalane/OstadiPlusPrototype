@@ -541,7 +541,9 @@ const progress: DemoState['progress'] = {
 /* ------------------------------------------------------------------ */
 
 export const DEMO_STATE: DemoState = {
-  version: 4,
+  /* v5: documents now hold the real AlloSchool PDFs (new titles, page counts
+     and page images), so any v4 payload sitting in AsyncStorage is stale. */
+  version: 5,
   /* No auto sign-in: a fresh install opens on the welcome screen and
      the student authenticates via Login / Signup (or guest account picker). */
   activeStudentId: '',

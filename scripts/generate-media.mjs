@@ -18,6 +18,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { videos, pdfs } from './media/content.mjs';
 import { contentSlide, coverSlide, pdfDocument } from './media/templates.mjs';
+import { importRealPdfs } from './media/import-pdfs.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GEN = path.join(ROOT, 'media', 'generated');
@@ -196,6 +197,10 @@ async function main() {
   const resume = process.env.OSTADI_MEDIA_RESUME === '1';
   await prepareDirs(resume);
 
+  /* Real course documents (media/source/alloschool) are rasterised from their
+     actual PDFs; the demo HTML templates only cover keys without a source. */
+  const realDocs = await importRealPdfs({ log });
+
   const { chromium } = await import('playwright');
   const browser = await chromium.launch();
   const page = await browser.newPage({
@@ -265,6 +270,16 @@ async function main() {
   /* ---- pdfs ---- */
   const pdfManifest = {};
   for (const doc of pdfs) {
+    /* A real PDF is already on disk and rasterised — never overwrite it with
+       the demo template. */
+    if (realDocs[doc.key]) {
+      pdfManifest[doc.key] = realDocs[doc.key];
+      log(
+        `  kept real document ${doc.key} (${realDocs[doc.key].pages} pages)`,
+      );
+      continue;
+    }
+
     const html = pdfDocument(doc);
     const file = await writeHtml(doc.key, html);
     await page.goto(pathToFileURL(file).href, { waitUntil: 'load' });

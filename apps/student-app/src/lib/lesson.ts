@@ -19,6 +19,16 @@ export function lessonRoute(kind: LessonKind): 'Video' | 'Pdf' | 'Reader' | 'Qui
   return 'Pdf';
 }
 
+const LESSON_KINDS: LessonKind[] = ['video', 'pdf', 'text', 'quiz', 'image', 'exercise', 'exam'];
+
+/**
+ * Narrows a `LessonKind` that arrived as data — a push payload or a stored
+ * notification holds plain strings, so it has to be validated before use.
+ */
+export function lessonKindOf(value: string | undefined): LessonKind {
+  return LESSON_KINDS.find((kind) => kind === value) ?? 'pdf';
+}
+
 /** Ionicons glyph shown on a lesson row for each kind. */
 export const LESSON_ICONS: Record<LessonKind, keyof typeof Ionicons.glyphMap> = {
   video: 'play',

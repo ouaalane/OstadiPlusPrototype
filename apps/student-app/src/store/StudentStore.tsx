@@ -75,6 +75,8 @@ interface StoreValue {
   /** Notifications for the signed-in student. */
   myNotifications: AppNotification[];
   markNotificationRead: (notifId: string) => void;
+  /** Records a `new-lesson` alert for the signed-in student. */
+  addLessonNotification: (payload: Record<string, string>) => void;
   /** Center memberships for the signed-in student. */
   myMemberships: CenterMembership[];
   requestCenterJoin: (inviteCode: string) => 'ok' | 'not_found' | 'already_requested';
@@ -129,6 +131,7 @@ type Action =
   | { type: 'setLang'; lang: Lang }
   | { type: 'progress'; lessonId: string; positionSec: number; completed: boolean }
   | { type: 'notification/read'; notifId: string }
+  | { type: 'notification/new-lesson'; studentId: string; payload: Record<string, string> }
   | { type: 'membership/request'; centerId: string; studentId: string }
   | { type: 'membership/respond'; membershipId: string; accept: boolean; studentId: string }
   | { type: 'student/register'; student: Student };
@@ -206,6 +209,23 @@ function reducer(state: DemoState, action: Action): DemoState {
         n.id === action.notifId ? { ...n, read: true } : n,
       );
       return { ...state, notifications };
+    }
+
+    case 'notification/new-lesson': {
+      // In production this is dispatched from the push handler: the teacher
+      // publishes a lesson, the student's device is told about it.
+      const newNotif: AppNotification = {
+        id: newId('notif'),
+        studentId: action.studentId,
+        kind: 'new-lesson',
+        payload: action.payload,
+        read: false,
+        createdAt: nowIso(),
+      };
+      return {
+        ...state,
+        notifications: [...(state.notifications ?? []), newNotif],
+      };
     }
 
     case 'membership/request': {
@@ -423,6 +443,17 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   const markNotificationRead = useCallback((notifId: string) => {
     dispatch({ type: 'notification/read', notifId });
   }, []);
+
+  /* Called when the device is told a teacher published a lesson — the push
+     handler in `src/notifications` is the only caller today. */
+  const addLessonNotification = useCallback(
+    (payload: Record<string, string>) => {
+      const studentId = state.activeStudentId;
+      if (!studentId) return;
+      dispatch({ type: 'notification/new-lesson', studentId, payload });
+    },
+    [state.activeStudentId],
+  );
 
   const myMemberships = useMemo(
     () => (state.memberships ?? []).filter((m) => m.studentId === state.activeStudentId),
@@ -670,6 +701,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       lastSyncedAt,
       myNotifications,
       markNotificationRead,
+      addLessonNotification,
       myMemberships,
       requestCenterJoin,
       respondToMembership,
@@ -701,6 +733,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       lastSyncedAt,
       myNotifications,
       markNotificationRead,
+      addLessonNotification,
       myMemberships,
       requestCenterJoin,
       respondToMembership,

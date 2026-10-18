@@ -8,10 +8,11 @@
  * (sync import, reset) folded in.
  */
 
-import React, { useMemo, useRef, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 
 import { allLessons, lessonProgress, relativeTime, shortDate } from '@ostadiplus/shared';
 import { useNavigation } from '@react-navigation/native';
@@ -121,7 +122,20 @@ export default function ProfileScreen() {
   const [syncOpen, setSyncOpen] = useState(false);
 
   // toggle rows (visual)
+  /* Not a visual toggle any more: this is the real device permission, read from
+     the OS. The app cannot flip it itself, so tapping opens system settings. */
   const [notificationsOn, setNotificationsOn] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    Notifications.getPermissionsAsync()
+      .then(({ granted }) => {
+        if (alive) setNotificationsOn(granted);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [darkOn, setDarkOn] = useState(false);
 
   // sync payload tool
@@ -334,7 +348,18 @@ export default function ProfileScreen() {
               notificationsOn ? 'مفعّلة' : 'موقوفة',
               notificationsOn ? 'Activées' : 'Désactivées',
             )}
-            onPress={() => setNotificationsOn((v) => !v)}
+            onPress={async () => {
+              if (notificationsOn) {
+                /* Android keeps the switch in system settings. */
+                await Linking.openSettings().catch(() => undefined);
+                return;
+              }
+              const { granted } = await Notifications.requestPermissionsAsync().catch(() => ({
+                granted: false,
+              }));
+              setNotificationsOn(granted);
+              if (!granted) await Linking.openSettings().catch(() => undefined);
+            }}
           />
 
           <View style={styles.menuDivider} />

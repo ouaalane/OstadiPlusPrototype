@@ -4,15 +4,16 @@
     "slug": "ostadiplus-student",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/icon.png",
     "scheme": "ostadiplus",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "primaryColor": "#0B5CFF",
+    "backgroundColor": "#F3F9FD",
     "splash": {
-      "image": "./assets/logo.png",
+      "image": "./assets/adaptive-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F5F7FC"
+      "backgroundColor": "#F3F9FD"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -24,8 +25,8 @@
     "android": {
       "package": "ma.atlas.ostadiplus.student",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#F5F7FC"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -34,12 +35,20 @@
       "expo-video",
       "expo-font",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0B5CFF",
+          "defaultChannel": "lessons"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
-          "image": "./assets/logo.png",
-          "imageWidth": 160,
+          "image": "./assets/adaptive-icon.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#F5F7FC"
+          "backgroundColor": "#F3F9FD"
         }
       ],
       "expo-asset"

@@ -447,10 +447,13 @@ export function Pill({
   label,
   tone = 'neutral',
   dot,
+  onBrand = false,
 }: {
   label: string;
   tone?: 'brand' | 'success' | 'warning' | 'danger' | 'neutral' | 'info';
   dot?: boolean;
+  /** Sits on the brand gradient: no chip fill, white label, tone-coloured dot. */
+  onBrand?: boolean;
 }) {
   const tones = {
     brand: { bg: colors.brandSoft, fg: colors.brand },
@@ -463,9 +466,18 @@ export function Pill({
   const t = tones[tone];
   const rowDir = useRowDir();
   return (
-    <View style={[styles.pill, { backgroundColor: t.bg, flexDirection: rowDir }]}>
+    <View
+      style={[
+        styles.pill,
+        {
+          backgroundColor: onBrand ? 'transparent' : t.bg,
+          paddingHorizontal: onBrand ? 0 : 9,
+          flexDirection: rowDir,
+        },
+      ]}
+    >
       {dot ? <View style={[styles.dot, { backgroundColor: t.fg }]} /> : null}
-      <AppText size={11.5} weight="medium" style={{ color: t.fg }}>
+      <AppText size={11.5} weight="medium" style={{ color: onBrand ? colors.white : t.fg }}>
         {label}
       </AppText>
     </View>

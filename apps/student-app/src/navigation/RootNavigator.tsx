@@ -1,19 +1,19 @@
 /**
  * Navigation root.
  *
- * • not hydrated yet      → brand splash
+ * • launch splash         → app mark, held until the stored session is ready
  * • no signed-in student  → sign-in stack
  * • otherwise             → 4 tabs + course / video / document screens
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import SplashScreen from '../screens/SplashScreen';
+import LaunchSplash from '../screens/LaunchSplash';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -31,6 +31,8 @@ import PdfScreen from '../screens/PdfScreen';
 import ReaderScreen from '../screens/ReaderScreen';
 import QuizScreen from '../screens/QuizScreen';
 import StudentCardScreen from '../screens/StudentCardScreen';
+import LessonAlerts from '../notifications/LessonAlertsBridge';
+import { navigationRef } from './ref';
 import { useStore } from '../store/StudentStore';
 import { useI18n } from '../i18n/useI18n';
 import { colors, familyFor, radius } from '../theme';
@@ -167,9 +169,14 @@ function AuthNavigator() {
 
 export default function RootNavigator() {
   const { hydrated, me } = useStore();
+  /* The launch image runs once per app start, in front of the navigators.
+     Hydration happens concurrently behind it, so the splash simply waits for
+     the stored session and then stands down — by the time it finishes, the app
+     is guaranteed to have drawn its first real screen. */
+  const [splashDone, setSplashDone] = useState(false);
 
-  if (!hydrated) {
-    return <SplashScreen />;
+  if (!splashDone) {
+    return <LaunchSplash ready={hydrated} onFinish={() => setSplashDone(true)} />;
   }
 
   const theme = {
@@ -178,7 +185,10 @@ export default function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer ref={navigationRef} theme={theme}>
+      {/* Puts teacher lesson alerts in the device's notification shade and opens
+          the lesson when one is tapped. */}
+      <LessonAlerts />
       {!me ? (
         <AuthNavigator />
       ) : (

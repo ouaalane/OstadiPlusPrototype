@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -38,7 +39,11 @@ export default function App() {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => undefined);
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  /* The native splash can be dismissed before the JS tree has anything to draw
+     — in development the fonts alone stream in over Metro for a few seconds.
+     Painting the launch background while they load keeps that gap the same
+     colour as the splash instead of leaving the bare window showing. */
+  if (!fontsLoaded) return <View style={styles.launch} />;
 
   return (
     <SafeAreaProvider>
@@ -49,3 +54,7 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  launch: { flex: 1, backgroundColor: '#F3F9FD' },
+});

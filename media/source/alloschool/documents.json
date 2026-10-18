@@ -1,0 +1,30 @@
+{
+  "note": "Real course documents imported from AlloSchool (alloschool.com). Each key matches a `doc('<key>')` lesson in packages/shared/src/seed.ts; `<key>.pdf` sits next to this file. `npm run media:pdfs` rasterises them into page images for the app.",
+  "documents": {
+    "limits-sheet": {
+      "title": "ملخص: النهايات والاشتقاق (تذكير)",
+      "source": "https://www.alloschool.com/element/122872",
+      "original": "Limites et dérivation (Rappel) — 2Bac SPC-SVT"
+    },
+    "derivative-exercises": {
+      "title": "الاشتقاق ودراسة الدوال — الجزء الأول",
+      "source": "https://www.alloschool.com/element/122875",
+      "original": "Dérivation et étude des fonctions (Partie 1) — 2Bac SPC-SVT"
+    },
+    "vectors-sheet": {
+      "title": "الهندسة الفضائية: الجداء السلمي",
+      "source": "https://www.alloschool.com/element/124722",
+      "original": "Géométrie dans l'espace 1 : Produit scalaire — 2Bac SPC-SVT"
+    },
+    "functions-exercises": {
+      "title": "الدالة اللوغاريتمية — ملخص وتمارين",
+      "source": "https://www.alloschool.com/element/122879",
+      "original": "Fonctions logarithmiques — 2Bac SPC-SVT"
+    },
+    "bac-exercises": {
+      "title": "الامتحان الوطني 2021 — الدورة العادية",
+      "source": "https://www.alloschool.com/element/127131",
+      "original": "Examen National Maths SPC-SVC-STE-STM 2021 Normale"
+    }
+  }
+}

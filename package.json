@@ -13,9 +13,11 @@
     "app": "npm run start --prefix apps/student-app",
     "app:android": "npm run android --prefix apps/student-app",
     "media": "node scripts/generate-media.mjs",
+    "media:pdfs": "node scripts/media/import-pdfs.mjs",
     "media:sync": "node scripts/sync-media.mjs"
   },
   "devDependencies": {
+    "pdf-to-img": "^7.0.1",
     "playwright": "^1.64.0",
     "typescript": "^5.9.3"
   }

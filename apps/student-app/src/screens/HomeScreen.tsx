@@ -26,6 +26,7 @@ import {
   relativeTime,
   type Course,
   type Lesson,
+  type NotificationKind,
 } from '@ostadiplus/shared';
 
 import { useI18n } from '../i18n/useI18n';
@@ -49,7 +50,7 @@ import {
   Thumb,
 } from '../components/ui';
 import { resolvePoster } from '../media/lookup';
-import { lessonMetaText, lessonRoute } from '../lib/lesson';
+import { lessonKindOf, lessonMetaText, lessonRoute } from '../lib/lesson';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, shadow, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
@@ -60,6 +61,13 @@ interface LessonEntry {
   lesson: Lesson;
   course: Course;
 }
+
+/** Glyph for each kind of notification row. */
+const NOTIF_ICONS: Record<NotificationKind, keyof typeof Ionicons.glyphMap> = {
+  'new-lesson': 'megaphone-outline',
+  'access-granted': 'checkmark-circle-outline',
+  'center-request': 'business-outline',
+};
 
 /* Weekday + month names, spelled out locally (Hermes has no full Intl). */
 const WEEKDAYS = {
@@ -503,27 +511,43 @@ export default function HomeScreen() {
                 {myNotifications.map((n) => (
                   <Pressable
                     key={n.id}
-                    onPress={() => markNotificationRead(n.id)}
+                    onPress={() => {
+                      markNotificationRead(n.id);
+                      /* A lesson alert is a shortcut to the lesson itself. */
+                      if (n.kind === 'new-lesson' && n.payload.lessonId) {
+                        navigation.navigate(
+                          lessonRoute(lessonKindOf(n.payload.lessonKind)),
+                          { lessonId: n.payload.lessonId },
+                        );
+                        setNotifOpen(false);
+                      }
+                    }}
                     accessibilityRole="button"
-                    accessibilityLabel={n.payload.centerName ?? n.payload.courseTitle ?? ''}
+                    accessibilityLabel={
+                      n.payload.lessonTitle ?? n.payload.centerName ?? n.payload.courseTitle ?? ''
+                    }
                     style={({ pressed }) => [styles.notifRow, l.row, pressed && { opacity: 0.75 }]}
                   >
                     <View style={styles.notifIcon} importantForAccessibility="no">
                       <Ionicons
-                        name={n.kind === 'access-granted' ? 'checkmark-circle-outline' : 'business-outline'}
+                        name={NOTIF_ICONS[n.kind]}
                         size={18}
                         color={colors.brand}
                       />
                     </View>
                     <View style={{ flex: 1, gap: 2 }}>
                       <AppText size={14} weight="semibold" tone="ink" numberOfLines={2}>
-                        {n.kind === 'access-granted'
+                        {n.kind === 'new-lesson'
                           ? rtl
-                            ? `تم تفعيل وصولك إلى «${n.payload.courseTitle ?? ''}»`
-                            : `Accès activé : « ${n.payload.courseTitle ?? ''} »`
-                          : rtl
-                            ? `طلب انضمام من «${n.payload.centerName ?? ''}»`
-                            : `Demande d'adhésion de « ${n.payload.centerName ?? ''} »`}
+                            ? `${n.payload.teacherName ?? ''} نشر درساً جديداً: ${n.payload.lessonTitle ?? ''}`
+                            : `${n.payload.teacherName ?? ''} a publié : ${n.payload.lessonTitle ?? ''}`
+                          : n.kind === 'access-granted'
+                            ? rtl
+                              ? `تم تفعيل وصولك إلى «${n.payload.courseTitle ?? ''}»`
+                              : `Accès activé : « ${n.payload.courseTitle ?? ''} »`
+                            : rtl
+                              ? `طلب انضمام من «${n.payload.centerName ?? ''}»`
+                              : `Demande d'adhésion de « ${n.payload.centerName ?? ''} »`}
                       </AppText>
                       <AppText size={12} tone="muted">
                         {relativeTime(n.createdAt, lang)}
