@@ -11,10 +11,13 @@ One demo dataset, two finished-looking apps:
 | --- | --- | --- |
 | `apps/teacher-dashboard` | React + TypeScript + Vite + Tailwind | لوحة الأستاذ — courses, chapters/lessons, uploads, students & access, announcements |
 | `apps/student-app` | React Native (Expo SDK 54) + TypeScript | تطبيق التلاميذ — Android, offline: splash, sign-in, home, my courses, course detail, video player, document reader, announcements, profile |
+| `apps/api` | Node ≥ 23.6, zero dependencies (`node:http`, `node:sqlite`) | Watermark API — issues + traces the per-playback video codes (optional at runtime) |
 
 Everything is **Arabic / RTL**, the brand name stays **OstadiPlus** in Latin script, and both apps read the same
-seed from `packages/shared` (`seed.ts` + `media-manifest.json`). No backend, no payments, no real accounts —
-changes are stored locally on each device.
+seed from `packages/shared` (`seed.ts` + `media-manifest.json`). No remote backend, no payments, no real
+accounts — changes are stored locally on each device. The only server-side piece is the local **watermark API**
+(`apps/api`): it hands the player a traceability code on every playback start and keeps the leak-tracing
+ledger; the apps still run fully offline without it.
 
 ---
 
@@ -60,6 +63,9 @@ npm run dashboard
 
 # 5. student app (Metro bundler) — in a second terminal
 npm run app          # then press "a" for Android, or scan the QR with Expo Go
+
+# 6. (optional) watermark API — the player asks it for a traceability code per playback
+npm run api          # http://localhost:8787 (the emulator reaches it as 10.0.2.2:8787)
 ```
 
 ### Run the Android app on an emulator
@@ -90,6 +96,24 @@ delete it and re-run prebuild whenever `app.json` or native dependencies change.
 > **Machine-specific tweak:** `android/gradle/wrapper/gradle-wrapper.properties` points at the `gradle-8.14.3-all`
 > distribution, which is already cached in `%USERPROFILE%\.gradle\wrapper\dists` (the `-bin` download times out
 > here). After re-running `expo prebuild`, re-apply that one-line change if Gradle tries to download again.
+
+### Video watermark & screen capture
+
+Every video playback start calls the watermark API (`POST /api/playback/start`), which validates the student's
+enrollment and returns a fresh 12-character Base32 code (no `0/O/1/I/L`). The player renders **only that code** —
+two dim white copies that fade-move between random positions every 8–15 s, never over the bottom controls or the
+dead centre, and unmount entirely while paused. Trace a leaked code with:
+
+```powershell
+npm run api:trace -- K7M2QX9TPA4W
+# or over HTTP:
+# curl http://localhost:8787/api/admin/watermarks/K7M2QX9TPA4W -H "x-admin-token: dev-admin-token"
+```
+
+While the player is open the app blocks screen capture (FLAG_SECURE on Android — `adb screencap` returns a black
+frame; `expo-screen-capture` also reports capture attempts). Without the API the app still runs: it renders an
+unregistered local code (flagged in `apps/student-app/src/lib/watermark-api.ts`), and the ledger lives in
+`apps/api/data/watermarks.db` (git-ignored).
 
 ---
 
@@ -128,6 +152,7 @@ Re-running with `OSTADI_MEDIA_RESUME=1` keeps existing videos and only redoes wh
 packages/shared/        domain types, design tokens, seed data, selectors, sync codec, media manifest
 apps/teacher-dashboard/ React dashboard (Vite, Tailwind 4, HashRouter)
 apps/student-app/       React Native / Expo app (screens in src/screens, store in src/store)
+apps/api/               watermark API (Node, zero deps): codes + SQLite ledger + trace CLI
 scripts/                media pipeline (Chromium + ffmpeg) and asset distribution
 media/generated/        build output of the media pipeline (regenerable)
 shots/                  screenshots taken while verifying the dashboard

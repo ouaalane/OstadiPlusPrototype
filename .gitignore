@@ -19,6 +19,9 @@ media/generated/
 # raw video downloads (regenerate with `npm run media:fetch`)
 media/raw/
 
+# watermark API local database (recreated by `npm run api`)
+apps/api/data/
+
 # editors
 .vscode/
 .idea/

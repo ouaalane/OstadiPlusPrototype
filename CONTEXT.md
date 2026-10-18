@@ -17,10 +17,14 @@ presented as two apps sharing **one demo dataset**, aimed at investors / teacher
 | --- | --- | --- | --- |
 | Teacher dashboard | `apps/teacher-dashboard` | React + TS + Vite 7 + Tailwind 4 + react-router 7 (HashRouter) + lucide-react | إدارة الدورات، الفصول والدروس، رفع/اختيار الملفات، التلاميذ والوصول، الإعلانات، الإعدادات |
 | Student app | `apps/student-app` | React Native / **Expo SDK 54** (RN 0.81.5) + TS + react-navigation + expo-video | Android: splash, اختيار الحساب, الرئيسية, دوراتي, تفاصيل الدورة, مشغل الفيديو, قارئ المستندات, الإعلانات, الملف الشخصي |
+| Watermark API | `apps/api` | Node ≥ 23.6, zero deps (`node:http`, `node:sqlite`, `node:crypto`), migrations in SQL | إصدار رمز تتبّع لكل تشغيل فيديو (جدول `video_watermarks`) + البحث عن أي رمز مسرّب — `npm run api` (اختياري وقت التشغيل) |
 | Shared kernel | `packages/shared` | TS (no deps) | types, design tokens, seed dataset, selectors, `OSTADI1:` sync codec, media manifest |
 
-Both apps are **Arabic RTL**; the brand name is always written **OstadiPlus** (Latin script). No backend, no
-payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) and can be reset in-app.
+Both apps are **Arabic RTL**; the brand name is always written **OstadiPlus** (Latin script). No remote
+backend, no payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) and can be reset
+in-app. The one server-side piece is the local **watermark API** (`apps/api`): it issues the videos'
+traceability codes and keeps the leak-tracing ledger. It is optional at runtime — the app works fully
+offline (see §5, watermark fallback).
 
 ### The demo story the prototype must tell
 
@@ -53,13 +57,19 @@ payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) 
   the slide-deck template in `npm run media` — the same "a real source beats the demo template" rule as
   curated posters and AlloSchool PDFs. Raw downloads cache in git-ignored `media/raw/`. All 31 were eyeballed
   via contact sheets and language-checked (Vosk fr vs en models) — French audio confirmed.
-* **Ownership watermark + custom player controls** — a moving student-code/course-id pill over the video
-  (`src/lib/watermark.ts` pure logic with 8 executable checks in root `check-watermark.mjs` +
-  `src/components/VideoWatermark.tsx` overlay), plus a custom control overlay in `VideoScreen.tsx`
-  (back/mute/fullscreen/play/time). Fullscreen is rendered **in-app** on purpose: the platform's native
-  fullscreen surface cannot host RN overlays and would silently drop the watermark from fullscreen
-  recordings. Device-verified: the pill appears, tracks the course (`crs-math-2bac` → `crs-phys-2bac`) and
-  moves between positions during playback (`shots/video-*.png`).
+* **Ownership watermark v2 (server-issued codes) + copy control** — every playback start calls the
+  watermark API (`POST /api/playback/start`), which validates the enrollment against the shared seed, mints
+  a 12-char Base32 code (no 0/O/1/I/L), records it in the `video_watermarks` table (SQLite, SQL migrations in
+  `apps/api/migrations/`) and returns it with a session id. The overlay renders **only that code** — dim
+  white text (opacity 0.22, plus a smaller 0.15 second copy), fading between random slots every 8–15 s,
+  never the dead centre or the control bar, fully unmounted while paused, with a 5 s watchdog re-asserting
+  it if the animation state is lost (`src/lib/watermark.ts` + `src/components/VideoWatermark.tsx`). The
+  player screen engages `expo-screen-capture` (FLAG_SECURE on Android → screenshots/recordings come out
+  black) and re-randomises the overlay on detected captures. Trace a leaked code with
+  `npm run api:trace -- <code>` or `GET /api/admin/watermarks/:code`. `check-watermark.mjs` runs **21
+  checks** (client logic + server + HTTP end-to-end). Offline demo: when the API is unreachable the app
+  renders a marked, **unregistered** local code (`WATERMARK_ALLOW_OFFLINE_FALLBACK` in
+  `src/lib/watermark-api.ts` — set to `false` for server-only issuance).
 * **Teacher dashboard** — `npx tsc --noEmit` ✅, `npx vite build` ✅. Pages: Overview, Courses,
   CourseEditor (chapters/lessons/publish/preview/info), Students (access control), Announcements, Settings
   (profile edit + sync payload + reset), NotFound. Verified in Chromium at 1440×900 and 390×844 —
@@ -138,6 +148,11 @@ npm run media                 # ≈1 min when cached (use $env:OSTADI_MEDIA_RESU
 npm run media:fetch           # (re)download + cut the real lesson clips (needs python+yt-dlp, ffmpeg)
 npm run media:sync            # copy into both apps + regenerate apps/student-app/src/assets/registry.ts
 
+# watermark API — issues + traces the per-playback video codes (optional at runtime)
+npm run api                   # http://0.0.0.0:8787; the emulator reaches it as http://10.0.2.2:8787
+npm run api:trace -- <code>   # trace a leaked code straight from the SQLite ledger
+node check-watermark.mjs      # 21 checks: client logic + server + HTTP end-to-end
+
 # teacher dashboard  → http://localhost:5173
 npm run dashboard             # vite dev server (HashRouter, so any static host works for the build)
 
@@ -146,7 +161,7 @@ npm run app                   # then press "a" for Android, or use an emulator a
 
 # native Android build + install + launch (one shot; auto-finds JDK 17 + SDK)
 .\scripts\verify-android.ps1 -Install -Launch     # add -SkipBuild to only install+launch
-# produces apps\student-app\android\app\build\outputs\apk\debug\app-debug.apk (~209 MB,
+# produces apps\student-app\android\app\build\outputs\apk\debug\app-debug.apk (~212 MB,
 # JS bundle + assets embedded via debuggableVariants = [] — the script re-applies that
 # patch after every `expo prebuild`). The APK runs standalone: no Metro, no adb reverse.
 
@@ -214,9 +229,12 @@ npx tsc --noEmit            # in apps/student-app
   Profile) + `CourseDetail`, `Video`, `Pdf` (`src/navigation/RootNavigator.tsx`, param types in `types.ts`).
 * Video: `expo-video` (`useVideoPlayer` + `VideoView`) with a **custom control overlay** in
   `VideoScreen.tsx` (back, mute, big play/pause, time labels, in-app fullscreen), `timeUpdate` → progress,
-  `playToEnd` → completed, resume by setting `player.currentTime` in the setup callback. A moving ownership
-  watermark (`VideoWatermark.tsx` + `lib/watermark.ts`) shows the student code + course id at randomised
-  positions (9–20 s interval, 650 ms glide, never repeating the previous slot).
+  `playToEnd` → completed, resume by setting `player.currentTime` in the setup callback. Every playback
+  start requests a traceability code from the watermark API (`lib/watermark-api.ts`; 12-char Base32,
+  rendered by `VideoWatermark.tsx` as two dim copies that fade-move every 8–15 s and unmount while
+  paused). `usePreventScreenCapture` engages FLAG_SECURE for the duration of this screen (adb screenshots
+  come out black; detected captures re-randomise the overlay). Offline demo builds fall back to an
+  unregistered local code (flag in `lib/watermark-api.ts`).
 * App id: `ma.atlas.ostadiplus.student` (see `app.json`).
 
 ### Hermes gaps (break on-device only — browsers never show these)
@@ -284,15 +302,19 @@ checklist, cross-app demo. What remains, in order of usefulness:
   `apps/student-app/android/` is **not** committed — it is generated with `npx expo prebuild --platform
   android --no-install` (or automatically by `scripts/verify-android.ps1` when missing).
 * Excluded (`.gitignore`): `node_modules/`, `dist/`, `media/generated/` (regenerate with `npm run media`),
-  `media/raw/` (raw yt-dlp downloads — regenerate with `npm run media:fetch`), Gradle build outputs,
-  `*.apk`, editor folders.
+  `media/raw/` (raw yt-dlp downloads — regenerate with `npm run media:fetch`), the watermark API's local
+  SQLite ledger (`apps/api/data/` — recreated by `npm run api`), Gradle build outputs, `*.apk`, editor folders.
 * Screenshots in `shots/` are committed as verification evidence: dashboard (`*-desktop/mobile.png`),
-  on-device (`device-01..08-*.png`) and the real-video checks (`video-*.png`). `shots/demo-payload.txt` is
+  on-device (`device-01..08-*.png`), the real-video checks (`video-*.png`) and the watermark/capture checks
+  (`watermark-*.png` — including the all-black adb capture proving FLAG_SECURE). `shots/demo-payload.txt` is
   the captured cross-app sync payload; `scripts/device-verify.mjs` is the adb driver that produced the
   device screenshots.
 
 ## 8. Deliberate scope cuts (do not "fix" these without asking)
 
-No backend/cloud/accounts (auth = «pick your name»), no payments (PRD ENR-03: cash recorded at the centre),
-no quizzes/certificates/analytics/multi-teacher/licences, no anti-sharing. The phone document reader shows
-rasterised pages rather than a native PDF engine. Uploaded dashboard files live in IndexedDB only.
+No **remote** backend/cloud/accounts (auth = «pick your name»); the repo does include the local watermark
+API (`apps/api`, `npm run api`) — a zero-dependency prototype ledger for video traceability codes. It has no
+authentication of its own (the student id comes from the app; see `apps/api/README.md`) and is optional at
+runtime. No payments (PRD ENR-03: cash recorded at the centre), no quizzes/certificates/analytics/
+multi-teacher/licences, no anti-sharing. The phone document reader shows rasterised pages rather than a
+native PDF engine. Uploaded dashboard files live in IndexedDB only.

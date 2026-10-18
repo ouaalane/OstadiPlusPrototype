@@ -1,134 +1,294 @@
 /**
- * VideoWatermark — dynamic, moving ownership overlay for protected lessons.
+ * VideoWatermark — moving ownership overlay for protected lessons.
  *
- * Renders a compact translucent pill (`UST-XXXXX · crs-…`) over the video
- * surface. The pill glides between random positions at randomised intervals
- * (see `src/lib/watermark.ts` for the tunable constants) so that a screen
- * recording of the lesson stays traceable to the student account and course
- * it was captured from.
+ * Renders ONE short 12-char code issued by the watermark API (plus an
+ * optional smaller second copy of the same code at another random spot) as
+ * dim white text with a soft shadow. While the video plays the overlay
+ * fades between random positions every 8-15 s — never the dead centre and
+ * never over the bottom controls/subtitles. It fades out and unmounts
+ * entirely while the video is paused, and a watchdog re-asserts/re-places
+ * it if the animation state is ever lost (app backgrounded mid-fade, timers
+ * cleared, etc.).
  *
  * Security notes — read before extending:
- *  - Identifiers ONLY: the opaque `studentCode` (the app's student-card code)
- *    and the canonical course id. Never names, phones, e-mails or tokens.
- *  - The identity comes from the authenticated store (`useStore().me`); the
- *    player screen refuses to mount the watermark (or play) without a valid,
- *    actively enrolled session, so a forged lessonId cannot borrow another
- *    student's identity.
- *  - `pointerEvents="none"` + `importantForAccessibility="no"`: the pill can
- *    never be tapped, dragged or block the player controls underneath it.
- *  - This is a deterrent and an investigative aid, NOT copy protection. It
- *    does not stop screen recording, screenshots or camera capture; it makes
- *    leaked recordings easier to attribute. Server-side playback logging is
- *    the recommended complement once a real backend exists.
+ *  - The overlay text is a traceability code ONLY: no names, e-mails, phone
+ *    numbers, tokens, student codes or course titles. The code → (student,
+ *    course, video, session, device, date) mapping lives server-side in the
+ *    `video_watermarks` table (see `apps/api`).
+ *  - `pointerEvents="none"` + `importantForAccessibility="no-hide-descendants"`:
+ *    the overlay can never be tapped, dragged or block the player controls.
+ *  - This is a deterrent and an investigative aid, NOT copy protection.
+ *    The copy-control layer is `expo-screen-capture` (FLAG_SECURE on
+ *    Android, capture detection on iOS) — see VideoScreen.
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet } from 'react-native';
+import { Animated, StyleSheet, type LayoutChangeEvent } from 'react-native';
 
 import { AppText } from './ui';
 import {
-  WATERMARK_TRANSITION_MS,
+  WATERMARK_FADE_IN_MS,
+  WATERMARK_FADE_OUT_MS,
+  WATERMARK_HIDE_FADE_MS,
+  WATERMARK_OPACITY,
+  WATERMARK_SECONDARY_OPACITY,
+  WATERMARK_WATCHDOG_MS,
+  isWatermarkCode,
   nextWatermarkSlotIndex,
-  randomMoveDelay,
   randomInt,
+  randomMoveDelay,
   watermarkSlots,
-  watermarkText,
   type WatermarkSize,
 } from '../lib/watermark';
 
 interface VideoWatermarkProps {
-  /** Opaque student display code (e.g. `UST-7F3K2`) from the auth store. */
-  studentCode: string;
-  /** Canonical course id (e.g. `crs-math-2bac`) of the lesson being played. */
-  courseCode: string;
-  /** Whether playback is running — movement only happens while it is. */
+  /** 12-char traceability code issued by the watermark API. */
+  code: string;
+  /** Whether playback is running — the overlay is hidden when it is not. */
   playing: boolean;
+  /** Bumped by the screen when an external screen capture is detected. */
+  nonce?: number;
 }
 
-export default function VideoWatermark({
-  studentCode,
-  courseCode,
-  playing,
-}: VideoWatermarkProps) {
-  const translateX = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const slotIndex = useRef(-1);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+/** What the effect-driven engine exposes to the watchdog / capture probe. */
+interface WatermarkEngine {
+  /** Fade out, land on a new random position, fade back in. */
+  move: () => void;
+  /** Recover from a wedged overlay (frozen fade, lost timer, …). */
+  watchdog: () => void;
+}
 
+/** Keeps a stale slot index usable (random pick when out of range). */
+function clampIndex(value: number, count: number): number {
+  return value >= 0 && value < count ? value : randomInt(0, count);
+}
+
+export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWatermarkProps) {
+  const primaryOpacity = useRef(new Animated.Value(0)).current;
+  const secondaryOpacity = useRef(new Animated.Value(0)).current;
+  const primaryX = useRef(new Animated.Value(0)).current;
+  const primaryY = useRef(new Animated.Value(0)).current;
+  const secondaryX = useRef(new Animated.Value(0)).current;
+  const secondaryY = useRef(new Animated.Value(0)).current;
+
+  const primarySlot = useRef(-1);
+  const secondarySlot = useRef(-1);
+  const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Where the fade state machine currently is; the watchdog reads this. */
+  const phase = useRef<{ kind: 'idle' | 'fading'; at: number }>({ kind: 'idle', at: Date.now() });
+  const engine = useRef<WatermarkEngine | null>(null);
+
+  const [hidden, setHidden] = useState(false);
   const [container, setContainer] = useState<WatermarkSize | null>(null);
-  const [pill, setPill] = useState<WatermarkSize | null>(null);
+  const [primarySize, setPrimarySize] = useState<WatermarkSize | null>(null);
+  const [secondarySize, setSecondarySize] = useState<WatermarkSize | null>(null);
 
-  const slots = useMemo(
-    () => (container && pill ? watermarkSlots(container, pill) : null),
-    [container, pill],
+  const primarySlots = useMemo(
+    () => (container && primarySize ? watermarkSlots(container, primarySize) : null),
+    [container, primarySize],
+  );
+  const secondarySlots = useMemo(
+    () => (container && secondarySize ? watermarkSlots(container, secondarySize) : null),
+    [container, secondarySize],
   );
 
-  /* Place (or re-place after a resize / fullscreen toggle) the pill at its
-     current slot, instantly, and fade it in once it is actually on screen. */
+  /* ------------------------------------------------------------------ */
+  /* Movement engine — alive only while playing + visible.               */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
-    if (!slots || slots.length === 0) return;
-    if (slotIndex.current < 0 || slotIndex.current >= slots.length) {
-      slotIndex.current = randomInt(0, slots.length);
-    }
-    const { x, y } = slots[slotIndex.current];
-    translateX.setValue(x);
-    translateY.setValue(y);
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [slots, translateX, translateY, opacity]);
+    if (!playing || hidden || !primarySlots || primarySlots.length === 0) return;
 
-  /* Movement loop: a self-rescheduling timer with a randomised delay, alive
-     only while playback runs (so pause / playToEnd / unmount leave no
-     timers behind) and only while there is somewhere else to go. */
-  useEffect(() => {
-    if (!playing || !slots || slots.length < 2) return;
     let cancelled = false;
+    const primaryList = primarySlots;
+    const secondaryList = secondarySlots ?? primarySlots;
+
+    const applyPositions = () => {
+      const p = primaryList[clampIndex(primarySlot.current, primaryList.length)];
+      const s = secondaryList[clampIndex(secondarySlot.current, secondaryList.length)];
+      primaryX.setValue(p.x);
+      primaryY.setValue(p.y);
+      secondaryX.setValue(s.x);
+      secondaryY.setValue(s.y);
+    };
 
     const schedule = () => {
-      timer.current = setTimeout(() => {
-        if (cancelled) return;
-        slotIndex.current = nextWatermarkSlotIndex(slots.length, slotIndex.current);
-        const { x, y } = slots[slotIndex.current];
-        Animated.parallel([
-          Animated.timing(translateX, {
-            toValue: x,
-            duration: WATERMARK_TRANSITION_MS,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: y,
-            duration: WATERMARK_TRANSITION_MS,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]).start();
-        schedule();
+      if (cancelled) return;
+      if (moveTimer.current) clearTimeout(moveTimer.current);
+      moveTimer.current = setTimeout(() => {
+        moveTimer.current = null;
+        move();
       }, randomMoveDelay());
     };
 
-    schedule();
+    const fadeIn = () => {
+      phase.current = { kind: 'fading', at: Date.now() };
+      Animated.parallel([
+        Animated.timing(primaryOpacity, {
+          toValue: WATERMARK_OPACITY,
+          duration: WATERMARK_FADE_IN_MS,
+          useNativeDriver: true,
+        }),
+        Animated.timing(secondaryOpacity, {
+          toValue: WATERMARK_SECONDARY_OPACITY,
+          duration: WATERMARK_FADE_IN_MS,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        if (cancelled) return;
+        phase.current = { kind: 'idle', at: Date.now() };
+        schedule();
+      });
+    };
+
+    const move = () => {
+      if (cancelled) return;
+      // A move can be requested at any time (normal schedule or a detected
+      // capture): drop the pending timer so there is exactly one move in
+      // flight, then fade to a fresh position.
+      if (moveTimer.current) {
+        clearTimeout(moveTimer.current);
+        moveTimer.current = null;
+      }
+      phase.current = { kind: 'fading', at: Date.now() };
+      Animated.parallel([
+        Animated.timing(primaryOpacity, {
+          toValue: 0,
+          duration: WATERMARK_FADE_OUT_MS,
+          useNativeDriver: true,
+        }),
+        Animated.timing(secondaryOpacity, {
+          toValue: 0,
+          duration: WATERMARK_FADE_OUT_MS,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (cancelled || !finished) return;
+        // Land on a fresh spot (never the same one twice in a row) and put
+        // the second copy somewhere clearly different from the first.
+        primarySlot.current = nextWatermarkSlotIndex(primaryList.length, primarySlot.current);
+        secondarySlot.current = nextWatermarkSlotIndex(secondaryList.length, primarySlot.current);
+        applyPositions();
+        fadeIn();
+      });
+    };
+
+    const watchdog = () => {
+      if (cancelled) return;
+      const now = Date.now();
+      const wedged =
+        (phase.current.kind === 'fading' && now - phase.current.at > WATERMARK_WATCHDOG_MS) ||
+        (phase.current.kind === 'idle' && !moveTimer.current);
+      if (!wedged) return;
+      console.log('[watermark] watchdog re-asserted the overlay');
+      primaryOpacity.stopAnimation();
+      secondaryOpacity.stopAnimation();
+      if (moveTimer.current) {
+        clearTimeout(moveTimer.current);
+        moveTimer.current = null;
+      }
+      primarySlot.current = nextWatermarkSlotIndex(primaryList.length, primarySlot.current);
+      secondarySlot.current = nextWatermarkSlotIndex(secondaryList.length, primarySlot.current);
+      applyPositions();
+      fadeIn();
+    };
+
+    // Initial placement: a random slot per copy, then fade in once measured.
+    if (primarySlot.current < 0 || primarySlot.current >= primaryList.length) {
+      primarySlot.current = randomInt(0, primaryList.length);
+    }
+    if (
+      secondarySlot.current < 0 ||
+      secondarySlot.current >= secondaryList.length ||
+      secondarySlot.current === primarySlot.current
+    ) {
+      secondarySlot.current = nextWatermarkSlotIndex(secondaryList.length, primarySlot.current);
+    }
+    applyPositions();
+    fadeIn();
+
+    engine.current = { move, watchdog };
+
     return () => {
       cancelled = true;
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = null;
+      engine.current = null;
+      if (moveTimer.current) {
+        clearTimeout(moveTimer.current);
+        moveTimer.current = null;
+      }
+      primaryOpacity.stopAnimation();
+      secondaryOpacity.stopAnimation();
     };
-  }, [playing, slots, translateX, translateY]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Animated values are stable refs.
+  }, [playing, hidden, primarySlots, secondarySlots]);
 
-  /* Belt-and-braces cleanup on unmount (rapid lesson switches remount the
-     whole player, so nothing may survive the old instance). */
-  useEffect(
-    () => () => {
-      translateX.stopAnimation();
-      translateY.stopAnimation();
-      opacity.stopAnimation();
-    },
-    [translateX, translateY, opacity],
-  );
+  /* ------------------------------------------------------------------ */
+  /* Hidden only while paused/closed: fade out, then unmount entirely.   */
+  /* ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (playing) {
+      setHidden((wasHidden) => (wasHidden ? false : wasHidden));
+      return;
+    }
+    if (moveTimer.current) {
+      clearTimeout(moveTimer.current);
+      moveTimer.current = null;
+    }
+    Animated.parallel([
+      Animated.timing(primaryOpacity, {
+        toValue: 0,
+        duration: WATERMARK_HIDE_FADE_MS,
+        useNativeDriver: true,
+      }),
+      Animated.timing(secondaryOpacity, {
+        toValue: 0,
+        duration: WATERMARK_HIDE_FADE_MS,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setHidden(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Animated values are stable refs.
+  }, [playing]);
+
+  /* ------------------------------------------------------------------ */
+  /* Watchdog + capture probe hooks.                                     */
+  /* ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (!playing || hidden) return;
+    const id = setInterval(() => engine.current?.watchdog(), WATERMARK_WATCHDOG_MS);
+    return () => clearInterval(id);
+  }, [playing, hidden]);
+
+  useEffect(() => {
+    if (nonce <= 0) return;
+    engine.current?.move();
+  }, [nonce]);
+
+  /* Never render anything that is not a well-formed server code. */
+  const valid = isWatermarkCode(code);
+  const warned = useRef(false);
+  useEffect(() => {
+    if (!valid && !warned.current) {
+      warned.current = true;
+      console.log('[watermark] malformed code — overlay not rendered');
+    }
+  }, [valid]);
+
+  if (!valid || hidden) return null;
+
+  const measureContainer = (event: LayoutChangeEvent) =>
+    setContainer({
+      width: event.nativeEvent.layout.width,
+      height: event.nativeEvent.layout.height,
+    });
+  const measurePrimary = (event: LayoutChangeEvent) =>
+    setPrimarySize({
+      width: event.nativeEvent.layout.width,
+      height: event.nativeEvent.layout.height,
+    });
+  const measureSecondary = (event: LayoutChangeEvent) =>
+    setSecondarySize({
+      width: event.nativeEvent.layout.width,
+      height: event.nativeEvent.layout.height,
+    });
 
   return (
     <Animated.View
@@ -136,35 +296,35 @@ export default function VideoWatermark({
       pointerEvents="none"
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
-      onLayout={(e) =>
-        setContainer({
-          width: e.nativeEvent.layout.width,
-          height: e.nativeEvent.layout.height,
-        })
-      }
+      onLayout={measureContainer}
       testID="video-watermark"
     >
       <Animated.View
+        onLayout={measurePrimary}
+        testID="video-watermark-primary"
         style={[
-          styles.pill,
-          { opacity, transform: [{ translateX }, { translateY }] },
+          styles.copy,
+          { opacity: primaryOpacity, transform: [{ translateX: primaryX }, { translateY: primaryY }] },
         ]}
-        onLayout={(e) =>
-          setPill({
-            width: e.nativeEvent.layout.width,
-            height: e.nativeEvent.layout.height,
-          })
-        }
       >
-        <AppText
-          lang="fr"
-          size={10.5}
-          weight="semibold"
-          tone="white"
-          numberOfLines={1}
-          style={styles.text}
-        >
-          {watermarkText(studentCode, courseCode)}
+        <AppText lang="fr" size={11} weight="semibold" tone="white" numberOfLines={1} style={styles.text}>
+          {code}
+        </AppText>
+      </Animated.View>
+
+      <Animated.View
+        onLayout={measureSecondary}
+        testID="video-watermark-secondary"
+        style={[
+          styles.copy,
+          {
+            opacity: secondaryOpacity,
+            transform: [{ translateX: secondaryX }, { translateY: secondaryY }],
+          },
+        ]}
+      >
+        <AppText lang="fr" size={9} weight="medium" tone="white" numberOfLines={1} style={styles.text}>
+          {code}
         </AppText>
       </Animated.View>
     </Animated.View>
@@ -172,23 +332,19 @@ export default function VideoWatermark({
 }
 
 const styles = StyleSheet.create({
-  pill: {
+  copy: {
     position: 'absolute',
     top: 0,
     left: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    /** Subtle scrim + hairline border keep the text readable over both very
-        bright and very dark scenes without stealing attention. */
-    backgroundColor: 'rgba(11,18,32,0.38)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.28)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
+  /** Light text + soft shadow reads on both dark and bright scenes at the
+      low overall opacity the component applies. */
   text: {
-    letterSpacing: 0.3,
-    textShadowColor: 'rgba(0,0,0,0.45)',
+    letterSpacing: 1.2,
+    textShadowColor: 'rgba(0,0,0,0.65)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
 });

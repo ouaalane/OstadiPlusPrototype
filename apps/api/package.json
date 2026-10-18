@@ -1,0 +1,14 @@
+{
+  "name": "@ostadiplus/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OstadiPlus watermark API — issues per-playback traceability codes for protected lesson videos (zero-dependency Node service)",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.mjs",
+    "trace": "node src/trace.mjs"
+  },
+  "engines": {
+    "node": ">=23.6"
+  }
+}

@@ -7,10 +7,12 @@
  * next» bar.
  *
  * Playback is gated by the student's enrollment (published course + active,
- * non-expired subscription) and a moving ownership watermark
- * (`VideoWatermark`) overlays the video so leaked recordings stay traceable.
- * Fullscreen is rendered in-app so the watermark and the custom controls
- * remain visible and functional there too.
+ * non-expired subscription). Every playback start asks the watermark API
+ * for a fresh traceability code (server-side generation only, see apps/api)
+ * which `VideoWatermark` renders as a moving overlay; the platform's
+ * screen-capture protection is engaged while this screen is open. Fullscreen
+ * is rendered in-app so the watermark and the custom controls remain visible
+ * and functional there too.
  *
  * Bilingual: strings are authored inline per language, layout flips RTL↔LTR.
  */
@@ -22,6 +24,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
+import { addScreenshotListener, usePreventScreenCapture } from 'expo-screen-capture';
 
 import {
   allLessons,
@@ -49,6 +52,7 @@ import {
 } from '../components/ui';
 import { lessonMetaText, lessonRoute } from '../lib/lesson';
 import VideoWatermark from '../components/VideoWatermark';
+import { requestPlaybackGrant, type PlaybackGrant } from '../lib/watermark-api';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
@@ -169,6 +173,51 @@ export default function VideoScreen() {
     return () => sub.remove();
   }, [fullscreen]);
 
+  /**
+   * Screen-capture protection + detection. While this screen is mounted the
+   * platform blocks screen capture (FLAG_SECURE on Android; recording
+   * protection + a screenshot callback on iOS — no extra permissions on
+   * Android 14+). A detected capture re-randomises the watermark position.
+   */
+  usePreventScreenCapture('lesson-player');
+  const [captureNonce, setCaptureNonce] = useState(0);
+  useEffect(() => {
+    const subscription = addScreenshotListener(() => {
+      console.log('[watermark] screen capture detected — re-randomising the overlay');
+      setCaptureNonce((n) => n + 1);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  /**
+   * Playback grant — every playback start asks the watermark API for a
+   * fresh traceability code (server-side generation only, see apps/api).
+   * The code is the only thing the overlay renders; the server keeps the
+   * code → student / course / video / session mapping for leak tracing.
+   */
+  const [grant, setGrant] = useState<PlaybackGrant | null>(null);
+  useEffect(() => {
+    setGrant(null);
+    if (!found || !courseAuthorized || !me) return;
+    const target = found;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const issued = await requestPlaybackGrant({
+          studentId: me.id,
+          courseId: target.course.id,
+          videoId: target.lesson.id,
+        });
+        if (!cancelled) setGrant(issued);
+      } catch (error) {
+        console.log(`[watermark] no playback grant issued: ${String(error)}`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [found, courseAuthorized, me]);
+
   const player = useVideoPlayer(
     // Never hand the player a source the current session is not entitled to.
     media.kind === 'video' && courseAuthorized ? media.source : null,
@@ -232,10 +281,6 @@ export default function VideoScreen() {
   }
 
   const { course, lesson } = found;
-  /** Opaque watermark identity — the student-card code, falling back to the
-   *  canonical id. Only ever rendered for the authenticated, authorized
-   *  session (see `courseAuthorized` above). */
-  const studentCode = me?.studentCode || me?.id || '';
   const lessons = allLessons(course).filter((x) => x.published);
   const index = lessons.findIndex((x) => x.id === lesson.id);
   const prev = index > 0 ? lessons[index - 1] : undefined;
@@ -430,14 +475,15 @@ export default function VideoScreen() {
             </View>
           </SafeAreaView>
 
-          {/* Moving ownership watermark — drawn above the video and controls
-              but pointerEvents="none", so it can never block them. */}
-          {studentCode ? (
+          {/* Moving ownership watermark — the server-issued traceability
+              code, drawn above the video and controls but
+              pointerEvents="none", so it can never block them. */}
+          {grant ? (
             <VideoWatermark
-              key={`${studentCode}|${course.id}`}
-              studentCode={studentCode}
-              courseCode={course.id}
+              key={grant.code}
+              code={grant.code}
               playing={playing}
+              nonce={captureNonce}
             />
           ) : null}
     </View>

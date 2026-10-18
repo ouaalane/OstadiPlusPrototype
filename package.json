@@ -12,6 +12,8 @@
     "dashboard:build": "npm run build -w @ostadiplus/teacher-dashboard",
     "app": "npm run start --prefix apps/student-app",
     "app:android": "npm run android --prefix apps/student-app",
+    "api": "node apps/api/src/main.mjs",
+    "api:trace": "node apps/api/src/trace.mjs",
     "media": "node scripts/generate-media.mjs",
     "media:fetch": "node scripts/fetch-videos.mjs",
     "media:pdfs": "node scripts/media/import-pdfs.mjs",

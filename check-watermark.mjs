@@ -1,35 +1,67 @@
 /**
- * Executable checks for the dynamic video-watermark logic
- * (apps/student-app/src/lib/watermark.ts — pure, dependency-free module).
+ * Executable checks for the video-watermark feature.
  *
- * Verifies that: every slot keeps the pill inside the video area and clear of
- * the player controls; positions span corners/sides/centres but never the
- * dead centre; the move delay is randomised inside the configured range; and
- * the slot chooser never repeats consecutively while covering every option.
+ *  A. client logic — apps/student-app/src/lib/watermark.ts (pure module)
+ *  B. server logic — apps/api (code minting, SQLite ledger, validation,
+ *     HTTP endpoints)
  *
- * Requires Node >= 23.6 (native TypeScript type stripping).
+ * Requires Node >= 23.6 (native TypeScript type stripping + node:sqlite).
  *
  * Usage: node check-watermark.mjs
  */
 import assert from 'node:assert/strict';
+import { register } from 'node:module';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import {
-  WATERMARK_MOVE_MIN_MS,
+  WATERMARK_CODE_ALPHABET,
+  WATERMARK_CODE_LENGTH,
   WATERMARK_MOVE_MAX_MS,
+  WATERMARK_MOVE_MIN_MS,
+  WATERMARK_OPACITY,
+  WATERMARK_OPACITY_MAX,
+  WATERMARK_OPACITY_MIN,
+  WATERMARK_SECONDARY_OPACITY,
+  isWatermarkCode,
+  localFallbackCode,
   nextWatermarkSlotIndex,
   randomInt,
   randomMoveDelay,
   watermarkSlots,
-  watermarkText,
 } from './apps/student-app/src/lib/watermark.ts';
 
+// The server reaches the TypeScript domain model through the shared package;
+// register the resolver hook before importing anything that pulls it in.
+register('./apps/api/src/resolve.mjs', import.meta.url);
+
+const { openDatabase } = await import('./apps/api/src/db.mjs');
+const {
+  hmacWatermarkCode,
+  isWatermarkCode: isServerCode,
+  randomWatermarkCode,
+} = await import('./apps/api/src/codes.mjs');
+const {
+  countWatermarks,
+  findWatermarkByCode,
+  issueWatermark,
+} = await import('./apps/api/src/watermarks.mjs');
+const { resolveWatermarkRecord, validatePlayback } = await import('./apps/api/src/validate.mjs');
+const { createWatermarkApi } = await import('./apps/api/src/server.mjs');
+const { DEMO_STATE, allLessons } = await import('@ostadiplus/shared');
+
 let passed = 0;
-const test = (name, fn) => {
-  fn();
+const test = async (name, fn) => {
+  await fn();
   passed += 1;
   console.log(`ok - ${name}`);
 };
 
-const PILL = { width: 130, height: 24 };
+/** Keeps migration/HTTP chatter out of the test output. */
+const quiet = { log() {}, error() {}, warn() {} };
+
+const PILL = { width: 104, height: 20 };
 const CONTAINERS = [
   { width: 390, height: 219, label: 'portrait 16:9 inline player' },
   { width: 844, height: 390, label: 'landscape fullscreen' },
@@ -37,7 +69,11 @@ const CONTAINERS = [
   { width: 640, height: 360, label: 'tablet inline player' },
 ];
 
-test('slots keep the pill fully inside every container size', () => {
+/* ================================================================== */
+/* A. Client logic                                                     */
+/* ================================================================== */
+
+await test('slots keep the overlay fully inside every container size', () => {
   for (const c of CONTAINERS) {
     const slots = watermarkSlots(c, PILL);
     assert.equal(slots.length, 8, `${c.label}: expected 8 slots`);
@@ -50,7 +86,7 @@ test('slots keep the pill fully inside every container size', () => {
   }
 });
 
-test('slots avoid the top and bottom control bars on the inline player', () => {
+await test('slots avoid the top and bottom control bars on the inline player', () => {
   const c = { width: 390, height: 219 };
   const slots = watermarkSlots(c, PILL);
   const topRow = slots.slice(0, 3);
@@ -61,7 +97,7 @@ test('slots avoid the top and bottom control bars on the inline player', () => {
   }
 });
 
-test('slots use corners, sides and top/bottom centre — never dead centre', () => {
+await test('slots use corners, sides and top/bottom centre — never dead centre', () => {
   const slots = watermarkSlots({ width: 844, height: 390 }, PILL);
   const xs = new Set(slots.map((s) => s.x));
   const ys = new Set(slots.map((s) => s.y));
@@ -75,7 +111,9 @@ test('slots use corners, sides and top/bottom centre — never dead centre', () 
   assert.equal(deadCentre, undefined, 'no slot in the dead centre (play button)');
 });
 
-test('randomised delay stays inside the configured range', () => {
+await test('randomised move delay stays inside the 8-15 s range', () => {
+  assert.equal(WATERMARK_MOVE_MIN_MS, 8_000);
+  assert.equal(WATERMARK_MOVE_MAX_MS, 15_000);
   const seen = new Set();
   for (let i = 0; i < 5000; i++) {
     const d = randomMoveDelay();
@@ -86,7 +124,7 @@ test('randomised delay stays inside the configured range', () => {
   assert.ok(seen.size > 100, `delay is not a fixed value (${seen.size} distinct)`);
 });
 
-test('slot choice never repeats consecutively and covers every alternative', () => {
+await test('slot choice never repeats consecutively and covers every alternative', () => {
   const count = 8;
   let previous = nextWatermarkSlotIndex(count, -1);
   assert.ok(previous >= 0 && previous < count, 'initial pick in range');
@@ -101,7 +139,7 @@ test('slot choice never repeats consecutively and covers every alternative', () 
   assert.equal(hits.size, count, 'every slot eventually used');
 });
 
-test('slot choice edge cases', () => {
+await test('slot choice edge cases', () => {
   assert.equal(nextWatermarkSlotIndex(0, 3), -1, 'no slots -> -1');
   assert.equal(nextWatermarkSlotIndex(1, 0), 0, 'single slot -> itself');
   for (let i = 0; i < 100; i++) {
@@ -112,7 +150,7 @@ test('slot choice edge cases', () => {
   }
 });
 
-test('randomInt respects bounds', () => {
+await test('randomInt respects bounds', () => {
   for (let i = 0; i < 1000; i++) {
     const v = randomInt(3, 7);
     assert.ok(v >= 3 && v <= 6, `randomInt(3,7) in [3,6] (${v})`);
@@ -120,8 +158,264 @@ test('randomInt respects bounds', () => {
   assert.equal(randomInt(5, 5), 5, 'degenerate range returns min');
 });
 
-test('watermark text formats identifiers only', () => {
-  assert.equal(watermarkText('UST-7F3K2', 'crs-math-2bac'), 'UST-7F3K2 · crs-math-2bac');
+await test('code validator accepts the spec example and issued codes', () => {
+  assert.ok(isWatermarkCode('K7M2QX9TPA4W'), 'spec example accepted');
+  assert.equal(WATERMARK_CODE_LENGTH, 12);
+  for (let i = 0; i < 2000; i++) {
+    assert.ok(isWatermarkCode(localFallbackCode()), 'fallback code accepted');
+  }
+});
+
+await test('code validator rejects malformed or confusing values', () => {
+  const rejected = [
+    '',
+    'k7m2qx9tpa4w', // lowercase
+    'K7M2QX9TPA4WX', // 13 chars
+    'K7M2QX9TPA4', // 11 chars (implemented format is exactly 12)
+    'K7M2 QX9TPA4W', // space
+    'K7M2QX9TPA4W · crs-math-2bac', // extra text
+    'K0M2QX9TPA4W', // 0 forbidden
+    'KOM2QX9TPA4W', // O forbidden
+    'K1M2QX9TPA4W', // 1 forbidden
+    'KIM2QX9TPA4W', // I forbidden
+    'KLM2QX9TPA4W', // L forbidden
+    null,
+    42,
+  ];
+  for (const value of rejected) {
+    assert.equal(isWatermarkCode(value), false, `rejected: ${String(value)}`);
+  }
+});
+
+await test('offline fallback codes are well-formed and varied', () => {
+  const seen = new Set();
+  for (let i = 0; i < 2000; i++) {
+    const code = localFallbackCode();
+    assert.ok(isWatermarkCode(code), `well-formed (${code})`);
+    seen.add(code);
+  }
+  assert.ok(seen.size > 1900, `varied (${seen.size} distinct of 2000)`);
+});
+
+await test('opacity constants sit inside the 0.15-0.25 band', () => {
+  assert.ok(WATERMARK_OPACITY_MIN >= 0.15 && WATERMARK_OPACITY_MAX <= 0.25);
+  assert.ok(WATERMARK_OPACITY >= WATERMARK_OPACITY_MIN && WATERMARK_OPACITY <= WATERMARK_OPACITY_MAX);
+  assert.ok(
+    WATERMARK_SECONDARY_OPACITY >= WATERMARK_OPACITY_MIN &&
+      WATERMARK_SECONDARY_OPACITY <= WATERMARK_OPACITY,
+    'secondary copy is dimmer but still inside the band',
+  );
+});
+
+/* ================================================================== */
+/* B. Server logic                                                     */
+/* ================================================================== */
+
+const mathCourse = DEMO_STATE.courses.find((c) => c.id === 'crs-math-2bac');
+const mathVideo = allLessons(mathCourse).find((l) => l.kind === 'video' && l.published);
+const nonVideoLesson = allLessons(mathCourse).find((l) => l.kind !== 'video');
+const iman = DEMO_STATE.students.find((s) => s.id === 'st-iman');
+assert.ok(mathCourse && mathVideo && nonVideoLesson && iman, 'seed fixture present');
+
+await test('server code generator mints valid, unique codes', () => {
+  const seen = new Set();
+  for (let i = 0; i < 20000; i++) {
+    const code = randomWatermarkCode();
+    assert.ok(isServerCode(code), `valid (${code})`);
+    seen.add(code);
+  }
+  assert.equal(seen.size, 20000, 'no duplicate in 20k draws');
+});
+
+await test('server codes use every symbol of the alphabet', () => {
+  const used = new Set();
+  for (let i = 0; i < 2000; i++) {
+    for (const ch of randomWatermarkCode()) used.add(ch);
+  }
+  for (const ch of WATERMARK_CODE_ALPHABET) {
+    assert.ok(used.has(ch), `symbol ${ch} appears`);
+  }
+});
+
+await test('hmac mode is deterministic and input-sensitive', () => {
+  const a = hmacWatermarkCode('secret', 'st-iman', 'crs-math-2bac');
+  const b = hmacWatermarkCode('secret', 'st-iman', 'crs-math-2bac');
+  const otherStudent = hmacWatermarkCode('secret', 'st-yassine', 'crs-math-2bac');
+  const otherSecret = hmacWatermarkCode('different', 'st-iman', 'crs-math-2bac');
+  assert.ok(isServerCode(a), `valid (${a})`);
+  assert.equal(a, b, 'stable per student+course');
+  assert.notEqual(a, otherStudent, 'changes with the student');
+  assert.notEqual(a, otherSecret, 'changes with the secret');
+});
+
+await test('migrations create the ledger and are idempotent', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ostadi-watermark-'));
+  const dbFile = join(dir, 'watermarks.db');
+  try {
+    let db = openDatabase(dbFile, { logger: quiet });
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all()
+      .map((row) => row.name);
+    assert.ok(tables.includes('video_watermarks'), 'video_watermarks table exists');
+    assert.ok(tables.includes('schema_migrations'), 'schema_migrations table exists');
+    const applied = db.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n;
+    assert.equal(applied, 1, 'one migration applied');
+    db.close();
+
+    db = openDatabase(dbFile, { logger: quiet }); // second open must not re-run it
+    const again = db.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n;
+    assert.equal(again, 1, 're-open is idempotent');
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+await test('random mode records one fresh traceable row per playback start', () => {
+  const db = openDatabase(':memory:', { logger: quiet });
+  try {
+    const input = { studentId: 'st-iman', courseId: 'crs-math-2bac', videoId: mathVideo.id, deviceInfo: 'Android 15 · test' };
+    const first = issueWatermark(db, input);
+    const second = issueWatermark(db, input);
+    assert.ok(isServerCode(first.code) && isServerCode(second.code));
+    assert.notEqual(first.code, second.code, 'fresh code per session');
+    assert.notEqual(first.sessionId, second.sessionId, 'fresh session id per session');
+    assert.equal(countWatermarks(db), 2, 'one row per playback start');
+
+    const found = findWatermarkByCode(db, first.code);
+    assert.equal(found.studentId, 'st-iman');
+    assert.equal(found.courseId, 'crs-math-2bac');
+    assert.equal(found.videoId, mathVideo.id);
+    assert.equal(found.deviceInfo, 'Android 15 · test');
+    assert.ok(found.createdAt, 'created_at is filled');
+  } finally {
+    db.close();
+  }
+});
+
+await test('hmac mode keeps one stable row per student+course, refreshed', () => {
+  const db = openDatabase(':memory:', { logger: quiet });
+  try {
+    const base = { studentId: 'st-iman', courseId: 'crs-math-2bac', videoId: mathVideo.id, mode: 'hmac', hmacSecret: 'test-secret' };
+    const first = issueWatermark(db, { ...base, deviceInfo: 'first device' });
+    const second = issueWatermark(db, { ...base, deviceInfo: 'second device' });
+    assert.equal(first.code, second.code, 'stable code');
+    assert.notEqual(first.sessionId, second.sessionId, 'session refreshed');
+    assert.equal(second.deviceInfo, 'second device', 'device refreshed');
+    assert.equal(countWatermarks(db), 1, 'a single row per student+course');
+  } finally {
+    db.close();
+  }
+});
+
+await test('the ledger enforces code uniqueness', () => {
+  const db = openDatabase(':memory:', { logger: quiet });
+  try {
+    const row = issueWatermark(db, { studentId: 'st-iman', courseId: 'crs-math-2bac', videoId: mathVideo.id });
+    assert.throws(
+      () =>
+        db
+          .prepare('INSERT INTO video_watermarks (code, student_id, course_id, video_id, session_id) VALUES (?, ?, ?, ?, ?)')
+          .run(row.code, 'st-x', 'crs-x', 'lsn-x', 'sess-x'),
+      /UNIQUE/,
+      'duplicate code rejected by the UNIQUE constraint',
+    );
+  } finally {
+    db.close();
+  }
+});
+
+await test('playback validation follows the enrollment rules', () => {
+  assert.equal(validatePlayback({ studentId: 'st-iman', courseId: 'crs-math-2bac', videoId: mathVideo.id }).ok, true);
+
+  const unknownStudent = validatePlayback({ studentId: 'st-nobody', courseId: 'crs-math-2bac', videoId: mathVideo.id });
+  assert.deepEqual({ error: unknownStudent.error, status: unknownStudent.status }, { error: 'unknown-student', status: 403 });
+
+  const notEnrolled = validatePlayback({ studentId: 'st-omar', courseId: 'crs-math-2bac', videoId: mathVideo.id });
+  assert.deepEqual({ error: notEnrolled.error, status: notEnrolled.status }, { error: 'not-enrolled', status: 403 });
+
+  const unknownCourse = validatePlayback({ studentId: 'st-iman', courseId: 'crs-nope', videoId: mathVideo.id });
+  assert.deepEqual({ error: unknownCourse.error, status: unknownCourse.status }, { error: 'unknown-course', status: 404 });
+
+  // A lesson that exists but is not a video of that course is refused too.
+  const nonVideo = validatePlayback({ studentId: 'st-iman', courseId: 'crs-math-2bac', videoId: nonVideoLesson.id });
+  assert.equal(nonVideo.error, 'unknown-video');
+  const foreignVideo = validatePlayback({ studentId: 'st-iman', courseId: 'crs-phys-2bac', videoId: mathVideo.id });
+  assert.equal(foreignVideo.error, 'unknown-video');
+});
+
+await test('the trace report resolves student, course and lesson', () => {
+  const report = resolveWatermarkRecord({
+    code: 'K7M2QX9TPA4W',
+    sessionId: 'sess-1',
+    deviceInfo: 'Android 15 · Pixel',
+    createdAt: '2026-10-19T10:00:00.000Z',
+    studentId: 'st-iman',
+    courseId: 'crs-math-2bac',
+    videoId: mathVideo.id,
+  });
+  assert.equal(report.student.id, 'st-iman');
+  assert.equal(report.student.fullName, iman.fullName);
+  assert.equal(report.course.title, mathCourse.title);
+  assert.equal(report.lesson.title, mathVideo.title);
+  assert.equal(report.createdAt, '2026-10-19T10:00:00.000Z');
+  assert.equal(resolveWatermarkRecord(null), null, 'null record stays null');
+});
+
+await test('HTTP: issuance, admin trace, auth and error paths end-to-end', async () => {
+  const api = createWatermarkApi({ dbPath: ':memory:', adminToken: 'test-token', logger: quiet });
+  const { url } = await api.listen(0);
+  try {
+    const health = await (await fetch(`${url}/health`)).json();
+    assert.equal(health.ok, true);
+    assert.equal(health.mode, 'random');
+
+    const start = await fetch(`${url}/api/playback/start`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ studentId: 'st-iman', courseId: 'crs-math-2bac', videoId: mathVideo.id, deviceInfo: 'HTTP test' }),
+    });
+    assert.equal(start.status, 201);
+    const grant = await start.json();
+    assert.ok(isServerCode(grant.code), `granted a valid code (${grant.code})`);
+    assert.ok(grant.sessionId && grant.createdAt);
+
+    const noToken = await fetch(`${url}/api/admin/watermarks/${grant.code}`);
+    assert.equal(noToken.status, 401, 'trace endpoint requires the admin token');
+
+    const trace = await fetch(`${url}/api/admin/watermarks/${grant.code}`, {
+      headers: { 'x-admin-token': 'test-token' },
+    });
+    assert.equal(trace.status, 200);
+    const report = await trace.json();
+    assert.equal(report.student.id, 'st-iman');
+    assert.equal(report.course.id, 'crs-math-2bac');
+    assert.equal(report.lesson.id, mathVideo.id);
+    assert.equal(report.deviceInfo, 'HTTP test');
+
+    const unknownCode = await fetch(`${url}/api/admin/watermarks/ABCDEFGHJKMN`, {
+      headers: { 'x-admin-token': 'test-token' },
+    });
+    assert.equal(unknownCode.status, 404);
+
+    const malformedCode = await fetch(`${url}/api/admin/watermarks/nope`, {
+      headers: { 'x-admin-token': 'test-token' },
+    });
+    assert.equal(malformedCode.status, 400);
+
+    const rejected = await fetch(`${url}/api/playback/start`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ studentId: 'st-nobody', courseId: 'crs-math-2bac', videoId: mathVideo.id }),
+    });
+    assert.equal(rejected.status, 403);
+
+    const badBody = await fetch(`${url}/api/playback/start`, { method: 'POST', body: 'not-json' });
+    assert.equal(badBody.status, 400);
+  } finally {
+    await api.close();
+  }
 });
 
 console.log(`\n${passed} checks passed`);
