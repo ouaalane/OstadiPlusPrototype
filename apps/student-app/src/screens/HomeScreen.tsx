@@ -205,13 +205,18 @@ export default function HomeScreen() {
               />
               {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
             </View>
-            <View style={styles.avatar}>
+            <Pressable
+              onPress={() => navigation.navigate('Tabs', { screen: 'Profile' })}
+              accessibilityRole="button"
+              accessibilityLabel={rtl ? 'الملف الشخصي' : 'Profil'}
+              style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.75 }]}
+            >
               <Image
                 source={require('../assets/student-avatar.jpg')}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
               />
-            </View>
+            </Pressable>
           </View>
         </View>
 
