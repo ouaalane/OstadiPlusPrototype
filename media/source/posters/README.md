@@ -41,3 +41,37 @@ photo only.
 
 Same rights caveat: these are third-party images, so using them beyond this
 prototype needs the rightsholder's permission.
+
+## the remaining maths lessons
+
+The eleven posters for the rest of the maths course — `limits-intro`,
+`limits-rules`, `derivative-concept`, `derivative-rules`, `curve-study`,
+`vectors`, `dot-product`, `geometry-problems`, `logarithm`, `exponential`,
+`exam-strategy` — come from the same channel as the `complex-*` set,
+*Aderdour Mustapha* (`UCL-mC1yTDnh7zVuj7Upl7fg`), one custom thumbnail per
+lesson:
+
+| poster | video |
+| --- | --- |
+| `limits-intro` | `LQOjCYGOB9A` حساب النهايات — الجزء الأول |
+| `limits-rules` | `g3RMLEP-_9c` حساب النهايات — الجزء الثاني |
+| `derivative-concept` | `DaLR2MU8oRI` الإشتقاق في نقطة — الجزء الأول |
+| `derivative-rules` | `IV9pe9CAjFo` قواعد الاشتقاق وطريقة إنشاء جدول التغيرات |
+| `curve-study` | `FsfnpHe8qc0` دراسة الدوال العددية |
+| `vectors` | `cSCv5Qo4wPM` الهندسة الفضائية — الجداء المتجهي |
+| `dot-product` | `PoHhLChzHCc` Le produit scalaire dans l'espace |
+| `geometry-problems` | `JuvoOyGyV6I` تمرين شامل — الهندسة الفضائية |
+| `logarithm` | `DJXagmebrxs` الدالة اللوغاريتمية — شرح النهايات |
+| `exponential` | `Ea2NPKUGovo` الدالة الأسية — تعريف و خاصيات |
+| `exam-strategy` | `zn1Zj7GV620` نصائح ليلة الإمتحان الوطني |
+
+Nine of them carry the channel's own "أضرضور مصطفى" lockup — and, for some, a
+`www.aderdour.com` watermark — in the bottom-right; that corner is replaced by
+an OstadiPlus brand panel, the same treatment the `complex-*` set got. The
+other two (`vectors`, `geometry-problems`) are clean classroom/blackboard
+photos with no channel branding, so they only carry a small OstadiPlus corner
+badge. The lesson keys are used as-is, so the mapping above is what ties each
+poster back to its source.
+
+Same rights caveat again: third-party images, so anything beyond this prototype
+needs the rightsholder's permission.
