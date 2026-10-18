@@ -11,7 +11,9 @@ import React, { useRef, useState } from 'react';
 import {
   Image,
   KeyboardTypeOptions,
+  Modal,
   Pressable,
+  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
@@ -1171,6 +1173,284 @@ export function LabeledField({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Select                                                              */
+/* ------------------------------------------------------------------ */
+
+/** One choice in a {@link SelectField}. */
+export interface SelectOption {
+  value: string;
+  label: string;
+  /** Secondary line under the label — the académie régionale, a filière, … */
+  hint?: string;
+  /** Consecutive options sharing a group render under one section header. */
+  group?: string;
+}
+
+/**
+ * Search fold for {@link SelectField} — case-, accent- and diacritic-insensitive
+ * so « Fès », « fes » and « FES » all match, and Arabic variants (أ/ا، ة/ه، ى/ي)
+ * collapse together.
+ */
+function fold(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[àâäá]/g, 'a')
+    .replace(/[éèêë]/g, 'e')
+    .replace(/[îïí]/g, 'i')
+    .replace(/[ôöó]/g, 'o')
+    .replace(/[ûüùú]/g, 'u')
+    .replace(/ç/g, 'c')
+    .replace(/[’'`\-]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/[\u064B-\u0652\u0640]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Read-only field that opens a searchable sheet — the pattern to use wherever
+ * the choice list is too long for inline chips (the city list is ~90 entries).
+ *
+ * Browse mode shows the options grouped by `group`; typing filters on the
+ * label and the hint, and drops the headers so results read as one flat list.
+ */
+export function SelectField({
+  label,
+  icon,
+  value,
+  options,
+  onSelect,
+  placeholder,
+  sheetTitle,
+  searchPlaceholder,
+  emptyText,
+  clearLabel,
+  closeLabel,
+  error,
+  required,
+  style,
+}: {
+  label: string;
+  icon?: IconName;
+  value: string | null;
+  options: SelectOption[];
+  onSelect: (value: string) => void;
+  placeholder: string;
+  sheetTitle: string;
+  searchPlaceholder: string;
+  emptyText: string;
+  clearLabel: string;
+  closeLabel: string;
+  error?: string | null;
+  required?: boolean;
+  style?: ViewStyle;
+}) {
+  const { lang } = useI18n();
+  const rowDir = useRowDir();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const selected = options.find((o) => o.value === value) ?? null;
+
+  const needle = fold(query);
+  const matches = needle
+    ? options.filter(
+        (o) => fold(o.label).includes(needle) || fold(o.hint ?? '').includes(needle),
+      )
+    : options;
+
+  /** Flat render list; headers only while browsing, never for search results. */
+  const rows: ({ header: string } | { option: SelectOption })[] = [];
+  let lastGroup: string | undefined;
+  for (const option of matches) {
+    if (!needle && option.group && option.group !== lastGroup) rows.push({ header: option.group });
+    lastGroup = needle ? undefined : option.group;
+    rows.push({ option });
+  }
+
+  const pick = (next: string) => {
+    onSelect(next);
+    setOpen(false);
+  };
+
+  return (
+    <View style={[{ gap: spacing.sm }, style]}>
+      <View style={{ flexDirection: rowDir, alignItems: 'center', gap: 3 }}>
+        <AppText size={13.5} weight="bold" tone="ink">
+          {label}
+        </AppText>
+        {required ? (
+          <AppText size={13.5} weight="bold" tone="danger">
+            *
+          </AppText>
+        ) : null}
+      </View>
+
+      <Pressable
+        onPress={() => {
+          setQuery('');
+          setOpen(true);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityValue={{ text: selected?.label ?? placeholder }}
+        style={({ pressed }) => [
+          styles.field,
+          { flexDirection: rowDir },
+          error ? styles.fieldError : null,
+          pressed && { opacity: 0.7 },
+        ]}
+      >
+        {icon ? (
+          <Ionicons name={icon} size={18} color={colors.muted} importantForAccessibility="no" />
+        ) : null}
+        <AppText
+          size={15}
+          tone={selected ? 'ink' : 'faint'}
+          numberOfLines={1}
+          style={{ flex: 1 }}
+          importantForAccessibility="no"
+        >
+          {selected?.label ?? placeholder}
+        </AppText>
+        <Ionicons name="chevron-down" size={18} color={colors.muted} importantForAccessibility="no" />
+      </Pressable>
+
+      {error ? (
+        <AppText
+          size={12}
+          weight="semibold"
+          tone="danger"
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+        >
+          {error}
+        </AppText>
+      ) : null}
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.selectScrim} onPress={() => setOpen(false)} accessible={false}>
+          <Pressable style={styles.selectSheet} onPress={() => undefined} accessible={false}>
+            <View style={styles.selectGrabber} />
+            <View style={[styles.selectHead, { flexDirection: rowDir }]}>
+              <AppText size={17} weight="bold" tone="ink" style={{ flex: 1 }}>
+                {sheetTitle}
+              </AppText>
+              <IconButton
+                icon="close"
+                variant="plain"
+                size={34}
+                label={closeLabel}
+                onPress={() => setOpen(false)}
+              />
+            </View>
+
+            <View style={[styles.field, styles.selectSearch, { flexDirection: rowDir }]}>
+              <Ionicons name="search-outline" size={18} color={colors.muted} importantForAccessibility="no" />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={searchPlaceholder}
+                placeholderTextColor={colors.faint}
+                autoCorrect={false}
+                autoFocus
+                accessibilityLabel={searchPlaceholder}
+                style={[styles.fieldInput, { fontFamily: familyFor(lang, 'regular') }]}
+              />
+              {query ? (
+                <Pressable
+                  onPress={() => setQuery('')}
+                  hitSlop={10}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={clearLabel}
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={18}
+                    color={colors.lineStrong}
+                    importantForAccessibility="no"
+                  />
+                </Pressable>
+              ) : null}
+            </View>
+
+            <ScrollView
+              style={styles.selectList}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={{ paddingBottom: spacing.sm }}
+            >
+              {rows.length === 0 ? (
+                <AppText size={14} tone="muted" style={styles.selectEmpty}>
+                  {emptyText}
+                </AppText>
+              ) : (
+                rows.map((row) =>
+                  'header' in row ? (
+                    <AppText
+                      key={`header-${row.header}`}
+                      size={11.5}
+                      weight="bold"
+                      tone="faint"
+                      style={styles.selectGroup}
+                    >
+                      {row.header}
+                    </AppText>
+                  ) : (
+                    <Pressable
+                      key={row.option.value}
+                      onPress={() => pick(row.option.value)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: row.option.value === value }}
+                      accessibilityLabel={
+                        row.option.hint ? `${row.option.label} — ${row.option.hint}` : row.option.label
+                      }
+                      style={({ pressed }) => [
+                        styles.selectRow,
+                        { flexDirection: rowDir },
+                        pressed && { backgroundColor: colors.brandSofter },
+                      ]}
+                    >
+                      <View style={{ flex: 1, gap: 2 }} importantForAccessibility="no">
+                        <AppText
+                          size={14.5}
+                          weight={row.option.value === value ? 'bold' : 'medium'}
+                          tone="ink"
+                        >
+                          {row.option.label}
+                        </AppText>
+                        {row.option.hint ? (
+                          <AppText size={11.5} tone="muted">
+                            {row.option.hint}
+                          </AppText>
+                        ) : null}
+                      </View>
+                      {row.option.value === value ? (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color={colors.brand}
+                          importantForAccessibility="no"
+                        />
+                      ) : null}
+                    </Pressable>
+                  ),
+                )
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
 /** 6-digit verification code input with a hidden text field behind the boxes. */
 export function CodeInput({
   value,
@@ -1724,6 +2004,62 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.ink,
     paddingVertical: spacing.md,
+  },
+
+  selectScrim: {
+    flex: 1,
+    backgroundColor: colors.scrim,
+    justifyContent: 'flex-end',
+  },
+  selectSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    maxHeight: '82%',
+    ...shadow.overlay,
+  },
+  selectGrabber: {
+    alignSelf: 'center',
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.line,
+  },
+  selectHead: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  selectSearch: {
+    marginHorizontal: spacing.xl,
+    minHeight: 48,
+    backgroundColor: colors.surfaceAlt,
+    borderColor: 'transparent',
+  },
+  selectList: { maxHeight: 400 },
+  selectGroup: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: tracking.eyebrow,
+  },
+  selectRow: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
+  selectEmpty: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl,
+    textAlign: 'center',
   },
 
   codeRow: { flexDirection: 'row', gap: spacing.sm },

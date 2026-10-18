@@ -23,7 +23,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppText, AuthAppBar, LabeledField, PrimaryButton, Stepper } from '../components/ui';
+import {
+  AppText,
+  AuthAppBar,
+  LabeledField,
+  PrimaryButton,
+  SelectField,
+  type SelectOption,
+  Stepper,
+} from '../components/ui';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
@@ -76,26 +84,117 @@ const LEVELS: LevelOption[] = [
   },
 ];
 
-const CITIES = [
-  'الدار البيضاء (Casablanca)',
-  'الرباط / Rabat',
-  'مراكش / Marrakech',
-  'فاس / Fès',
-  'طنجة / Tanger',
-  'أكادير / Agadir',
-  'وجدة / Oujda',
+interface City {
+  /** Canonical value kept in the form — the Arabic name. */
+  ar: string;
+  /** Latin label shown by the French (LTR) UI. */
+  fr: string;
+}
+
+/**
+ * Every city the « académie régionale » picker offers. Too many to lay out as
+ * chips, so step 2 uses a select field backed by a searchable sheet.
+ * Ordered by prominence: the big academic hubs first, then the rest A→Z.
+ */
+const CITIES: City[] = [
+  { ar: 'الدار البيضاء', fr: 'Casablanca' },
+  { ar: 'الرباط', fr: 'Rabat' },
+  { ar: 'فاس', fr: 'Fès' },
+  { ar: 'مراكش', fr: 'Marrakech' },
+  { ar: 'طنجة', fr: 'Tanger' },
+  { ar: 'أكادير', fr: 'Agadir' },
+  { ar: 'مكناس', fr: 'Meknès' },
+  { ar: 'وجدة', fr: 'Oujda' },
+  { ar: 'القنيطرة', fr: 'Kénitra' },
+  { ar: 'تطوان', fr: 'Tétouan' },
+  { ar: 'سلا', fr: 'Salé' },
+  { ar: 'آسفي', fr: 'Safi' },
+  { ar: 'المحمدية', fr: 'Mohammedia' },
+  { ar: 'الجديدة', fr: 'El Jadida' },
+  { ar: 'بني ملال', fr: 'Béni Mellal' },
+  { ar: 'الناظور', fr: 'Nador' },
+  { ar: 'خريبكة', fr: 'Khouribga' },
+  { ar: 'سطات', fr: 'Settat' },
+  { ar: 'تازة', fr: 'Taza' },
+  { ar: 'العرائش', fr: 'Larache' },
+  { ar: 'أيت ملول', fr: 'Aït Melloul' },
+  { ar: 'الحسيمة', fr: 'Al Hoceima' },
+  { ar: 'أصيلة', fr: 'Asilah' },
+  { ar: 'أزمور', fr: 'Azemmour' },
+  { ar: 'أزيلال', fr: 'Azilal' },
+  { ar: 'أزرو', fr: 'Azrou' },
+  { ar: 'بجعد', fr: 'Bejaad' },
+  { ar: 'بن جرير', fr: 'Ben Guerir' },
+  { ar: 'بنسليمان', fr: 'Benslimane' },
+  { ar: 'بركان', fr: 'Berkane' },
+  { ar: 'برشيد', fr: 'Berrechid' },
+  { ar: 'بيوكرى', fr: 'Biougra' },
+  { ar: 'بوجدور', fr: 'Boujdour' },
+  { ar: 'بولمان', fr: 'Boulemane' },
+  { ar: 'بوسكورة', fr: 'Bouskoura' },
+  { ar: 'شفشاون', fr: 'Chefchaouen' },
+  { ar: 'شيشاوة', fr: 'Chichaoua' },
+  { ar: 'الداخلة', fr: 'Dakhla' },
+  { ar: 'الدريوش', fr: 'Driouch' },
+  { ar: 'أرفود', fr: 'Erfoud' },
+  { ar: 'الرشيدية', fr: 'Errachidia' },
+  { ar: 'الصويرة', fr: 'Essaouira' },
+  { ar: 'فجيج', fr: 'Figuig' },
+  { ar: 'الفنيدق', fr: 'Fnideq' },
+  { ar: 'الفقيه بن صالح', fr: 'Fquih Ben Salah' },
+  { ar: 'كلميم', fr: 'Guelmim' },
+  { ar: 'جرسيف', fr: 'Guercif' },
+  { ar: 'إفران', fr: 'Ifrane' },
+  { ar: 'إنزكان', fr: 'Inezgane' },
+  { ar: 'جرادة', fr: 'Jerada' },
+  { ar: 'قصبة تادلة', fr: 'Kasba Tadla' },
+  { ar: 'قلعة السراغنة', fr: 'Kelaa des Sraghna' },
+  { ar: 'قلعة مكونة', fr: 'Kelaat M’Gouna' },
+  { ar: 'الخميسات', fr: 'Khémisset' },
+  { ar: 'خنيفرة', fr: 'Khenifra' },
+  { ar: 'القصر الكبير', fr: 'Ksar El Kebir' },
+  { ar: 'العيون', fr: 'Laâyoune' },
+  { ar: 'المضيق', fr: 'M’diq' },
+  { ar: 'مرتيل', fr: 'Martil' },
+  { ar: 'مديونة', fr: 'Mediouna' },
+  { ar: 'ميدلت', fr: 'Midelt' },
+  { ar: 'ميسور', fr: 'Missour' },
+  { ar: 'مولاي يعقوب', fr: 'Moulay Yacoub' },
+  { ar: 'النواصر', fr: 'Nouaceur' },
+  { ar: 'ورزازات', fr: 'Ouarzazate' },
+  { ar: 'وادزم', fr: 'Oued Zem' },
+  { ar: 'وزان', fr: 'Ouezzane' },
+  { ar: 'أولاد تايمة', fr: 'Oulad Teima' },
+  { ar: 'أوطاط الحاج', fr: 'Outat El Haj' },
+  { ar: 'الريش', fr: 'Rich' },
+  { ar: 'الريصاني', fr: 'Rissani' },
+  { ar: 'الرماني', fr: 'Rommani' },
+  { ar: 'صفرو', fr: 'Sefrou' },
+  { ar: 'سيدي بنور', fr: 'Sidi Bennour' },
+  { ar: 'سيدي إفني', fr: 'Sidi Ifni' },
+  { ar: 'سيدي قاسم', fr: 'Sidi Kacem' },
+  { ar: 'سيدي سليمان', fr: 'Sidi Slimane' },
+  { ar: 'سيدي يحيى الغرب', fr: 'Sidi Yahya El Gharb' },
+  { ar: 'الصخيرات', fr: 'Skhirat' },
+  { ar: 'السمارة', fr: 'Smara' },
+  { ar: 'تافراوت', fr: 'Tafraout' },
+  { ar: 'تحناوت', fr: 'Tahannaout' },
+  { ar: 'طانطان', fr: 'Tan-Tan' },
+  { ar: 'تاونات', fr: 'Taounate' },
+  { ar: 'تاوريرت', fr: 'Taourirt' },
+  { ar: 'طرفاية', fr: 'Tarfaya' },
+  { ar: 'تارودانت', fr: 'Taroudant' },
+  { ar: 'تاتا', fr: 'Tata' },
+  { ar: 'تمارة', fr: 'Témara' },
+  { ar: 'تيفلت', fr: 'Tiflet' },
+  { ar: 'تنغير', fr: 'Tinghir' },
+  { ar: 'تيزنيت', fr: 'Tiznit' },
+  { ar: 'اليوسفية', fr: 'Youssoufia' },
+  { ar: 'زاكورة', fr: 'Zagora' },
 ];
 
-/** French labels for the city chips — the stored `city` value stays canonical. */
-const CITY_FR: Record<string, string> = {
-  'الدار البيضاء (Casablanca)': 'Casablanca',
-  'الرباط / Rabat': 'Rabat',
-  'مراكش / Marrakech': 'Marrakech',
-  'فاس / Fès': 'Fès',
-  'طنجة / Tanger': 'Tanger',
-  'أكادير / Agadir': 'Agadir',
-  'وجدة / Oujda': 'Oujda',
-};
+/** Latin label for a stored (Arabic) city value. */
+const CITY_FR = new Map<string, string>(CITIES.map((c) => [c.ar, c.fr] as const));
 
 const DUMMY_NAME = 'التلميذ الجديد';
 const DUMMY_NAME_FR = 'Nouvel élève';
@@ -122,7 +221,7 @@ export default function SignupScreen({
 
   // step 2
   const [levelId, setLevelId] = useState('bac');
-  const [city, setCity] = useState(CITIES[0]);
+  const [city, setCity] = useState(CITIES[0].ar);
 
   // step 3
   const [agreed, setAgreed] = useState(false);
@@ -135,8 +234,23 @@ export default function SignupScreen({
 
   const level = LEVELS.find((l) => l.id === levelId)!;
 
-  /** City chips are stored with their canonical (Arabic-first) value; only the label flips. */
-  const cityLabel = (value: string) => (rtl ? value : CITY_FR[value] ?? value);
+  /** City values are canonical (Arabic-first); only the label flips to Latin. */
+  const cityLabel = (value: string) => (rtl ? value : CITY_FR.get(value) ?? value);
+
+  /**
+   * The city list is far too long for chips, so step 2 uses a select field.
+   * Each option is titled in the active language and subtitled in the other
+   * one, which keeps the sheet bilingual and searchable in either script.
+   */
+  const cityOptions = useMemo<SelectOption[]>(
+    () =>
+      CITIES.map((c) => ({
+        value: c.ar,
+        label: rtl ? c.ar : c.fr,
+        hint: rtl ? c.fr : c.ar,
+      })),
+    [rtl],
+  );
 
   const strength = useMemo(() => {
     let s = 0;
@@ -376,37 +490,23 @@ export default function SignupScreen({
                 })}
               </View>
 
-              <AppText size={13.5} weight="semibold" tone="ink" style={{ marginTop: spacing.sm }}>
-                {rtl ? 'المدينة (الأكاديمية الجهوية)' : 'Ville (Académie régionale)'}
-              </AppText>
-              <View style={[l.row, styles.cityWrap]}>
-                {CITIES.map((c) => {
-                  const selected = c === city;
-                  return (
-                    <Pressable
-                      key={c}
-                      onPress={() => setCity(c)}
-                      style={({ pressed }) => [
-                        styles.cityChip,
-                        selected && styles.cityChipActive,
-                        pressed && !selected && { opacity: 0.7 },
-                      ]}
-                      accessible
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected }}
-                      accessibilityLabel={cityLabel(c)}
-                    >
-                      <AppText
-                        size={12.5}
-                        weight={selected ? 'bold' : 'medium'}
-                        tone={selected ? 'white' : 'body'}
-                      >
-                        {cityLabel(c)}
-                      </AppText>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <SelectField
+                label={rtl ? 'المدينة (الأكاديمية الجهوية)' : 'Ville (Académie régionale)'}
+                icon="location-outline"
+                value={city}
+                options={cityOptions}
+                onSelect={setCity}
+                placeholder={rtl ? 'اختر مدينتك' : 'Choisissez votre ville'}
+                sheetTitle={rtl ? 'اختر المدينة' : 'Choisir une ville'}
+                searchPlaceholder={rtl ? 'ابحث عن مدينتك…' : 'Rechercher votre ville…'}
+                emptyText={
+                  rtl
+                    ? 'لا توجد مدينة مطابقة لبحثك.'
+                    : 'Aucune ville ne correspond à votre recherche.'
+                }
+                clearLabel={rtl ? 'مسح البحث' : 'Effacer la recherche'}
+                closeLabel={rtl ? 'إغلاق' : 'Fermer'}
+              />
             </View>
           ) : null}
 
@@ -618,17 +718,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cityWrap: { flexWrap: 'wrap', gap: spacing.sm },
-  cityChip: {
-    borderRadius: radius.pill,
-    borderWidth: 1.2,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 9,
-  },
-  cityChipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
-
   summary: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
