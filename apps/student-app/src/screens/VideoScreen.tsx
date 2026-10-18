@@ -6,11 +6,17 @@
  * Overview · Chapters · Resources tabs, and the sticky Prev / «Complete &
  * next» bar.
  *
+ * Playback is gated by the student's enrollment (published course + active,
+ * non-expired subscription) and a moving ownership watermark
+ * (`VideoWatermark`) overlays the video so leaked recordings stay traceable.
+ * Fullscreen is rendered in-app so the watermark and the custom controls
+ * remain visible and functional there too.
+ *
  * Bilingual: strings are authored inline per language, layout flips RTL↔LTR.
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -42,6 +48,7 @@ import {
   ProgressBar,
 } from '../components/ui';
 import { lessonMetaText, lessonRoute } from '../lib/lesson';
+import VideoWatermark from '../components/VideoWatermark';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
@@ -90,6 +97,7 @@ export default function VideoScreen() {
   const {
     state,
     me,
+    statusOf,
     progressOf,
     saveProgress,
     markCompleted,
@@ -112,6 +120,20 @@ export default function VideoScreen() {
     return null;
   }, [state.courses, params.lessonId]);
 
+  /**
+   * Playback authorization — reuses the exact enrollment rules the rest of
+   * the app enforces (published course + active, non-expired subscription).
+   * The route only carries a `lessonId`, so this check is what stops a
+   * hand-crafted id from playing a course the signed-in student cannot
+   * access, and it guarantees the watermark identity belongs to a student
+   * who is genuinely entitled to the lesson.
+   */
+  const courseAuthorized = useMemo(() => {
+    if (!found || !me) return false;
+    if (found.course.status !== 'published') return false;
+    return statusOf(found.course.id) === 'active';
+  }, [found, me, statusOf]);
+
   const saved = progressOf(params.lessonId);
   const resumeAt = useRef(saved?.positionSec ?? 0);
 
@@ -123,15 +145,33 @@ export default function VideoScreen() {
       )
     : { kind: 'missing' as const };
 
-  const videoRef = useRef<VideoView>(null);
   const [playing, setPlaying] = useState(true);
   const [position, setPosition] = useState(resumeAt.current);
   const [duration, setDuration] = useState(found?.lesson.durationSec ?? 0);
   const [muted, setMuted] = useState(false);
   const [barWidth, setBarWidth] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  /**
+   * In-app fullscreen: the video, its custom controls and the ownership
+   * watermark all stay inside the React Native view tree. The platform's
+   * native fullscreen surface lives outside it — no JS overlay can be drawn
+   * over it — which would silently drop the watermark from fullscreen
+   * recordings. Android's hardware back exits fullscreen before it leaves
+   * the lesson.
+   */
+  useEffect(() => {
+    if (!fullscreen) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setFullscreen(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [fullscreen]);
 
   const player = useVideoPlayer(
-    media.kind === 'video' ? media.source : null,
+    // Never hand the player a source the current session is not entitled to.
+    media.kind === 'video' && courseAuthorized ? media.source : null,
     (p) => {
       p.timeUpdateEventInterval = 1;
       if (resumeAt.current > 3) p.currentTime = resumeAt.current;
@@ -167,14 +207,19 @@ export default function VideoScreen() {
     };
   }, [player, params.lessonId, saveProgress, markCompleted]);
 
-  if (!found || media.kind !== 'video') {
+  if (!found || media.kind !== 'video' || !courseAuthorized) {
+    const unauthorized = !!found && media.kind === 'video' && !courseAuthorized;
     return (
       <SafeAreaView style={styles.safeMissing} edges={['top']}>
         <View style={styles.missing}>
           <AppText size={15} tone="muted" style={{ textAlign: 'center' }}>
-            {rtl
-              ? 'تعذّر تحميل الفيديو في هذا الجهاز.'
-              : 'Impossible de charger la vidéo sur cet appareil.'}
+            {unauthorized
+              ? rtl
+                ? 'لا تملك إذناً لمشاهدة هذا الدرس.'
+                : "Vous n'avez pas l'autorisation de regarder cette leçon."
+              : rtl
+                ? 'تعذّر تحميل الفيديو في هذا الجهاز.'
+                : 'Impossible de charger la vidéo sur cet appareil.'}
           </AppText>
           <PrimaryButton
             label={rtl ? 'رجوع' : 'Retour'}
@@ -187,6 +232,10 @@ export default function VideoScreen() {
   }
 
   const { course, lesson } = found;
+  /** Opaque watermark identity — the student-card code, falling back to the
+   *  canonical id. Only ever rendered for the authenticated, authorized
+   *  session (see `courseAuthorized` above). */
+  const studentCode = me?.studentCode || me?.id || '';
   const lessons = allLessons(course).filter((x) => x.published);
   const index = lessons.findIndex((x) => x.id === lesson.id);
   const prev = index > 0 ? lessons[index - 1] : undefined;
@@ -250,18 +299,20 @@ export default function VideoScreen() {
     else navigation.goBack();
   };
 
-  return (
-    <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* ---- video + custom overlay ---- */}
-        <View style={styles.videoWrap}>
+  /**
+   * The video surface + custom overlay + ownership watermark, as one block.
+   * Rendered either inline in the scroll view or lifted into the in-app
+   * fullscreen overlay — a single definition keeps both presentations
+   * identical (same player, same controls, same watermark).
+   */
+  const videoBlock = (
+    <View style={fullscreen ? styles.videoWrapFullscreen : styles.videoWrap}>
           <VideoView
-            ref={videoRef}
             player={player}
             style={StyleSheet.absoluteFill}
             contentFit="contain"
             nativeControls={false}
-            fullscreenOptions={{ enable: true }}
+            fullscreenOptions={{ enable: false }}
           />
 
           {/* tap surface toggles playback */}
@@ -287,7 +338,10 @@ export default function VideoScreen() {
                 variant="onPhoto"
                 size={38}
                 label={t('back')}
-                onPress={() => navigation.goBack()}
+                onPress={() => {
+                  if (fullscreen) setFullscreen(false);
+                  else navigation.goBack();
+                }}
               />
               <View style={{ flex: 1 }} />
               {isDownloaded ? (
@@ -305,15 +359,23 @@ export default function VideoScreen() {
                   player.muted = !muted;
                 }}
               />
-              <IconButton
-                icon="expand"
-                variant="onPhoto"
-                size={38}
-                label={rtl ? 'ملء الشاشة' : 'Plein écran'}
-                onPress={() => {
-                  void videoRef.current?.enterFullscreen();
-                }}
-              />
+              {fullscreen ? (
+                <IconButton
+                  icon="contract"
+                  variant="onPhoto"
+                  size={38}
+                  label={rtl ? 'إنهاء ملء الشاشة' : 'Quitter le plein écran'}
+                  onPress={() => setFullscreen(false)}
+                />
+              ) : (
+                <IconButton
+                  icon="expand"
+                  variant="onPhoto"
+                  size={38}
+                  label={rtl ? 'ملء الشاشة' : 'Plein écran'}
+                  onPress={() => setFullscreen(true)}
+                />
+              )}
             </View>
 
             <View style={{ flex: 1 }} pointerEvents="none" />
@@ -367,7 +429,25 @@ export default function VideoScreen() {
               </AppText>
             </View>
           </SafeAreaView>
-        </View>
+
+          {/* Moving ownership watermark — drawn above the video and controls
+              but pointerEvents="none", so it can never block them. */}
+          {studentCode ? (
+            <VideoWatermark
+              key={`${studentCode}|${course.id}`}
+              studentCode={studentCode}
+              courseCode={course.id}
+              playing={playing}
+            />
+          ) : null}
+    </View>
+  );
+
+  return (
+    <View style={styles.root}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* ---- video + custom overlay ---- */}
+        {fullscreen ? <View style={styles.videoWrap} /> : videoBlock}
 
         <View style={styles.body}>
           {/* ---- meta ---- */}
@@ -663,6 +743,10 @@ export default function VideoScreen() {
           />
         </View>
       </SafeAreaView>
+
+      {/* In-app fullscreen presentation — the same block, drawn over the
+          whole screen so the watermark stays visible in fullscreen. */}
+      {fullscreen ? videoBlock : null}
     </View>
   );
 }
@@ -681,6 +765,12 @@ const styles = StyleSheet.create({
   },
 
   videoWrap: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.black },
+  /** In-app fullscreen: the same block, lifted over the whole screen. */
+  videoWrapFullscreen: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    backgroundColor: colors.black,
+  },
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
   overlayTop: {
     flexDirection: 'row',
