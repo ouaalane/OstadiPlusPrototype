@@ -47,6 +47,19 @@ payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) 
   (real durations/sizes). Re-run with `OSTADI_MEDIA_RESUME=1` to keep existing videos.
   `scripts/sync-media.mjs` copies assets to `apps/teacher-dashboard/public/media` **and**
   `apps/student-app/src/assets` (+ generates `src/assets/registry.ts`, the Metro `require()` map).
+* **Real lesson videos** (`npm run media:fetch`) — the 31 lesson clips are short real explanation videos
+  (French, «Khan Academy en français», CC BY-NC-SA — credits in `media/source/videos/CREDITS.md`), cut to
+  120 s / ≈1.7–2.5 MB (854×480 H.264 + AAC, `+faststart`). `media/source/videos/<key>.mp4` always wins over
+  the slide-deck template in `npm run media` — the same "a real source beats the demo template" rule as
+  curated posters and AlloSchool PDFs. Raw downloads cache in git-ignored `media/raw/`. All 31 were eyeballed
+  via contact sheets and language-checked (Vosk fr vs en models) — French audio confirmed.
+* **Ownership watermark + custom player controls** — a moving student-code/course-id pill over the video
+  (`src/lib/watermark.ts` pure logic with 8 executable checks in root `check-watermark.mjs` +
+  `src/components/VideoWatermark.tsx` overlay), plus a custom control overlay in `VideoScreen.tsx`
+  (back/mute/fullscreen/play/time). Fullscreen is rendered **in-app** on purpose: the platform's native
+  fullscreen surface cannot host RN overlays and would silently drop the watermark from fullscreen
+  recordings. Device-verified: the pill appears, tracks the course (`crs-math-2bac` → `crs-phys-2bac`) and
+  moves between positions during playback (`shots/video-*.png`).
 * **Teacher dashboard** — `npx tsc --noEmit` ✅, `npx vite build` ✅. Pages: Overview, Courses,
   CourseEditor (chapters/lessons/publish/preview/info), Students (access control), Announcements, Settings
   (profile edit + sync payload + reset), NotFound. Verified in Chromium at 1440×900 and 390×844 —
@@ -56,7 +69,8 @@ payments, no accounts — everything is local (`localStorage` / `AsyncStorage`) 
 * **Student app source** — all screens written and `npx tsc --noEmit` ✅ (see §5 for the file map).
   `android/` was generated with `npx expo prebuild --platform android --no-install`.
 * **Standalone APK built and installed** — `scripts\verify-android.ps1 -Install -Launch` produces
-  `app-debug.apk` (≈148 MB) with the JS bundle + 93 assets embedded (`debuggableVariants = []` in
+  `app-debug.apk` (≈209 MB — the real lesson videos alone are ≈57 MB) with the JS bundle + assets embedded
+  (`debuggableVariants = []` in
   `android/app/build.gradle` — re-applied automatically by the script after every prebuild). The app runs
   with Metro stopped and no `adb reverse` (verified: Metro killed, still fine).
 * **On-device verification (old §6.2) — ALL PASS** on the Pixel_9a emulator (API 36, `emulator-5554`).
@@ -121,6 +135,7 @@ npm --prefix apps/student-app install
 
 # media pipeline (offline: Chromium + ffmpeg) and asset distribution
 npm run media                 # ≈1 min when cached (use $env:OSTADI_MEDIA_RESUME='1' to skip existing)
+npm run media:fetch           # (re)download + cut the real lesson clips (needs python+yt-dlp, ffmpeg)
 npm run media:sync            # copy into both apps + regenerate apps/student-app/src/assets/registry.ts
 
 # teacher dashboard  → http://localhost:5173
@@ -131,7 +146,7 @@ npm run app                   # then press "a" for Android, or use an emulator a
 
 # native Android build + install + launch (one shot; auto-finds JDK 17 + SDK)
 .\scripts\verify-android.ps1 -Install -Launch     # add -SkipBuild to only install+launch
-# produces apps\student-app\android\app\build\outputs\apk\debug\app-debug.apk (~148 MB,
+# produces apps\student-app\android\app\build\outputs\apk\debug\app-debug.apk (~209 MB,
 # JS bundle + assets embedded via debuggableVariants = [] — the script re-applies that
 # patch after every `expo prebuild`). The APK runs standalone: no Metro, no adb reverse.
 
@@ -174,6 +189,10 @@ npx tsc --noEmit            # in apps/student-app
 * Every lesson references a bundled file by name (`limits-intro.mp4`, `limits-sheet.pdf`, …). The manifest
   (`packages/shared/src/media-manifest.json`) supplies `durationSec` / `sizeMb` / `pages`, which is why the
   dashboard and the app show real durations.
+* The 31 lesson **videos** are real French clips fetched by `npm run media:fetch` (sources in
+  `scripts/media/ka-video-sources.json`, yt-dlp + ffmpeg in `scripts/fetch-videos.mjs`, credits auto-written
+  to `media/source/videos/CREDITS.md`). `scripts/generate-media.mjs` copies
+  `media/source/videos/<key>.mp4` over the slide-deck template whenever it exists.
 * The phone's «PDF viewer» is a **page-image reader**: `npm run media` rasterises each A4 page to PNG
   (`media/generated/doc-pages/<key>-<n>.png`), and `sync-media.mjs` writes
   `apps/student-app/src/assets/registry.ts` with literal `require()` calls
@@ -193,8 +212,11 @@ npx tsc --noEmit            # in apps/student-app
   `exportPayload`, `resetDemo`.
 * Navigation: `Auth` (sign-in) when nobody is signed in, otherwise `Tabs` (Home / Courses / Announcements /
   Profile) + `CourseDetail`, `Video`, `Pdf` (`src/navigation/RootNavigator.tsx`, param types in `types.ts`).
-* Video: `expo-video` (`useVideoPlayer` + `VideoView`, native controls), `timeUpdate` → progress,
-  `playToEnd` → completed, resume by setting `player.currentTime` in the setup callback.
+* Video: `expo-video` (`useVideoPlayer` + `VideoView`) with a **custom control overlay** in
+  `VideoScreen.tsx` (back, mute, big play/pause, time labels, in-app fullscreen), `timeUpdate` → progress,
+  `playToEnd` → completed, resume by setting `player.currentTime` in the setup callback. A moving ownership
+  watermark (`VideoWatermark.tsx` + `lib/watermark.ts`) shows the student code + course id at randomised
+  positions (9–20 s interval, 650 ms glide, never repeating the previous slot).
 * App id: `ma.atlas.ostadiplus.student` (see `app.json`).
 
 ### Hermes gaps (break on-device only — browsers never show these)
@@ -241,9 +263,10 @@ function-entry positions (`1:bytecodeOffset`) and symbolicate against
 All of the original next steps are **done** (see §2 for evidence): standalone APK, on-device verification
 checklist, cross-app demo. What remains, in order of usefulness:
 
-1. **Demo at 1080p**: the emulator window can be centred with any `SetWindowPos` helper; screenshots land in
-   `shots/`. Re-run `node scripts\device-verify.mjs` any time — it resets the app (`pm clear`) and walks the
-   whole story, writing `shots/device-01..08-*.png`.
+1. **Demo at 1080p**: the emulator window can be re-centred with `powershell -File scripts\center-emulator.ps1`;
+   screenshots land in `shots/` (the real-video checks wrote `shots/video-*.png`). Re-run
+   `node scripts\device-verify.mjs` any time — it resets the app (`pm clear`) and walks the whole story,
+   writing `shots/device-01..08-*.png`.
 2. **Refresh the payload before a live demo**: the committed `shots/demo-payload.txt` is a snapshot; the
    quickest way to regenerate is the dashboard (الإعدادات → نسخ رمز المزامنة) — or re-run the Playwright
    cross-app flow that produced it.
@@ -256,14 +279,17 @@ checklist, cross-app demo. What remains, in order of usefulness:
 
 * Remote: `git@github.com:ouaalane/OstadiPlusPrototype.git`, branch `main`.
 * Included in git: all source, plus the **synced media copies** that make the apps run right after a clone —
-  `apps/teacher-dashboard/public/media` (13.4 MB) and `apps/student-app/src/assets` (12.8 MB).
+  `apps/teacher-dashboard/public/media` (≈72 MB) and `apps/student-app/src/assets` (≈72 MB), including the
+  real lesson videos and their originals in `media/source/videos/` (≈57 MB).
   `apps/student-app/android/` is **not** committed — it is generated with `npx expo prebuild --platform
   android --no-install` (or automatically by `scripts/verify-android.ps1` when missing).
 * Excluded (`.gitignore`): `node_modules/`, `dist/`, `media/generated/` (regenerate with `npm run media`),
-  Gradle build outputs, `*.apk`, editor folders.
-* Screenshots in `shots/` are committed as verification evidence: dashboard (`*-desktop/mobile.png`) and
-  on-device (`device-01..08-*.png`). `shots/demo-payload.txt` is the captured cross-app sync payload;
-  `scripts/device-verify.mjs` is the adb driver that produced the device screenshots.
+  `media/raw/` (raw yt-dlp downloads — regenerate with `npm run media:fetch`), Gradle build outputs,
+  `*.apk`, editor folders.
+* Screenshots in `shots/` are committed as verification evidence: dashboard (`*-desktop/mobile.png`),
+  on-device (`device-01..08-*.png`) and the real-video checks (`video-*.png`). `shots/demo-payload.txt` is
+  the captured cross-app sync payload; `scripts/device-verify.mjs` is the adb driver that produced the
+  device screenshots.
 
 ## 8. Deliberate scope cuts (do not "fix" these without asking)
 

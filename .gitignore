@@ -16,6 +16,9 @@ apps/student-app/.metro-health-check*
 # generated media (regenerate with `npm run media`)
 media/generated/
 
+# raw video downloads (regenerate with `npm run media:fetch`)
+media/raw/
+
 # editors
 .vscode/
 .idea/

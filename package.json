@@ -13,6 +13,7 @@
     "app": "npm run start --prefix apps/student-app",
     "app:android": "npm run android --prefix apps/student-app",
     "media": "node scripts/generate-media.mjs",
+    "media:fetch": "node scripts/fetch-videos.mjs",
     "media:pdfs": "node scripts/media/import-pdfs.mjs",
     "media:sync": "node scripts/sync-media.mjs"
   },

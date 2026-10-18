@@ -33,6 +33,7 @@ const DOC_DIR = path.join(GEN, 'docs');
 const DOC_PAGES = path.join(GEN, 'doc-pages');
 const BUILD = path.join(GEN, 'video-build');
 const SOURCE_POSTERS = path.join(ROOT, 'media', 'source', 'posters');
+const SOURCE_VIDEOS = path.join(ROOT, 'media', 'source', 'videos');
 const MANIFEST = path.join(ROOT, 'packages', 'shared', 'src', 'media-manifest.json');
 
 const FONT_DIR = path.join(
@@ -249,9 +250,23 @@ async function main() {
     const total = video.slides.length * slideSec - (video.slides.length - 1) * XFADE;
 
     const videoFile = path.join(VIDEO_DIR, `${video.key}.mp4`);
+    const realSource = path.join(SOURCE_VIDEOS, `${video.key}.mp4`);
     const existing = resume ? await fs.stat(videoFile).catch(() => null) : null;
     const cached = Boolean(existing && existing.size > 0);
-    if (cached) {
+    if (await exists(realSource)) {
+      /* A real lesson clip in `media/source/videos/<key>.mp4` always wins over
+         the generated slide deck — the same "a real source beats the demo
+         template" rule curated posters and AlloSchool PDFs follow. */
+      const real = await fs.stat(realSource);
+      const upToDate =
+        cached && existing.size === real.size && existing.mtimeMs >= real.mtimeMs;
+      if (!upToDate) {
+        await fs.copyFile(realSource, videoFile);
+        log(`  real video ${video.key} (${(real.size / 1048576).toFixed(2)} MB)`);
+      } else {
+        log(`  cached real video ${video.key}`);
+      }
+    } else if (cached) {
       log(`  cached ${video.key}`);
     } else {
       for (let i = 0; i < video.slides.length; i++) {
