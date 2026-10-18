@@ -242,6 +242,46 @@ const courseMath: Course = {
           },
         ]),
       ]),
+      chapter('الأعداد العقدية', [
+        video('complex-affix'),
+        video('complex-collinear'),
+        video('complex-argument'),
+        video('complex-locus'),
+        video('complex-moivre'),
+        video('complex-angles'),
+        video('complex-triangle'),
+        video('complex-equations'),
+        video('complex-trig'),
+        video('complex-quadrilateral'),
+        video('complex-trig-form'),
+        quiz('اختبر فهمك — الأعداد العقدية', [
+          {
+            prompt: 'ما معيار العدد العقدي z = 3 + 4i؟',
+            options: ['5', '7', '25', '√7'],
+            correct: [0],
+          },
+          {
+            prompt: 'إذا كان z = cos θ + i sin θ، فما يساوي zⁿ وفق صيغة موافر؟',
+            options: [
+              'cos(nθ) + i sin(nθ)',
+              'n(cos θ + i sin θ)',
+              'cos(θⁿ) + i sin(θⁿ)',
+              'cos(nθ) − i sin(nθ)',
+            ],
+            correct: [0],
+          },
+          {
+            prompt: 'النقط A و B و C ذات اللحقوق zA و zB و zC في استقامية إذا كان العدد التالي حقيقيًا:',
+            options: [
+              '(zB − zA) / (zC − zA)',
+              '(zB − zA)(zC − zA)',
+              'zA + zB + zC',
+              'zB − zC',
+            ],
+            correct: [0],
+          },
+        ]),
+      ]),
       chapter('تحضير الامتحان الوطني', [
         video('exam-strategy'),
         doc('bac-exercises'),
@@ -542,11 +582,13 @@ const progress: DemoState['progress'] = {
 /* ------------------------------------------------------------------ */
 
 export const DEMO_STATE: DemoState = {
-  /* v6: professors can now carry a photo — the course header brands itself
+  /* v7: the maths course gained an «الأعداد العقدية» chapter (eleven videos
+     with curated poster art plus a quiz), so a v6 payload is stale.
+     v6: professors can now carry a photo — the course header brands itself
      with the prof's own imagery — so a v5 payload is stale.
      v5: documents now hold the real AlloSchool PDFs (new titles, page counts
      and page images), so any v4 payload sitting in AsyncStorage is stale. */
-  version: 6,
+  version: 7,
   /* No auto sign-in: a fresh install opens on the welcome screen and
      the student authenticates via Login / Signup (or guest account picker). */
   activeStudentId: '',

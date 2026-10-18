@@ -8,6 +8,9 @@
  *   4. probes the real duration / size and writes
  *      packages/shared/src/media-manifest.json
  *
+ * A lesson poster is the first frame of its video, unless a curated 1280×720
+ * image sits in `media/source/posters/<key>.jpg` — that one always wins.
+ *
  * Usage: npm run media
  */
 
@@ -29,6 +32,7 @@ const POSTER_DIR = path.join(GEN, 'posters');
 const DOC_DIR = path.join(GEN, 'docs');
 const DOC_PAGES = path.join(GEN, 'doc-pages');
 const BUILD = path.join(GEN, 'video-build');
+const SOURCE_POSTERS = path.join(ROOT, 'media', 'source', 'posters');
 const MANIFEST = path.join(ROOT, 'packages', 'shared', 'src', 'media-manifest.json');
 
 const FONT_DIR = path.join(
@@ -40,7 +44,10 @@ const FONT_DIR = path.join(
 );
 
 /** Seconds per slide, by video index — keeps lesson lengths varied. */
-const SLIDE_SEC = [34, 38, 33, 42, 44, 35, 39, 32, 37, 34, 48];
+const SLIDE_SEC = [
+  34, 38, 33, 42, 44, 35, 39, 32, 37, 34, 48, 36, 41, 34, 38, 36, 33, 39, 35,
+  42, 34, 37,
+];
 const XFADE = 0.8;
 const W = 1280;
 const H = 720;
@@ -86,6 +93,15 @@ function probeDuration(file) {
 async function probeSize(file) {
   const stat = await fs.stat(file);
   return Number((stat.size / (1024 * 1024)).toFixed(1));
+}
+
+async function exists(file) {
+  try {
+    await fs.access(file);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function prepareDirs(resume) {
@@ -188,6 +204,23 @@ function buildPoster(key) {
   return out;
 }
 
+/**
+ * Poster for a lesson video. A curated image in `media/source/posters/<key>.jpg`
+ * always wins — the same "a real source beats the demo template" rule the
+ * AlloSchool PDFs follow — and only otherwise is the first frame of the demo
+ * video grabbed (once; a resumed run keeps what is already there).
+ */
+async function resolvePoster(key, rebuilt) {
+  const out = path.join(POSTER_DIR, `${key}.jpg`);
+  if (await exists(path.join(SOURCE_POSTERS, `${key}.jpg`))) {
+    await fs.copyFile(path.join(SOURCE_POSTERS, `${key}.jpg`), out);
+    return 'curated';
+  }
+  if (!rebuilt && (await exists(out))) return 'cached';
+  buildPoster(key);
+  return 'frame';
+}
+
 /* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
@@ -217,7 +250,8 @@ async function main() {
 
     const videoFile = path.join(VIDEO_DIR, `${video.key}.mp4`);
     const existing = resume ? await fs.stat(videoFile).catch(() => null) : null;
-    if (existing && existing.size > 0) {
+    const cached = Boolean(existing && existing.size > 0);
+    if (cached) {
       log(`  cached ${video.key}`);
     } else {
       for (let i = 0; i < video.slides.length; i++) {
@@ -253,9 +287,11 @@ async function main() {
       log(`  encoding ${video.key} (${video.slides.length} slides, ${Math.round(total)}s)`);
       buildWithRetry(() => {
         buildVideo(video.key, video.slides.length, slideSec, total);
-        buildPoster(video.key);
       }, video.key);
     }
+
+    const poster = await resolvePoster(video.key, !cached);
+    if (poster === 'curated') log(`  poster ${video.key} (curated)`);
 
     const file = `${video.key}.mp4`;
     videoManifest[video.key] = {

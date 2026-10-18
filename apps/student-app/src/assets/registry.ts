@@ -3,6 +3,17 @@
 
 /** Video file name → bundled asset id. */
 export const videoAssets: Record<string, number> = {
+  'complex-affix.mp4': require('./videos/complex-affix.mp4'),
+  'complex-angles.mp4': require('./videos/complex-angles.mp4'),
+  'complex-argument.mp4': require('./videos/complex-argument.mp4'),
+  'complex-collinear.mp4': require('./videos/complex-collinear.mp4'),
+  'complex-equations.mp4': require('./videos/complex-equations.mp4'),
+  'complex-locus.mp4': require('./videos/complex-locus.mp4'),
+  'complex-moivre.mp4': require('./videos/complex-moivre.mp4'),
+  'complex-quadrilateral.mp4': require('./videos/complex-quadrilateral.mp4'),
+  'complex-triangle.mp4': require('./videos/complex-triangle.mp4'),
+  'complex-trig-form.mp4': require('./videos/complex-trig-form.mp4'),
+  'complex-trig.mp4': require('./videos/complex-trig.mp4'),
   'curve-study.mp4': require('./videos/curve-study.mp4'),
   'derivative-concept.mp4': require('./videos/derivative-concept.mp4'),
   'derivative-rules.mp4': require('./videos/derivative-rules.mp4'),
@@ -18,6 +29,17 @@ export const videoAssets: Record<string, number> = {
 
 /** Video poster (jpg) file name → bundled asset id. */
 export const posterAssets: Record<string, number> = {
+  'complex-affix.jpg': require('./posters/complex-affix.jpg'),
+  'complex-angles.jpg': require('./posters/complex-angles.jpg'),
+  'complex-argument.jpg': require('./posters/complex-argument.jpg'),
+  'complex-collinear.jpg': require('./posters/complex-collinear.jpg'),
+  'complex-equations.jpg': require('./posters/complex-equations.jpg'),
+  'complex-locus.jpg': require('./posters/complex-locus.jpg'),
+  'complex-moivre.jpg': require('./posters/complex-moivre.jpg'),
+  'complex-quadrilateral.jpg': require('./posters/complex-quadrilateral.jpg'),
+  'complex-triangle.jpg': require('./posters/complex-triangle.jpg'),
+  'complex-trig-form.jpg': require('./posters/complex-trig-form.jpg'),
+  'complex-trig.jpg': require('./posters/complex-trig.jpg'),
   'curve-study.jpg': require('./posters/curve-study.jpg'),
   'derivative-concept.jpg': require('./posters/derivative-concept.jpg'),
   'derivative-rules.jpg': require('./posters/derivative-rules.jpg'),
