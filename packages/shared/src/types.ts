@@ -79,6 +79,8 @@ export interface TeacherProfile {
   since: string;
   /** Two-letter monogram used when no photo is available. */
   monogram: string;
+  /** Key of this teacher's bundled photo set — see `CourseTeacher.photo`. */
+  photo?: string;
 }
 
 /**
@@ -155,6 +157,13 @@ export interface CourseTeacher {
   subject: string;
   /** Two-letter monogram used when no photo is available. */
   monogram: string;
+  /**
+   * Key of this teacher's bundled photo set (see the app's `teacherPhotos`
+   * map). It drives the branding of their courses — the course header and the
+   * instructor row use it, so a course reads as its professor's own space.
+   * A missing or unknown key falls back to the course cover.
+   */
+  photo?: string;
 }
 
 export interface Course {

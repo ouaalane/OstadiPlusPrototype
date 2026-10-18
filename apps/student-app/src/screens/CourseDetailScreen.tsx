@@ -38,6 +38,7 @@ import {
 } from '../components/ui';
 import { LESSON_ICONS, lessonMetaText, lessonRoute, lessonTint } from '../lib/lesson';
 import { coverAssets } from '../assets/covers';
+import { teacherPhotosFor } from '../assets/teacher-photos';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
@@ -132,7 +133,12 @@ export default function CourseDetailScreen() {
     navigation.navigate(lessonRoute(lesson.kind), { lessonId: lesson.id });
   };
 
-  const heroSource = coverAssets[course.cover];
+  /**
+   * Art for the header: the professor's own photo when they have one, so the
+   * course reads as their space, otherwise the course's cover palette entry.
+   */
+  const photos = teacherPhotosFor(instructor.photo);
+  const heroSource = photos?.hero ?? coverAssets[course.cover];
 
   return (
     <View style={styles.safe}>
@@ -140,20 +146,20 @@ export default function CourseDetailScreen() {
         {/* ---- hero ---- */}
         <View style={styles.hero}>
           {heroSource ? (
-            <Image source={heroSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            <Image source={heroSource} style={styles.heroArt} resizeMode="cover" />
           ) : (
             <LinearGradient
               colors={['#3D82FF', '#0546C8']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
+              style={styles.heroArt}
             />
           )}
           <LinearGradient
             colors={['rgba(11,18,32,0.45)', 'rgba(11,18,32,0.70)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
-            style={StyleSheet.absoluteFill}
+            style={styles.heroArt}
           />
 
           <SafeAreaView edges={['top']}>
@@ -228,7 +234,13 @@ export default function CourseDetailScreen() {
         <View style={styles.body}>
           {/* ---- instructor ---- */}
           <View style={[l.row, styles.instructor]}>
-            <Avatar monogram={instructor.monogram} size={44} tone="brand" square />
+            <Avatar
+              monogram={instructor.monogram}
+              size={44}
+              tone="brand"
+              square
+              photo={photos?.avatar}
+            />
             <View style={{ flex: 1, gap: 1 }}>
               <AppText size={14.5} weight="semibold" tone="ink" numberOfLines={1}>
                 {instructor.name}
@@ -511,7 +523,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingBottom: spacing.xxl * 2 },
   missingWrap: { padding: spacing.lg },
-  hero: { backgroundColor: '#0B1B2A' },
+  /* `overflow: hidden` keeps the header art inside the header — without it the
+     cover bleeds down the body, behind the cards. */
+  hero: { backgroundColor: '#0B1B2A', overflow: 'hidden' },
+  /*
+   * Absolute art layer that fills the header. Explicit percentages rather than
+   * `StyleSheet.absoluteFill`: an `Image` given only insets resolves to its own
+   * intrinsic pixel size instead, painting a magnified slice of the artwork far
+   * outside the header.
+   */
+  heroArt: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   heroBar: {
     flexDirection: 'row',
     alignItems: 'center',

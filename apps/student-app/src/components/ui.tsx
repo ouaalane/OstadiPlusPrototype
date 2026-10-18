@@ -767,23 +767,42 @@ const AVATAR_GRADIENTS: Record<string, [string, string]> = {
   rose: ['#FF6B8A', '#D6304F'],
 };
 
-/** Circular (or rounded-square) monogram avatar on a soft gradient. */
+/**
+ * Circular (or rounded-square) avatar: the teacher's real photo when one is
+ * bundled, otherwise a monogram on a soft gradient.
+ */
 export function Avatar({
   monogram,
   size = 48,
   seed = 0,
   square = false,
   tone,
+  photo,
 }: {
   monogram: string;
   size?: number;
   seed?: number;
   square?: boolean;
   tone?: keyof typeof AVATAR_GRADIENTS;
+  /** Bundled photo (see `assets/teacher-photos`); falls back to the monogram. */
+  photo?: number;
 }) {
   const keys = Object.keys(AVATAR_GRADIENTS);
   const key = tone ?? keys[Math.abs(seed) % keys.length];
   const pair = AVATAR_GRADIENTS[key] ?? AVATAR_GRADIENTS.brand;
+  const radius = square ? Math.round(size * 0.28) : size / 2;
+
+  if (photo) {
+    return (
+      <Image
+        source={photo}
+        style={{ width: size, height: size, borderRadius: radius, backgroundColor: colors.surfaceAlt }}
+        resizeMode="cover"
+        accessibilityIgnoresInvertColors
+      />
+    );
+  }
+
   return (
     <LinearGradient
       colors={[pair[0], pair[1]]}
@@ -792,7 +811,7 @@ export function Avatar({
       style={{
         width: size,
         height: size,
-        borderRadius: square ? Math.round(size * 0.28) : size / 2,
+        borderRadius: radius,
         alignItems: 'center',
         justifyContent: 'center',
       }}

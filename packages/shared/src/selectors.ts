@@ -70,6 +70,7 @@ export function courseTeacher(state: DemoState, course: Course): CourseTeacher {
     name: state.teacher.name,
     subject: state.teacher.subject,
     monogram: state.teacher.monogram,
+    photo: state.teacher.photo,
   };
 }
 

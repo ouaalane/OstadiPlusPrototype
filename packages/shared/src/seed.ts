@@ -141,6 +141,7 @@ const teacher: TeacherProfile = {
   bio: 'أستاذ الرياضيات، خبرة 12 سنة في تحضير تلاميذ شعب Sciences للامتحان الوطني.',
   since: '2024',
   monogram: 'JA',
+  photo: 'jawad-alamy',
 };
 
 /* ------------------------------------------------------------------ */
@@ -164,7 +165,7 @@ const courseMath: Course = {
   title: 'الرياضيات · 2ème Bac',
   subject: 'الرياضيات',
   level: '2ème Bac — SVT & PC',
-  teacher: { name: 'أ. جواد العلمي', subject: 'الرياضيات', monogram: 'JA' },
+  teacher: { name: 'أ. جواد العلمي', subject: 'الرياضيات', monogram: 'JA', photo: 'jawad-alamy' },
   summary:
     'برنامج السنة كاملاً مقسّماً على الدورتين: النهايات والاشتقاق ودراسة الدوال في الدورة الأولى، والمتجهات والدوال اللوغاريتمية والأسية في الدورة الثانية.',
   cover: 'blue',
@@ -541,9 +542,11 @@ const progress: DemoState['progress'] = {
 /* ------------------------------------------------------------------ */
 
 export const DEMO_STATE: DemoState = {
-  /* v5: documents now hold the real AlloSchool PDFs (new titles, page counts
+  /* v6: professors can now carry a photo — the course header brands itself
+     with the prof's own imagery — so a v5 payload is stale.
+     v5: documents now hold the real AlloSchool PDFs (new titles, page counts
      and page images), so any v4 payload sitting in AsyncStorage is stale. */
-  version: 5,
+  version: 6,
   /* No auto sign-in: a fresh install opens on the welcome screen and
      the student authenticates via Login / Signup (or guest account picker). */
   activeStudentId: '',
