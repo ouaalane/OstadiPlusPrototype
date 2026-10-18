@@ -20,7 +20,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -47,22 +47,30 @@ interface LevelOption {
   id: string;
   title: Bi;
   sub: Bi;
-  icon: keyof typeof Ionicons.glyphMap;
+  /** MaterialCommunityIcons glyph — its education set reads as the level itself. */
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }
 
-/** Every educational level the platform supports (Stitch level-select). */
+/**
+ * Every educational level the platform supports (Stitch level-select).
+ *
+ * Icons spell out the cycle rather than the generic book/school the reference
+ * uses: counting beads for primary, an open book for collège, the school for
+ * the BAC years, a certificate for free candidates and a student cap for
+ * university and vocational training.
+ */
 const LEVELS: LevelOption[] = [
   {
     id: 'primary',
     title: { ar: 'ابتدائي', fr: 'Primaire' },
     sub: { ar: 'Primaire · من الأول إلى السادس ابتدائي', fr: 'Primaire · de la 1re à la 6e année' },
-    icon: 'happy-outline',
+    icon: 'abacus',
   },
   {
     id: 'college',
     title: { ar: 'ثانوي إعدادي', fr: 'Collège' },
     sub: { ar: 'Collège · السنة 1، 2 و 3 إعدادي', fr: 'Collège · 1re, 2e et 3e année' },
-    icon: 'book-outline',
+    icon: 'book-education-outline',
   },
   {
     id: 'bac',
@@ -74,13 +82,13 @@ const LEVELS: LevelOption[] = [
     id: 'free',
     title: { ar: 'باك حر (Candidats Libres)', fr: 'Bac libre (Candidats Libres)' },
     sub: { ar: 'مترشحون أحرار · جميع الشعب والمسالك', fr: 'Candidats libres · toutes les filières' },
-    icon: 'person-add-outline',
+    icon: 'certificate-outline',
   },
   {
     id: 'uni',
     title: { ar: 'جامعي وتكوين مهني', fr: 'Universitaire et formation professionnelle' },
     sub: { ar: 'EST, FST, BTS, CPGE, Facultés & OFPPT', fr: 'EST, FST, BTS, CPGE, Facultés & OFPPT' },
-    icon: 'business-outline',
+    icon: 'account-school-outline',
   },
 ];
 
@@ -465,9 +473,9 @@ export default function SignupScreen({
                       accessibilityLabel={`${rtl ? lv.title.ar : lv.title.fr} — ${rtl ? lv.sub.ar : lv.sub.fr}`}
                     >
                       <View style={[styles.levelIcon, selected && { backgroundColor: colors.brand }]} importantForAccessibility="no">
-                        <Ionicons
+                        <MaterialCommunityIcons
                           name={lv.icon}
-                          size={22}
+                          size={24}
                           color={selected ? colors.white : colors.brand}
                         />
                       </View>
