@@ -27,7 +27,10 @@ import {
   isWatermarkCode,
   localFallbackCode,
   nextWatermarkSlotIndex,
+  nextWatermarkSlotIndexInOtherRow,
   randomInt,
+  watermarkSlotColumn,
+  watermarkSlotRow,
   randomMoveDelay,
   watermarkSlots,
 } from './apps/student-app/src/lib/watermark.ts';
@@ -76,7 +79,7 @@ const CONTAINERS = [
 await test('slots keep the overlay fully inside every container size', () => {
   for (const c of CONTAINERS) {
     const slots = watermarkSlots(c, PILL);
-    assert.equal(slots.length, 8, `${c.label}: expected 8 slots`);
+    assert.equal(slots.length, 6, `${c.label}: expected 6 slots`);
     for (const s of slots) {
       assert.ok(s.x >= 0, `${c.label}: x>=0 (${s.x})`);
       assert.ok(s.y >= 0, `${c.label}: y>=0 (${s.y})`);
@@ -89,19 +92,19 @@ await test('slots keep the overlay fully inside every container size', () => {
 await test('slots avoid the top and bottom control bars on the inline player', () => {
   const c = { width: 390, height: 219 };
   const slots = watermarkSlots(c, PILL);
-  const topRow = slots.slice(0, 3);
-  const bottomRow = slots.slice(5);
+  const topRow = slots.slice(0, 2);
+  const bottomRow = slots.slice(4);
   for (const s of topRow) assert.ok(s.y >= 30, `top row below controls (y=${s.y})`);
   for (const s of bottomRow) {
     assert.ok(s.y + PILL.height <= c.height - 25, `bottom row above scrubber (y=${s.y})`);
   }
 });
 
-await test('slots use corners, sides and top/bottom centre — never dead centre', () => {
+await test('slots use corners and sides — never dead centre', () => {
   const slots = watermarkSlots({ width: 844, height: 390 }, PILL);
   const xs = new Set(slots.map((s) => s.x));
   const ys = new Set(slots.map((s) => s.y));
-  assert.ok(xs.size >= 3, 'at least 3 distinct columns');
+  assert.ok(xs.size >= 2, 'at least 2 distinct columns (both edges)');
   assert.ok(ys.size >= 3, 'at least 3 distinct rows');
   const centreX = (844 - PILL.width) / 2;
   const centreY = (390 - PILL.height) / 2;
@@ -109,6 +112,41 @@ await test('slots use corners, sides and top/bottom centre — never dead centre
     (s) => Math.abs(s.x - centreX) < 40 && Math.abs(s.y - centreY) < 40,
   );
   assert.equal(deadCentre, undefined, 'no slot in the dead centre (play button)');
+});
+
+await test('secondary copy lands on a different row and opposite edge', () => {
+  const count = 6;
+  for (let primary = 0; primary < count; primary++) {
+    const seen = new Set();
+    for (let i = 0; i < 500; i++) {
+      const secondary = nextWatermarkSlotIndexInOtherRow(count, primary);
+      assert.ok(secondary >= 0 && secondary < count, `index in range (${secondary})`);
+      assert.notEqual(secondary, primary, 'not the primary slot');
+      assert.notEqual(
+        watermarkSlotRow(secondary),
+        watermarkSlotRow(primary),
+        'different row',
+      );
+      assert.notEqual(
+        watermarkSlotColumn(secondary),
+        watermarkSlotColumn(primary),
+        'opposite edge',
+      );
+      seen.add(secondary);
+    }
+    // Every opposite-edge slot on another row must be reachable.
+    const expected = new Set(
+      [0, 1, 2, 3, 4, 5].filter(
+        (i) =>
+          watermarkSlotRow(i) !== watermarkSlotRow(primary) &&
+          watermarkSlotColumn(i) !== watermarkSlotColumn(primary),
+      ),
+    );
+    assert.equal(seen.size, expected.size, `primary ${primary}: every diagonal slot reachable`);
+    for (const value of expected) {
+      assert.ok(seen.has(value), `primary ${primary} can reach ${value}`);
+    }
+  }
 });
 
 await test('randomised move delay stays inside the 8-15 s range', () => {

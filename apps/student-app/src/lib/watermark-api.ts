@@ -30,6 +30,9 @@ export const WATERMARK_API_URL = (
 export const WATERMARK_ALLOW_OFFLINE_FALLBACK = true;
 
 const REQUEST_TIMEOUT_MS = 5_000;
+/** One immediate retry absorbs a dropped request without an unregistered code. */
+const REQUEST_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 800;
 
 export interface PlaybackGrant {
   /** The 12-char code rendered by the overlay. */
@@ -59,45 +62,54 @@ export async function requestPlaybackGrant(input: {
   courseId: string;
   videoId: string;
 }): Promise<PlaybackGrant> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetch(`${WATERMARK_API_URL}/api/playback/start`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...input, deviceInfo: deviceInfoString() }),
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`watermark API responded ${response.status}`);
+  let lastError: unknown;
 
-    const payload = (await response.json()) as {
-      code?: unknown;
-      sessionId?: unknown;
-      createdAt?: unknown;
-    };
-    if (!isWatermarkCode(payload.code)) throw new Error('watermark API returned a malformed code');
+  for (let attempt = 1; attempt <= REQUEST_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${WATERMARK_API_URL}/api/playback/start`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...input, deviceInfo: deviceInfoString() }),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`watermark API responded ${response.status}`);
 
-    const grant: PlaybackGrant = {
-      code: payload.code,
-      sessionId: typeof payload.sessionId === 'string' ? payload.sessionId : '',
-      createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : '',
-      source: 'server',
-    };
-    console.log(`[watermark] server issued code ${grant.code} (session ${grant.sessionId})`);
-    return grant;
-  } catch (error) {
-    if (!WATERMARK_ALLOW_OFFLINE_FALLBACK) throw error;
-    const offline: PlaybackGrant = {
-      code: localFallbackCode(),
-      sessionId: '',
-      createdAt: new Date().toISOString(),
-      source: 'offline',
-    };
-    console.log(
-      `[watermark] API unreachable (${String(error)}) — rendering UNREGISTERED offline code ${offline.code}`,
-    );
-    return offline;
-  } finally {
-    clearTimeout(timer);
+      const payload = (await response.json()) as {
+        code?: unknown;
+        sessionId?: unknown;
+        createdAt?: unknown;
+      };
+      if (!isWatermarkCode(payload.code)) throw new Error('watermark API returned a malformed code');
+
+      const grant: PlaybackGrant = {
+        code: payload.code,
+        sessionId: typeof payload.sessionId === 'string' ? payload.sessionId : '',
+        createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : '',
+        source: 'server',
+      };
+      console.log(`[watermark] server issued code ${grant.code} (session ${grant.sessionId})`);
+      return grant;
+    } catch (error) {
+      lastError = error;
+      if (attempt < REQUEST_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
+  if (!WATERMARK_ALLOW_OFFLINE_FALLBACK) throw lastError;
+  const offline: PlaybackGrant = {
+    code: localFallbackCode(),
+    sessionId: '',
+    createdAt: new Date().toISOString(),
+    source: 'offline',
+  };
+  console.log(
+    `[watermark] API unreachable (${String(lastError)}) — rendering UNREGISTERED offline code ${offline.code}`,
+  );
+  return offline;
 }

@@ -86,11 +86,11 @@ export const WATERMARK_SECONDARY_OPACITY = 0.15;
  * container height so the overlay stays usable in short landscape or
  * fullscreen surfaces.
  */
-export const WATERMARK_SAFE_TOP = 64;
-export const WATERMARK_SAFE_BOTTOM = 56;
+export const WATERMARK_SAFE_TOP = 100;
+export const WATERMARK_SAFE_BOTTOM = 72;
 
 /** Horizontal margin from the left/right edges of the video area. */
-export const WATERMARK_EDGE = 10;
+export const WATERMARK_EDGE = 8;
 
 export interface WatermarkSize {
   width: number;
@@ -106,14 +106,14 @@ export interface WatermarkSlot {
 
 /**
  * Anchor points as fractions of the free area (container minus copy minus
- * safe insets). Corners, left/right sides and top/bottom centre are used —
- * the dead centre is deliberately avoided so the overlay never sits on the
- * big play/pause button or the middle of the board.
+ * safe insets). Only corners and the middle sides are used: an inline 16:9
+ * player is short, and top/bottom-centre anchors collide with the title row
+ * and the large centre play button. The dead centre is never used.
  */
 const SLOT_ANCHORS: readonly (readonly [number, number])[] = [
-  [0, 0], [0.5, 0], [1, 0], // top row (below the control bar)
+  [0, 0], [1, 0], // top row (below the control bar)
   [0, 0.5], [1, 0.5], // middle sides
-  [0, 1], [0.5, 1], [1, 1], // bottom row (above the scrubber)
+  [0, 1], [1, 1], // bottom row (above the scrubber)
 ];
 
 /** Uniform integer in [min, max). `max` is clamped above `min`. */
@@ -142,8 +142,11 @@ export function watermarkSlots(
   const height = Math.max(0, container.height);
 
   // Scale the insets down on short surfaces so a usable area always remains.
-  const topInset = Math.max(4, Math.min(WATERMARK_SAFE_TOP, height * 0.18));
-  const bottomInset = Math.max(4, Math.min(WATERMARK_SAFE_BOTTOM, height * 0.16));
+  // The caps are deliberately generous here: the player chrome (status bar +
+  // top controls, and the scrubber strip) occupies a large share of an inline
+  // 16:9 player, and a watermark must never sit on top of those controls.
+  const topInset = Math.max(4, Math.min(WATERMARK_SAFE_TOP, height * 0.6));
+  const bottomInset = Math.max(4, Math.min(WATERMARK_SAFE_BOTTOM, height * 0.22));
   const availX = Math.max(0, width - copy.width - WATERMARK_EDGE * 2);
   const availY = Math.max(0, height - copy.height - topInset - bottomInset);
 
@@ -166,4 +169,41 @@ export function nextWatermarkSlotIndex(count: number, previousIndex: number): nu
   let next = randomInt(0, count - 1);
   if (next >= previousIndex) next += 1; // shift past the previous slot
   return next;
+}
+
+/** Row of a slot index: 0 = top, 1 = middle, 2 = bottom. */
+export function watermarkSlotRow(index: number): number {
+  if (index <= 1) return 0;
+  if (index <= 3) return 1;
+  return 2;
+}
+
+/** Column of a slot index: 0 = left edge, 1 = right edge. */
+export function watermarkSlotColumn(index: number): number {
+  return index % 2;
+}
+
+/**
+ * Picks a secondary-copy slot on a different row than the primary copy.
+ * Two codes on the same row look like a header/subtitle rather than a
+ * watermark; keeping them on separate rows also prevents them from being
+ * read as one long code. The opposite column is preferred so the two copies
+ * sit diagonally instead of stacking on one edge. Falls back to any
+ * different slot when the slot set is too small.
+ */
+export function nextWatermarkSlotIndexInOtherRow(
+  count: number,
+  primaryIndex: number,
+): number {
+  if (count <= 0) return -1;
+  const differentRow: number[] = [];
+  for (let index = 0; index < count; index += 1) {
+    if (watermarkSlotRow(index) !== watermarkSlotRow(primaryIndex)) differentRow.push(index);
+  }
+  if (differentRow.length === 0) return nextWatermarkSlotIndex(count, primaryIndex);
+  const oppositeColumn = differentRow.filter(
+    (index) => watermarkSlotColumn(index) !== watermarkSlotColumn(primaryIndex),
+  );
+  const pool = oppositeColumn.length > 0 ? oppositeColumn : differentRow;
+  return pool[randomInt(0, pool.length)];
 }

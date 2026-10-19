@@ -1,30 +1,48 @@
 /**
- * Video lesson — the lesson player.
+ * Video lesson — the lesson page.
  *
- * Custom overlay (back, mute, fullscreen, big play/pause, time labels and a
- * seekable scrubber), the meta block, the Save / Download action chips, the
- * Overview · Chapters · Resources tabs, and the sticky Prev / «Complete &
- * next» bar.
+ * The player itself lives in `LessonPlayer` (isolated playback state, one
+ * mounted video surface across inline/fullscreen, poster/loading/error
+ * states, draggable RTL-aware scrubber, ±10 s, previous/next lesson, pause on
+ * blur/background). This screen owns the enrollment gate, the watermark
+ * grant, screen-capture protection, the meta block, the Save / Download
+ * chips, the Overview · Chapters · Resources tabs, and the sticky Prev /
+ * «Complete & next» bar.
  *
  * Playback is gated by the student's enrollment (published course + active,
  * non-expired subscription). Every playback start asks the watermark API
  * for a fresh traceability code (server-side generation only, see apps/api)
- * which `VideoWatermark` renders as a moving overlay; the platform's
- * screen-capture protection is engaged while this screen is open. Fullscreen
- * is rendered in-app so the watermark and the custom controls remain visible
- * and functional there too.
+ * which `LessonPlayer` renders as a moving overlay; the platform's
+ * screen-capture protection is engaged while this screen is open on physical
+ * devices. Android emulators cannot composite FLAG_SECURE video into their
+ * host display, so protection is skipped there to keep the video visible.
+ * Fullscreen
+ * is rendered in-app (the player wrapper expands; the video view is never
+ * remounted) so the watermark and custom controls remain visible there too.
+ *
+ * The player is pinned at the top of the screen and the lesson body scrolls
+ * beneath it — standard behaviour for a course player and it keeps the video
+ * surface layout stable.
  *
  * Bilingual: strings are authored inline per language, layout flips RTL↔LTR.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  BackHandler,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { addScreenshotListener, usePreventScreenCapture } from 'expo-screen-capture';
+import * as Device from 'expo-device';
 
 import {
   allLessons,
@@ -44,14 +62,13 @@ import {
   Badge,
   Card,
   Eyebrow,
-  IconButton,
   NoticeCard,
   Pill,
   PrimaryButton,
   ProgressBar,
 } from '../components/ui';
 import { lessonMetaText, lessonRoute } from '../lib/lesson';
-import VideoWatermark from '../components/VideoWatermark';
+import LessonPlayer from '../components/LessonPlayer';
 import { requestPlaybackGrant, type PlaybackGrant } from '../lib/watermark-api';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
@@ -95,6 +112,30 @@ const MONTHS_AR = [
   'دجنبر',
 ];
 
+/**
+ * Screen-capture blocking (FLAG_SECURE on Android / recording protection on
+ * iOS). Physical devices only: Android emulators cannot composite a secure
+ * video surface into the host display, so FLAG_SECURE makes the lesson video
+ * fully black there while the timeline keeps advancing.
+ *
+ * `Device.isDevice` is not enough: Play Store emulator images report `true`
+ * (their fingerprint is `google/sdk_gphone64...`, not `generic`), so the
+ * fingerprint/model are checked as well.
+ */
+const CAPTURE_PROTECTION =
+  Device.isDevice &&
+  !(
+    Platform.OS === 'android' &&
+    /sdk_gphone|generic|goldfish|ranchu|vbox|emulator/i.test(
+      `${Device.osBuildFingerprint ?? ''} ${Device.modelName ?? ''}`,
+    )
+  );
+
+function ScreenCaptureGuard() {
+  usePreventScreenCapture('lesson-player');
+  return null;
+}
+
 export default function VideoScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Video'>>();
@@ -110,7 +151,7 @@ export default function VideoScreen() {
     deleteDownload,
     downloadStatusFor,
   } = useStore();
-  const { lang, t, dir } = useI18n();
+  const { lang, dir } = useI18n();
   const l = useLayout(lang);
   const rtl = dir === 'rtl';
   const [tab, setTab] = useState<TabKey>('about');
@@ -138,9 +179,6 @@ export default function VideoScreen() {
     return statusOf(found.course.id) === 'active';
   }, [found, me, statusOf]);
 
-  const saved = progressOf(params.lessonId);
-  const resumeAt = useRef(saved?.positionSec ?? 0);
-
   const media = found
     ? resolveLessonMedia(
         found.lesson.file,
@@ -149,11 +187,6 @@ export default function VideoScreen() {
       )
     : { kind: 'missing' as const };
 
-  const [playing, setPlaying] = useState(true);
-  const [position, setPosition] = useState(resumeAt.current);
-  const [duration, setDuration] = useState(found?.lesson.durationSec ?? 0);
-  const [muted, setMuted] = useState(false);
-  const [barWidth, setBarWidth] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
 
   /**
@@ -173,13 +206,6 @@ export default function VideoScreen() {
     return () => sub.remove();
   }, [fullscreen]);
 
-  /**
-   * Screen-capture protection + detection. While this screen is mounted the
-   * platform blocks screen capture (FLAG_SECURE on Android; recording
-   * protection + a screenshot callback on iOS — no extra permissions on
-   * Android 14+). A detected capture re-randomises the watermark position.
-   */
-  usePreventScreenCapture('lesson-player');
   const [captureNonce, setCaptureNonce] = useState(0);
   useEffect(() => {
     const subscription = addScreenshotListener(() => {
@@ -217,44 +243,6 @@ export default function VideoScreen() {
       cancelled = true;
     };
   }, [found, courseAuthorized, me]);
-
-  const player = useVideoPlayer(
-    // Never hand the player a source the current session is not entitled to.
-    media.kind === 'video' && courseAuthorized ? media.source : null,
-    (p) => {
-      p.timeUpdateEventInterval = 1;
-      if (resumeAt.current > 3) p.currentTime = resumeAt.current;
-      p.play();
-    },
-  );
-
-  /** Persist progress + mirror playback state into the custom overlay. */
-  useEffect(() => {
-    const timeSub = player.addListener('timeUpdate', (payload) => {
-      const current = payload?.currentTime ?? 0;
-      setPosition(current);
-      if (current > 1) saveProgress(params.lessonId, Math.floor(current));
-    });
-    const endSub = player.addListener('playToEnd', () => {
-      markCompleted(params.lessonId);
-    });
-    const playSub = player.addListener('playingChange', (payload) => {
-      setPlaying(payload.isPlaying);
-    });
-    const loadSub = player.addListener('sourceLoad', (payload) => {
-      if (payload.duration > 0) setDuration(payload.duration);
-    });
-    const muteSub = player.addListener('mutedChange', (payload) => {
-      setMuted(payload.muted);
-    });
-    return () => {
-      timeSub.remove();
-      endSub.remove();
-      playSub.remove();
-      loadSub.remove();
-      muteSub.remove();
-    };
-  }, [player, params.lessonId, saveProgress, markCompleted]);
 
   if (!found || media.kind !== 'video' || !courseAuthorized) {
     const unauthorized = !!found && media.kind === 'video' && !courseAuthorized;
@@ -302,16 +290,9 @@ export default function VideoScreen() {
     navigation.replace(lessonRoute(target.kind), { lessonId: target.id });
   };
 
-  const togglePlay = () => {
-    if (playing) player.pause();
-    else player.play();
-  };
-
-  const seekTo = (ratio: number) => {
-    if (duration <= 0) return;
-    const clamped = Math.max(0, Math.min(1, ratio));
-    player.currentTime = clamped * duration;
-    setPosition(clamped * duration);
+  const onPlayerBack = () => {
+    if (fullscreen) setFullscreen(false);
+    else navigation.goBack();
   };
 
   const onDownloadChip = () => {
@@ -344,157 +325,53 @@ export default function VideoScreen() {
     else navigation.goBack();
   };
 
-  /**
-   * The video surface + custom overlay + ownership watermark, as one block.
-   * Rendered either inline in the scroll view or lifted into the in-app
-   * fullscreen overlay — a single definition keeps both presentations
-   * identical (same player, same controls, same watermark).
-   */
-  const videoBlock = (
-    <View style={fullscreen ? styles.videoWrapFullscreen : styles.videoWrap}>
-          <VideoView
-            player={player}
-            style={StyleSheet.absoluteFill}
-            contentFit="contain"
-            nativeControls={false}
-            fullscreenOptions={{ enable: false }}
-          />
-
-          {/* tap surface toggles playback */}
-          <Pressable
-            onPress={togglePlay}
-            style={StyleSheet.absoluteFill}
-            accessibilityRole="button"
-            accessibilityLabel={
-              playing
-                ? rtl
-                  ? 'إيقاف مؤقت'
-                  : 'Pause'
-                : rtl
-                  ? 'تشغيل'
-                  : 'Lecture'
-            }
-          />
-
-          <SafeAreaView edges={['top']} style={styles.overlay} pointerEvents="box-none">
-            <View style={[styles.overlayTop, l.row]} pointerEvents="box-none">
-              <IconButton
-                icon={rtl ? 'chevron-forward' : 'chevron-back'}
-                variant="onPhoto"
-                size={38}
-                label={t('back')}
-                onPress={() => {
-                  if (fullscreen) setFullscreen(false);
-                  else navigation.goBack();
-                }}
-              />
-              <View style={{ flex: 1 }} />
-              {isDownloaded ? (
-                <Badge
-                  label={rtl ? 'محفوظ للاستعمال دون اتصال' : 'Disponible hors connexion'}
-                  tone="dark"
-                />
-              ) : null}
-              <IconButton
-                icon={muted ? 'volume-mute' : 'volume-high'}
-                variant="onPhoto"
-                size={38}
-                label={muted ? (rtl ? 'إلغاء الكتم' : 'Activer le son') : rtl ? 'كتم الصوت' : 'Couper le son'}
-                onPress={() => {
-                  player.muted = !muted;
-                }}
-              />
-              {fullscreen ? (
-                <IconButton
-                  icon="contract"
-                  variant="onPhoto"
-                  size={38}
-                  label={rtl ? 'إنهاء ملء الشاشة' : 'Quitter le plein écran'}
-                  onPress={() => setFullscreen(false)}
-                />
-              ) : (
-                <IconButton
-                  icon="expand"
-                  variant="onPhoto"
-                  size={38}
-                  label={rtl ? 'ملء الشاشة' : 'Plein écran'}
-                  onPress={() => setFullscreen(true)}
-                />
-              )}
-            </View>
-
-            <View style={{ flex: 1 }} pointerEvents="none" />
-
-            <Pressable
-              onPress={togglePlay}
-              style={styles.bigPlay}
-              accessibilityRole="button"
-              accessibilityLabel={
-                playing ? (rtl ? 'إيقاف مؤقت' : 'Pause') : rtl ? 'تشغيل' : 'Lecture'
-              }
-            >
-              <Ionicons
-                name={playing ? 'pause' : 'play'}
-                size={26}
-                color={colors.white}
-                style={playing ? undefined : { marginLeft: 3 }}
-                importantForAccessibility="no"
-              />
-            </Pressable>
-
-            <View style={{ flex: 1 }} pointerEvents="none" />
-
-            <View style={[styles.overlayBottom, l.row]}>
-              <AppText size={11.5} weight="medium" tone="white">
-                {formatDuration(position)}
-              </AppText>
-              <Pressable
-                style={styles.scrubTrack}
-                onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
-                onPress={(e) => {
-                  if (barWidth <= 0) return;
-                  const x = e.nativeEvent.locationX;
-                  seekTo(rtl ? 1 - x / barWidth : x / barWidth);
-                }}
-                accessibilityRole="adjustable"
-                accessibilityLabel={rtl ? 'شريط التقدم' : 'Barre de progression'}
-              >
-                <View style={styles.scrubBg} />
-                <View
-                  style={[
-                    styles.scrubFill,
-                    {
-                      width: `${duration > 0 ? Math.min(100, (position / duration) * 100) : 0}%`,
-                    },
-                  ]}
-                />
-              </Pressable>
-              <AppText size={11.5} weight="medium" tone="white">
-                {formatDuration(duration || lesson.durationSec)}
-              </AppText>
-            </View>
-          </SafeAreaView>
-
-          {/* Moving ownership watermark — the server-issued traceability
-              code, drawn above the video and controls but
-              pointerEvents="none", so it can never block them. */}
-          {grant ? (
-            <VideoWatermark
-              key={grant.code}
-              code={grant.code}
-              playing={playing}
-              nonce={captureNonce}
-            />
-          ) : null}
-    </View>
-  );
-
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* ---- video + custom overlay ---- */}
-        {fullscreen ? <View style={styles.videoWrap} /> : videoBlock}
+      {CAPTURE_PROTECTION ? <ScreenCaptureGuard /> : null}
+      {/*
+       * Pinned player. In fullscreen only this wrapper's style changes: the
+       * LessonPlayer (and therefore the native video surface) stays mounted
+       * at the same position in the tree, so playback never restarts or
+       * flashes black. The screen behind it remains mounted to preserve the
+       * lesson scroll position, but cannot receive touches.
+       */}
+      <View style={fullscreen ? styles.playerFullscreen : styles.playerSlot}>
+        <LessonPlayer
+          key={lesson.id}
+          lessonId={lesson.id}
+          source={media.source}
+          poster={media.poster}
+          title={lesson.title}
+          expectedDuration={lesson.durationSec}
+          // A completed lesson always restarts from the beginning. Re-watching
+          // one still saves a position, so the completed flag has to win here
+          // or the next open resumes in the middle of a lesson already marked
+          // as finished.
+          resumeAt={completed ? 0 : progressOf(lesson.id)?.positionSec ?? 0}
+          code={grant?.code ?? null}
+          captureNonce={captureNonce}
+          fullscreen={fullscreen}
+          hasPrev={!!prev}
+          hasNext={!!next}
+          onBack={onPlayerBack}
+          onPrev={() => {
+            if (prev) openLesson(prev);
+          }}
+          onNext={() => {
+            if (next) openLesson(next);
+          }}
+          onToggleFullscreen={() => setFullscreen((value) => !value)}
+          onProgress={saveProgress}
+          onCompleted={markCompleted}
+        />
+      </View>
 
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        pointerEvents={fullscreen ? 'none' : 'auto'}
+      >
         <View style={styles.body}>
           {/* ---- meta ---- */}
           <View style={[l.rowBetween, { gap: spacing.sm }]}>
@@ -514,11 +391,6 @@ export default function VideoScreen() {
               ? `درس ${index + 1} من ${lessons.length} · ${formatDuration(lesson.durationSec)}`
               : `Leçon ${index + 1} sur ${lessons.length} · ${formatDuration(lesson.durationSec)}`}
             {` · ${formatSize(lesson.sizeMb)}`}
-            {resumeAt.current > 5 && !completed
-              ? rtl
-                ? ` · توقفت عند ${formatDuration(resumeAt.current)}`
-                : ` · Arrêté à ${formatDuration(resumeAt.current)}`
-              : ''}
           </AppText>
           {downloadRecord ? (
             <AppText size={11.5} tone="faint" style={{ marginTop: 3 }}>
@@ -768,31 +640,29 @@ export default function VideoScreen() {
       </ScrollView>
 
       {/* ---- sticky prev / complete & next ---- */}
-      <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-        <View style={[l.row, styles.bottomRow]}>
-          {prev ? (
+      {!fullscreen ? (
+        <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+          <View style={[l.row, styles.bottomRow]}>
+            {prev ? (
+              <PrimaryButton
+                label={rtl ? 'السابق' : 'Précédent'}
+                variant="outline"
+                compact
+                leadingIcon={rtl ? 'chevron-forward' : 'chevron-back'}
+                onPress={() => openLesson(prev)}
+                style={{ flex: 1 }}
+              />
+            ) : null}
             <PrimaryButton
-              label={rtl ? 'السابق' : 'Précédent'}
-              variant="outline"
+              label={next ? (rtl ? 'إكمال والتالي' : 'Terminer & suivant') : rtl ? 'إكمال الدرس' : 'Terminer la leçon'}
               compact
-              leadingIcon={rtl ? 'chevron-forward' : 'chevron-back'}
-              onPress={() => openLesson(prev)}
-              style={{ flex: 1 }}
+              icon={next ? (rtl ? 'arrow-back' : 'arrow-forward') : undefined}
+              onPress={completeAndNext}
+              style={{ flex: 1.4 }}
             />
-          ) : null}
-          <PrimaryButton
-            label={next ? (rtl ? 'إكمال والتالي' : 'Terminer & suivant') : rtl ? 'إكمال الدرس' : 'Terminer la leçon'}
-            compact
-            icon={next ? (rtl ? 'arrow-back' : 'arrow-forward') : undefined}
-            onPress={completeAndNext}
-            style={{ flex: 1.4 }}
-          />
-        </View>
-      </SafeAreaView>
-
-      {/* In-app fullscreen presentation — the same block, drawn over the
-          whole screen so the watermark stays visible in fullscreen. */}
-      {fullscreen ? videoBlock : null}
+          </View>
+        </SafeAreaView>
+      ) : null}
     </View>
   );
 }
@@ -800,6 +670,7 @@ export default function VideoScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
   safeMissing: { flex: 1, backgroundColor: colors.canvas },
+  scrollView: { flex: 1 },
   scroll: { paddingBottom: spacing.xxl },
   missing: {
     flex: 1,
@@ -810,48 +681,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.canvas,
   },
 
-  videoWrap: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.black },
-  /** In-app fullscreen: the same block, lifted over the whole screen. */
-  videoWrapFullscreen: {
+  /** Inline player: pinned 16:9 above the scrollable lesson body. */
+  playerSlot: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.black },
+  /** In-app fullscreen: the SAME wrapper instance, only its style changes. */
+  playerFullscreen: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 10,
+    elevation: 10,
     backgroundColor: colors.black,
-  },
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
-  overlayTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  bigPlay: {
-    alignSelf: 'center',
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: 'rgba(11,18,32,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlayBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  scrubTrack: { flex: 1, justifyContent: 'center', height: 22 },
-  scrubBg: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-  },
-  scrubFill: {
-    position: 'absolute',
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.brand,
   },
 
   body: {

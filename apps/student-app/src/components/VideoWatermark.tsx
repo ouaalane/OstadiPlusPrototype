@@ -35,9 +35,12 @@ import {
   WATERMARK_WATCHDOG_MS,
   isWatermarkCode,
   nextWatermarkSlotIndex,
+  nextWatermarkSlotIndexInOtherRow,
   randomInt,
   randomMoveDelay,
   watermarkSlots,
+  watermarkSlotColumn,
+  watermarkSlotRow,
   type WatermarkSize,
 } from '../lib/watermark';
 
@@ -166,7 +169,10 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
         // Land on a fresh spot (never the same one twice in a row) and put
         // the second copy somewhere clearly different from the first.
         primarySlot.current = nextWatermarkSlotIndex(primaryList.length, primarySlot.current);
-        secondarySlot.current = nextWatermarkSlotIndex(secondaryList.length, primarySlot.current);
+        secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
+          secondaryList.length,
+          primarySlot.current,
+        );
         applyPositions();
         fadeIn();
       });
@@ -187,7 +193,10 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
         moveTimer.current = null;
       }
       primarySlot.current = nextWatermarkSlotIndex(primaryList.length, primarySlot.current);
-      secondarySlot.current = nextWatermarkSlotIndex(secondaryList.length, primarySlot.current);
+      secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
+        secondaryList.length,
+        primarySlot.current,
+      );
       applyPositions();
       fadeIn();
     };
@@ -199,9 +208,14 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
     if (
       secondarySlot.current < 0 ||
       secondarySlot.current >= secondaryList.length ||
-      secondarySlot.current === primarySlot.current
+      secondarySlot.current === primarySlot.current ||
+      watermarkSlotRow(secondarySlot.current) === watermarkSlotRow(primarySlot.current) ||
+      watermarkSlotColumn(secondarySlot.current) === watermarkSlotColumn(primarySlot.current)
     ) {
-      secondarySlot.current = nextWatermarkSlotIndex(secondaryList.length, primarySlot.current);
+      secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
+        secondaryList.length,
+        primarySlot.current,
+      );
     }
     applyPositions();
     fadeIn();
@@ -233,7 +247,7 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
       clearTimeout(moveTimer.current);
       moveTimer.current = null;
     }
-    Animated.parallel([
+    const fadeOut = Animated.parallel([
       Animated.timing(primaryOpacity, {
         toValue: 0,
         duration: WATERMARK_HIDE_FADE_MS,
@@ -244,7 +258,13 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
         duration: WATERMARK_HIDE_FADE_MS,
         useNativeDriver: true,
       }),
-    ]).start(() => setHidden(true));
+    ]);
+    fadeOut.start(({ finished }) => {
+      // A resume can stop this animation halfway; only a completed fade-out
+      // should unmount the overlay (otherwise play→pause races leave it gone).
+      if (finished) setHidden(true);
+    });
+    return () => fadeOut.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Animated values are stable refs.
   }, [playing]);
 
@@ -336,7 +356,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    paddingHorizontal: 6,
+    paddingHorizontal: 2,
     paddingVertical: 3,
   },
   /** Light text + soft shadow reads on both dark and bright scenes at the
