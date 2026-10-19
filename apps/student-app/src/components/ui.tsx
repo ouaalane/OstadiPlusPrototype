@@ -909,6 +909,7 @@ export function Thumb({
   poster,
   width = 104,
   height = 68,
+  aspectRatio,
   radiusValue = radius.sm,
   overlay,
   children,
@@ -917,6 +918,8 @@ export function Thumb({
   poster?: number;
   width?: number;
   height?: number;
+  /** Fill the parent's width at this ratio (e.g. `16 / 9`) instead of a fixed box. */
+  aspectRatio?: number;
   radiusValue?: number;
   /** Soft dark scrim so overlaid content stays legible. */
   overlay?: boolean;
@@ -925,7 +928,12 @@ export function Thumb({
   const coverSource = coverAssets[cover];
   const pair = coverGradients[cover] ?? coverGradients.blue;
   return (
-    <View style={{ width, height, borderRadius: radiusValue, overflow: 'hidden' }}>
+    <View
+      style={[
+        { borderRadius: radiusValue, overflow: 'hidden' },
+        aspectRatio ? { width: '100%', aspectRatio } : { width, height },
+      ]}
+    >
       {poster ? (
         <Image source={poster} style={styles.absoluteImage} resizeMode="cover" />
       ) : coverSource ? (

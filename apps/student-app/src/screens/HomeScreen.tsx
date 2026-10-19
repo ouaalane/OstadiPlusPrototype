@@ -25,6 +25,7 @@ import {
   lessonProgress,
   relativeTime,
   type Course,
+  type CourseProgress,
   type Lesson,
   type NotificationKind,
 } from '@ostadiplus/shared';
@@ -40,7 +41,6 @@ import {
   IconButton,
   LessonGlyph,
   MetricChip,
-  Pill,
   PlayGlyph,
   PrimaryButton,
   ProgressBar,
@@ -109,6 +109,143 @@ const MONTHS = {
 function formatToday(lang: 'ar' | 'fr'): string {
   const now = new Date();
   return `${WEEKDAYS[lang][now.getDay()]} ${now.getDate()} ${MONTHS[lang][now.getMonth()]}`;
+}
+
+/**
+ * A latest-lesson card: the full-width 16:9 cover sits on top — play glyph
+ * centred, length in the bottom-right, subject chip in the top-left — with the
+ * title (two lines max) directly under it.
+ */
+function LessonCard({
+  lesson,
+  course,
+  onPress,
+}: {
+  lesson: Lesson;
+  course: Course;
+  onPress: () => void;
+}) {
+  const { state } = useStore();
+  const { lang, dir } = useI18n();
+  const rtl = dir === 'rtl';
+  const teacher = courseTeacher(state, course);
+  const poster = lesson.kind === 'video' ? resolvePoster(lesson.file) : undefined;
+  const meta = lessonMetaText(lesson, lang);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => pressed && { opacity: 0.94 }}
+      accessibilityRole="button"
+      accessibilityLabel={
+        rtl
+          ? `درس ${lesson.title}، ${teacher.name}${meta ? `، ${meta}` : ''}`
+          : `Leçon ${lesson.title}, ${teacher.name}${meta ? `, ${meta}` : ''}`
+      }
+      accessibilityHint={rtl ? 'يفتح الدرس' : 'Ouvre la leçon'}
+    >
+      <Card flush>
+        <Thumb cover={course.cover} poster={poster} aspectRatio={16 / 9} radiusValue={0} overlay>
+          <View style={styles.cardPlay} pointerEvents="none" importantForAccessibility="no">
+            <LessonGlyph kind={lesson.kind} size={56} />
+          </View>
+          {meta ? (
+            <View style={styles.cardMeta} pointerEvents="none" importantForAccessibility="no">
+              <AppText size={11.5} weight="semibold" tone="white">
+                {meta}
+              </AppText>
+            </View>
+          ) : null}
+          <View style={styles.cardTag} pointerEvents="none" importantForAccessibility="no">
+            <AppText size={11.5} weight="medium" tone="white">
+              {course.subject}
+            </AppText>
+          </View>
+        </Thumb>
+        <View style={styles.cardBody}>
+          <AppText size={15} weight="semibold" tone="ink" numberOfLines={2}>
+            {lesson.title}
+          </AppText>
+        </View>
+      </Card>
+    </Pressable>
+  );
+}
+
+/**
+ * A «Mes cours» card: the full-width 16:9 cover on top — play glyph centred,
+ * subject chip in the top-left, lesson count in the bottom-right — then the
+ * title/teacher, progress and the «Continuer le cours» action below.
+ */
+function CourseCard({
+  course,
+  progress,
+  onPress,
+}: {
+  course: Course;
+  progress: CourseProgress | null;
+  onPress: () => void;
+}) {
+  const { state } = useStore();
+  const { lang, dir } = useI18n();
+  const l = useLayout(lang);
+  const rtl = dir === 'rtl';
+  const teacher = courseTeacher(state, course);
+  const lessonCount = allLessons(course).length;
+  const percent = progress?.percent ?? 0;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => pressed && { opacity: 0.94 }}
+      accessibilityRole="button"
+      accessibilityLabel={course.title}
+    >
+      <Card flush>
+        <Thumb cover={course.cover} aspectRatio={16 / 9} radiusValue={0} overlay>
+          <View style={styles.cardPlay} pointerEvents="none" importantForAccessibility="no">
+            <PlayGlyph size={56} />
+          </View>
+          <View style={styles.cardMeta} pointerEvents="none" importantForAccessibility="no">
+            <AppText size={11.5} weight="semibold" tone="white">
+              {lessonCount} {rtl ? 'دروس' : 'leçons'}
+            </AppText>
+          </View>
+          <View style={styles.cardTag} pointerEvents="none" importantForAccessibility="no">
+            <AppText size={11.5} weight="medium" tone="white">
+              {course.subject}
+            </AppText>
+          </View>
+        </Thumb>
+        <View style={styles.courseBody}>
+          <AppText size={15} weight="bold" tone="ink" numberOfLines={2}>
+            {course.title}
+          </AppText>
+          <AppText size={12} tone="muted" numberOfLines={1}>
+            {course.subject} · {teacher.name}
+          </AppText>
+          <View style={l.row}>
+            <View style={{ flex: 1 }}>
+              <ProgressBar
+                value={percent}
+                height={6}
+                tone={percent === 100 ? 'success' : 'brand'}
+              />
+            </View>
+            <AppText size={11.5} weight="semibold" tone="muted">
+              {percent}%
+            </AppText>
+          </View>
+        </View>
+        <View style={[l.rowBetween, styles.courseFooter]}>
+          <AppText size={13} weight="semibold" tone="brand">
+            {rtl ? 'متابعة الدورة' : 'Continuer le cours'}
+          </AppText>
+          <Ionicons name={rtl ? 'arrow-back' : 'arrow-forward'} size={15} color={colors.brand} />
+        </View>
+      </Card>
+    </Pressable>
+  );
 }
 
 export default function HomeScreen() {
@@ -314,55 +451,14 @@ export default function HomeScreen() {
               eyebrow={rtl ? 'دوراتي' : 'Mes cours'}
               counter={`${courseCards.length} ${rtl ? 'نشطة' : 'actifs'}`}
             />
-            <View style={{ gap: spacing.md }}>
+            <View style={{ gap: spacing.lg }}>
               {courseCards.map(({ course, progress }) => (
-                <Pressable
+                <CourseCard
                   key={course.id}
+                  course={course}
+                  progress={progress}
                   onPress={() => navigation.navigate('CourseDetail', { courseId: course.id })}
-                  style={({ pressed }) => pressed && { opacity: 0.94 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={course.title}
-                >
-                  <Card flush>
-                    <View style={[styles.courseRow, l.row]}>
-                      <Thumb cover={course.cover} width={96} height={72} radiusValue={radius.sm} overlay>
-                        <View style={styles.thumbPlay}>
-                          <PlayGlyph size={26} />
-                        </View>
-                      </Thumb>
-                      <View style={{ flex: 1, gap: 4 }}>
-                        <AppText size={15} weight="bold" tone="ink" numberOfLines={2}>
-                          {course.title}
-                        </AppText>
-                        <AppText size={12} tone="muted" numberOfLines={1}>
-                          {course.subject} · {courseTeacher(state, course).name}
-                        </AppText>
-                        <View style={l.row}>
-                          <View style={{ flex: 1 }}>
-                            <ProgressBar
-                              value={progress?.percent ?? 0}
-                              height={6}
-                              tone={progress?.percent === 100 ? 'success' : 'brand'}
-                            />
-                          </View>
-                          <AppText size={11.5} weight="semibold" tone="muted">
-                            {progress?.percent ?? 0}%
-                          </AppText>
-                        </View>
-                      </View>
-                    </View>
-                    <View style={[l.rowBetween, styles.courseFooter]}>
-                      <AppText size={13} weight="semibold" tone="brand">
-                        {rtl ? 'متابعة الدورة' : 'Continuer le cours'}
-                      </AppText>
-                      <Ionicons
-                        name={rtl ? 'arrow-back' : 'arrow-forward'}
-                        size={15}
-                        color={colors.brand}
-                      />
-                    </View>
-                  </Card>
-                </Pressable>
+                />
               ))}
             </View>
           </>
@@ -400,63 +496,17 @@ export default function HomeScreen() {
               action={rtl ? 'الكل' : 'Tout'}
               onAction={() => navigation.navigate('Tabs', { screen: 'Courses' })}
             />
-            <View style={{ gap: spacing.md }}>
-              {latestLessons.map(({ lesson, course }) => {
-                const p = me ? lessonProgress(state, me.id, lesson.id) : undefined;
-                const percent =
-                  p && lesson.durationSec > 0
-                    ? Math.min(100, Math.round((p.positionSec / lesson.durationSec) * 100))
-                    : p?.completed
-                      ? 100
-                      : undefined;
-                return (
-                  <Pressable
-                    key={lesson.id}
-                    onPress={() =>
-                      navigation.navigate(lessonRoute(lesson.kind), { lessonId: lesson.id })
-                    }
-                    style={({ pressed }) => pressed && { opacity: 0.94 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={lesson.title}
-                  >
-                    <Card flush>
-                      <View style={[styles.courseRow, l.row]}>
-                        <Thumb
-                          cover={course.cover}
-                          poster={lesson.kind === 'video' ? resolvePoster(lesson.file) : undefined}
-                          width={104}
-                          height={68}
-                          radiusValue={radius.sm}
-                          overlay
-                        >
-                          <View style={styles.thumbPlay}>
-                            <LessonGlyph kind={lesson.kind} size={26} />
-                          </View>
-                        </Thumb>
-                        <View style={{ flex: 1, gap: 4 }}>
-                          <AppText size={14.5} weight="semibold" tone="ink" numberOfLines={2}>
-                            {lesson.title}
-                          </AppText>
-                          <View style={l.row}>
-                            <AppText size={11.5} tone="muted">
-                              {courseTeacher(state, course).name}
-                            </AppText>
-                            <Pill
-                              label={
-                                lessonMetaText(lesson, lang) ?? (rtl ? 'نص' : 'texte')
-                              }
-                              tone="neutral"
-                            />
-                          </View>
-                          {percent !== undefined ? (
-                            <ProgressBar value={percent} height={5} />
-                          ) : null}
-                        </View>
-                      </View>
-                    </Card>
-                  </Pressable>
-                );
-              })}
+            <View style={{ gap: spacing.lg }}>
+              {latestLessons.map(({ lesson, course }) => (
+                <LessonCard
+                  key={lesson.id}
+                  lesson={lesson}
+                  course={course}
+                  onPress={() =>
+                    navigation.navigate(lessonRoute(lesson.kind), { lessonId: lesson.id })
+                  }
+                />
+              ))}
             </View>
           </>
         ) : null}
@@ -612,13 +662,30 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   continueBody: { padding: spacing.lg, gap: spacing.md },
-  courseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
+  courseBody: { padding: spacing.md, gap: 6 },
+  /** Centred play glyph over a full-width lesson cover. */
+  cardPlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  /** Length / pages badge — bottom-right corner of the cover. */
+  cardMeta: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: colors.scrim,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  thumbPlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  /** Subject chip — top-left corner of the cover. */
+  cardTag: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: colors.scrim,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cardBody: { padding: spacing.md },
   courseFooter: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
