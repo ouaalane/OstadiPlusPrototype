@@ -2,8 +2,8 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type TabParamList = {
   Home: undefined;
-  Courses: undefined;
-  Downloads: undefined;
+  Search: undefined;
+  Learning: undefined;
   Profile: undefined;
 };
 
@@ -20,6 +20,7 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Tabs: NavigatorScreenParams<TabParamList>;
   CourseDetail: { courseId: string };
+  Qna: { courseId: string; lessonId?: string };
   Video: { lessonId: string };
   Pdf: { lessonId: string };
   Reader: { lessonId: string };

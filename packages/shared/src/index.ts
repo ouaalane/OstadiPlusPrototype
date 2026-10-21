@@ -4,5 +4,6 @@ export * from './media';
 export * from './mediaLibrary';
 export * from './seed';
 export * from './selectors';
+export * from './qna';
 export * from './demoSync';
 export * from './i18n';

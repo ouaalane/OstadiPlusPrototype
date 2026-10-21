@@ -102,7 +102,6 @@ export default function ProfileScreen() {
     state,
     me,
     myCourses,
-    myDownloads,
     lang,
     setLang,
     signOut,
@@ -136,8 +135,6 @@ export default function ProfileScreen() {
       alive = false;
     };
   }, []);
-  const [darkOn, setDarkOn] = useState(false);
-
   // sync payload tool
   const [payload, setPayload] = useState('');
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
@@ -333,9 +330,10 @@ export default function ProfileScreen() {
           <View style={styles.menuDivider} />
 
           <MenuRow
-            icon="cloud-download-outline"
-            label={t('downloads')}
-            value={`${myDownloads.filter((d) => d.status === 'complete').length}`}
+            icon="play-circle-outline"
+            label={t('my_learning')}
+            value={`${myCourses.length}`}
+            onPress={() => navigation.navigate('Tabs', { screen: 'Learning' })}
           />
 
           <View style={styles.menuDivider} />

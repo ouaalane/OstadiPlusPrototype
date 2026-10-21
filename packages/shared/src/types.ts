@@ -289,6 +289,38 @@ export interface AppNotification {
 }
 
 /* ------------------------------------------------------------------ */
+/* Q & R (course / lesson questions)                                    */
+/* ------------------------------------------------------------------ */
+
+export type QnaAuthorRole = 'student' | 'teacher';
+
+/** One reply in a question thread. Today only the course teacher writes these. */
+export interface QnaReply {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole: QnaAuthorRole;
+  body: string;
+  createdAt: string;
+}
+
+/**
+ * A question posted by an enrolled student, optionally attached to one lesson.
+ * Threads are shared by every student enrolled in the course.
+ */
+export interface QnaQuestion {
+  id: string;
+  courseId: string;
+  /** When present, the question is attached to that lesson. */
+  lessonId?: string;
+  studentId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  replies: QnaReply[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Activity                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -331,4 +363,9 @@ export interface DemoState {
   activity: ActivityEvent[];
   /** studentId → per-lesson progress. */
   progress: Record<string, LessonProgress[]>;
+  /**
+   * Shared course Q & R threads. Optional so payloads written before the
+   * feature existed keep hydrating without a data-model bump.
+   */
+  questions?: QnaQuestion[];
 }

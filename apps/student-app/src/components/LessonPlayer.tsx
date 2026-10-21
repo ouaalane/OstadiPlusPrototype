@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
   topScrim: { position: 'absolute', top: 0, left: 0, right: 0, height: 88 },
   bottomScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 100 },
 
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
+  overlay: { ...StyleSheet.absoluteFill, justifyContent: 'space-between' },
 
   topBar: {
     gap: spacing.sm,
@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
   },
 
   errorLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(4,9,18,0.86)',
     alignItems: 'center',
     justifyContent: 'center',

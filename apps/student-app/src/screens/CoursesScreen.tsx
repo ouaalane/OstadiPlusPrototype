@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   thumbPlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

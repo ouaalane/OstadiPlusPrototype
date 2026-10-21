@@ -1,13 +1,26 @@
 /**
- * Course detail — hero, instructor, stats, resume CTA, progress, about, then
- * the chapters → lessons list, with the access banner that explains why a
- * lesson cannot be opened (pending / suspended / unpublished).
+ * Course detail — Udemy-style course page.
  *
- * Bilingual: strings are authored inline per language, layout flips RTL↔LTR.
+ * Photo hero with the current session/lesson and a «Premiers pas» /
+ * «Continuer» action, the course title and teacher, progress, then the
+ * Sessions / Plus tabs. Sessions renders numbered lesson rows with per-lesson
+ * download controls and section bulk downloads; Plus holds the about text,
+ * native share, shared Q & R and the file library.
+ *
+ * Enrollment rules, resume logic, access notices and PDF behaviour are the
+ * same as before — only the presentation changed.
  */
 
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +32,7 @@ import {
   courseDurationSec,
   courseProgress,
   courseTeacher,
+  isQuestionAnswered,
   type Lesson,
 } from '@ostadiplus/shared';
 
@@ -28,6 +42,7 @@ import {
   AppText,
   Avatar,
   Card,
+  EmptyState,
   Eyebrow,
   IconButton,
   NoticeCard,
@@ -36,34 +51,47 @@ import {
   ProgressBar,
   TopBar,
 } from '../components/ui';
-import { LESSON_ICONS, lessonMetaText, lessonRoute, lessonTint } from '../lib/lesson';
+import {
+  CurriculumRow,
+  CurriculumSectionHeader,
+  curriculumDuration,
+  lessonsDuration,
+} from '../components/Curriculum';
+import { DownloadButton } from '../components/DownloadButton';
+import { lessonRoute } from '../lib/lesson';
 import { coverAssets } from '../assets/covers';
 import { teacherPhotosFor } from '../assets/teacher-photos';
-import { useStore } from '../store/StudentStore';
+import { useStore, type DownloadStatus } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
-/** Minutes label helper — «3h 20m» / «3 س 20 د». */
-function durationLabel(seconds: number, rtl: boolean): string {
-  const total = Math.round(seconds / 60);
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  if (h <= 0) return `${m} ${rtl ? 'دقيقة' : 'min'}`;
-  if (m === 0) return `${h} ${rtl ? 'ساعة' : 'h'}`;
-  return rtl ? `${h} س ${m} د` : `${h}h ${m}m`;
-}
+type PageTab = 'sessions' | 'plus';
 
 export default function CourseDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'CourseDetail'>>();
-  const { state, me, statusOf, progressOf } = useStore();
+  const {
+    state,
+    me,
+    statusOf,
+    progressOf,
+    myDownloads,
+    downloadLesson,
+    cancelDownload,
+    deleteDownload,
+    deleteDownloads,
+    downloadLessons,
+    downloadStatusFor,
+    isFavorite,
+    toggleFavorite,
+    questionsOfCourse,
+  } = useStore();
   const { lang, t, dir } = useI18n();
   const l = useLayout(lang);
   const rtl = dir === 'rtl';
-  const [bookmarked, setBookmarked] = useState(false);
-  const [openChapter, setOpenChapter] = useState<string | null>(null);
+  const [tab, setTab] = useState<PageTab>('sessions');
 
-  const course = state.courses.find((c) => c.id === params.courseId);
+  const course = state.courses.find((item) => item.id === params.courseId);
 
   /** Published lessons only, grouped semester → topic. */
   const semesters = useMemo(
@@ -73,14 +101,13 @@ export default function CourseDetailScreen() {
             ...semester,
             chapters: semester.chapters.map((chapter) => ({
               ...chapter,
-              lessons: chapter.lessons.filter((les) => les.published),
+              lessons: chapter.lessons.filter((lesson) => lesson.published),
             })),
           }))
         : [],
     [course],
   );
 
-  /** Flat list of the topics, in program order. */
   const chapters = useMemo(
     () => semesters.flatMap((semester) => semester.chapters),
     [semesters],
@@ -91,12 +118,44 @@ export default function CourseDetailScreen() {
     [course, me, state],
   );
 
-  /** Default-open the section that holds the next lesson. */
-  const initialChapter = useMemo(() => {
-    if (!course || !progress) return chapters[0]?.id ?? null;
-    const found = chapters.find((c) => c.lessons.some((les) => les.id === progress.nextLessonId));
-    return found?.id ?? chapters[0]?.id ?? null;
-  }, [course, chapters, progress]);
+  const questions = useMemo(
+    () => (course ? questionsOfCourse(course.id) : []),
+    [course, questionsOfCourse],
+  );
+  const unanswered = questions.filter((question) => !isQuestionAnswered(question));
+
+  const downloadRecords = useMemo(
+    () => new Map(myDownloads.map((record) => [record.lessonId, record])),
+    [myDownloads],
+  );
+
+  /** Aggregate download state for the course / section bulk controls. */
+  const bulkSummary = (list: Lesson[]): {
+    status?: DownloadStatus;
+    progress: number;
+    complete: boolean;
+    downloading: boolean;
+  } => {
+    const videos = list.filter((lesson) => lesson.kind === 'video' && !!lesson.file);
+    if (videos.length === 0) return { progress: 0, complete: false, downloading: false };
+    const statuses = videos.map((lesson) => downloadStatusFor(lesson.id));
+    const complete = statuses.every((value) => value === 'complete');
+    const downloading = statuses.some((value) => value === 'downloading');
+    const progress = complete
+      ? 100
+      : Math.round(
+          videos.reduce((sum, lesson) => {
+            if (downloadStatusFor(lesson.id) === 'complete') return sum + 100;
+            return sum + (downloadRecords.get(lesson.id)?.progress ?? 0);
+          }, 0) / videos.length,
+        );
+    return {
+      status: complete ? 'complete' : downloading ? 'downloading' : undefined,
+      progress,
+      complete,
+      downloading,
+    };
+  };
 
   if (!course) {
     return (
@@ -113,37 +172,165 @@ export default function CourseDetailScreen() {
 
   const status = statusOf(course.id);
   const accessible = status === 'active' && course.status === 'published';
-  const durationSec = courseDurationSec(course);
-  const minutes = Math.round(durationSec / 60);
-  const lessons = allLessons(course).filter((les) => les.published);
+  const lessons = allLessons(course).filter((lesson) => lesson.published);
   const publishedCount = lessons.length;
-  const openId = openChapter ?? initialChapter;
-
-  /** 1-based index of the lesson the student should resume. */
-  const resumeIndex = progress?.nextLessonId
-    ? Math.max(1, lessons.findIndex((les) => les.id === progress.nextLessonId) + 1)
-    : 1;
-  const resumeLesson = lessons.find((les) => les.id === progress?.nextLessonId) ?? lessons[0];
-
-  /** The prof who owns this course (fallback: the platform teacher). */
+  const durationSec = courseDurationSec(course);
   const instructor = courseTeacher(state, course);
+  const photos = teacherPhotosFor(instructor.photo);
+  const heroSource = photos?.hero ?? coverAssets[course.cover];
+  const favorite = isFavorite(course.id);
+
+  const resumeLesson =
+    lessons.find((lesson) => lesson.id === progress?.nextLessonId) ?? lessons[0];
+  const resumeChapter = chapters.find((chapter) =>
+    chapter.lessons.some((lesson) => lesson.id === resumeLesson?.id),
+  );
+  const resumeSemesterIndex = semesters.findIndex((semester) =>
+    semester.chapters.some((chapter) => chapter.id === resumeChapter?.id),
+  );
+  const sessionNumber = resumeSemesterIndex >= 0 ? resumeSemesterIndex + 1 : 1;
+  const started = !!progress && (progress.percent > 0 || progress.lastPositionSec > 0);
+
+  const courseVideos = lessons.filter(
+    (lesson) => lesson.kind === 'video' && !!lesson.file,
+  );
+  const courseSummary = bulkSummary(courseVideos);
 
   const openLesson = (lesson: Lesson) => {
     if (!accessible) return;
     navigation.navigate(lessonRoute(lesson.kind), { lessonId: lesson.id });
   };
 
-  /**
-   * Art for the header: the professor's own photo when they have one, so the
-   * course reads as their space, otherwise the course's cover palette entry.
-   */
-  const photos = teacherPhotosFor(instructor.photo);
-  const heroSource = photos?.hero ?? coverAssets[course.cover];
+  const performDownload = (lesson: Lesson) => {
+    if (lesson.kind === 'pdf') {
+      openLesson(lesson);
+      return;
+    }
+    if (!accessible) return;
+    const statusValue = downloadStatusFor(lesson.id);
+    if (statusValue === 'downloading') {
+      cancelDownload(lesson.id);
+      return;
+    }
+    if (statusValue === 'complete') {
+      Alert.alert(
+        rtl ? 'حذف التنزيل' : 'Supprimer le téléchargement',
+        rtl
+          ? `سيُحذف « ${lesson.title} » من هذا الجهاز.`
+          : `« ${lesson.title} » sera supprimé de cet appareil.`,
+        [
+          { text: rtl ? 'إلغاء' : 'Annuler', style: 'cancel' },
+          {
+            text: rtl ? 'حذف' : 'Supprimer',
+            style: 'destructive',
+            onPress: () => {
+              void deleteDownload(lesson.id);
+            },
+          },
+        ],
+      );
+      return;
+    }
+    void downloadLesson(lesson.id).then((result) => {
+      if (result === 'error') {
+        Alert.alert(
+          rtl ? 'فشل التحميل' : 'Échec du téléchargement',
+          rtl
+            ? 'تعذّر تحميل الملف. تأكد من اتصالك بالإنترنت وحاول مجدداً.'
+            : 'Impossible de télécharger le fichier. Vérifiez votre connexion Internet.',
+        );
+      }
+    });
+  };
+
+  const downloadMany = async (list: Lesson[]) => {
+    const ids = list
+      .filter(
+        (lesson) =>
+          lesson.kind === 'video' &&
+          !!lesson.file &&
+          downloadStatusFor(lesson.id) !== 'complete' &&
+          downloadStatusFor(lesson.id) !== 'downloading',
+      )
+      .map((lesson) => lesson.id);
+    if (ids.length > 0) await downloadLessons(ids);
+  };
+
+  /** Complete → offer deletion, downloading → cancel, idle → start. */
+  const bulkAction = (list: Lesson[], summary: ReturnType<typeof bulkSummary>) => {
+    if (summary.complete) {
+      const downloaded = list
+        .filter((lesson) => lesson.kind === 'video')
+        .map((lesson) => downloadRecords.get(lesson.id))
+        .filter((record): record is NonNullable<typeof record> => !!record);
+      if (downloaded.length === 0) return;
+      Alert.alert(
+        rtl ? 'حذف التنزيلات' : 'Supprimer les téléchargements',
+        rtl
+          ? `سيُحذف ${downloaded.length} ملف فيديو من هذا الجهاز.`
+          : `${downloaded.length} vidéo${downloaded.length === 1 ? '' : 's'} ${
+              downloaded.length === 1 ? 'sera supprimée' : 'seront supprimées'
+            } de cet appareil.`,
+        [
+          { text: rtl ? 'إلغاء' : 'Annuler', style: 'cancel' },
+          {
+            text: rtl ? 'حذف' : 'Supprimer',
+            style: 'destructive',
+            onPress: () => {
+              void deleteDownloads(downloaded.map((record) => record.lessonId));
+            },
+          },
+        ],
+      );
+      return;
+    }
+    if (summary.downloading) {
+      list.forEach((lesson) => {
+        if (downloadStatusFor(lesson.id) === 'downloading') cancelDownload(lesson.id);
+      });
+      return;
+    }
+    void downloadMany(list);
+  };
+
+  const bulkLabel = (summary: ReturnType<typeof bulkSummary>, scope: 'course' | 'section') => {
+    if (summary.complete) {
+      return rtl ? 'حذف التنزيلات' : 'Supprimer les téléchargements';
+    }
+    if (summary.downloading) {
+      return rtl ? 'إلغاء التنزيلات' : 'Annuler les téléchargements';
+    }
+    if (scope === 'course') {
+      return rtl ? 'تحميل كل دروس الدورة' : 'Télécharger toutes les leçons';
+    }
+    return rtl ? 'تحميل دروس الفصل' : 'Télécharger la section';
+  };
+
+  const downloadLabelFor = (lesson: Lesson) => {
+    if (lesson.kind === 'pdf') {
+      return rtl ? 'فتح المستند المضمّن' : 'Ouvrir le document inclus';
+    }
+    const value = downloadStatusFor(lesson.id);
+    if (value === 'complete') return rtl ? 'حذف التنزيل' : 'Supprimer le téléchargement';
+    if (value === 'downloading') return rtl ? 'إلغاء التحميل' : 'Annuler le téléchargement';
+    return rtl ? 'تحميل الدرس' : 'Télécharger la leçon';
+  };
+
+  const shareCourse = async () => {
+    try {
+      await Share.share({
+        title: course.title,
+        message: `${course.title} — ${instructor.name}\nOstadiPlus`,
+      });
+    } catch {
+      /* user dismissed the share sheet */
+    }
+  };
 
   return (
     <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* ---- hero ---- */}
+        {/* ---- photo hero ---- */}
         <View style={styles.hero}>
           {heroSource ? (
             <Image source={heroSource} style={styles.heroArt} resizeMode="cover" />
@@ -156,13 +343,13 @@ export default function CourseDetailScreen() {
             />
           )}
           <LinearGradient
-            colors={['rgba(11,18,32,0.45)', 'rgba(11,18,32,0.70)']}
+            colors={['rgba(11,18,32,0.18)', 'rgba(11,18,32,0.82)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.heroArt}
           />
 
-          <SafeAreaView edges={['top']}>
+          <SafeAreaView edges={['top']} style={styles.heroSafe}>
             <View style={[styles.heroBar, l.row]}>
               <IconButton
                 icon={rtl ? 'chevron-forward' : 'chevron-back'}
@@ -173,126 +360,129 @@ export default function CourseDetailScreen() {
               />
               <View style={{ flex: 1 }} />
               <IconButton
-                icon={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                icon={favorite ? 'bookmark' : 'bookmark-outline'}
                 variant="onPhoto"
                 size={38}
                 label={
-                  bookmarked
+                  favorite
                     ? rtl
-                      ? 'إزالة الدورة من المحفوظات'
+                      ? 'إزالة الدورة من المفضلة'
                       : 'Retirer le cours des favoris'
                     : rtl
-                      ? 'حفظ الدورة'
+                      ? 'حفظ الدورة في المفضلة'
                       : 'Ajouter le cours aux favoris'
                 }
-                onPress={() => setBookmarked((b) => !b)}
+                onPress={() => toggleFavorite(course.id)}
               />
             </View>
 
+            <View style={{ flex: 1 }} />
+
             <View style={styles.heroBody}>
-              <AppText
-                size={11}
-                weight="bold"
-                tone="white"
-                style={{ letterSpacing: 0.9, textTransform: 'uppercase', opacity: 0.9 }}
-              >
-                {course.subject} · {course.level}
-              </AppText>
+              <View style={styles.sessionPill}>
+                <AppText
+                  size={10.5}
+                  weight="bold"
+                  tone="white"
+                  style={{ letterSpacing: 1.1, textTransform: 'uppercase' }}
+                >
+                  {rtl ? `الجلسة ${sessionNumber}` : `Session ${sessionNumber}`}
+                </AppText>
+              </View>
+
               <AppText size={24} weight="bold" tone="white" numberOfLines={3}>
+                {resumeLesson?.title ?? course.title}
+              </AppText>
+              <AppText size={12.5} tone="white" style={{ opacity: 0.88 }} numberOfLines={2}>
                 {course.title}
               </AppText>
-              <View style={l.row}>
+
+              {accessible && resumeLesson ? (
+                <PrimaryButton
+                  label={
+                    started ? (rtl ? 'متابعة' : 'Continuer') : rtl ? 'الخطوات الأولى' : 'Premiers pas'
+                  }
+                  leadingIcon="play"
+                  variant="accent"
+                  onPress={() => openLesson(resumeLesson)}
+                  accessibilityLabel={
+                    rtl ? `متابعة الدرس ${resumeLesson.title}` : `Continuer la leçon ${resumeLesson.title}`
+                  }
+                  style={styles.heroCta}
+                />
+              ) : (
                 <Pill
                   label={
-                    accessible
+                    status === 'pending'
                       ? rtl
-                        ? 'متاحة لك'
-                        : 'Disponible pour vous'
-                      : status === 'pending'
-                        ? rtl
-                          ? 'بانتظار التفعيل'
-                          : "En attente d'activation"
-                        : rtl
-                          ? 'وصول موقوف'
-                          : 'Accès suspendu'
+                        ? 'بانتظار التفعيل'
+                        : "En attente d'activation"
+                      : rtl
+                        ? 'الوصول غير متاح'
+                        : 'Accès indisponible'
                   }
-                  tone={accessible ? 'success' : status === 'pending' ? 'warning' : 'danger'}
+                  tone={status === 'pending' ? 'warning' : 'danger'}
                   dot
                 />
-                <Pill
-                  label={`${publishedCount} ${rtl ? 'درس' : 'leçons'}`}
-                  tone="neutral"
-                />
-                {durationSec > 0 ? (
-                  <Pill label={durationLabel(durationSec, rtl)} tone="neutral" />
-                ) : null}
-              </View>
+              )}
             </View>
           </SafeAreaView>
         </View>
 
         <View style={styles.body}>
-          {/* ---- instructor ---- */}
-          <View style={[l.row, styles.instructor]}>
-            <Avatar
-              monogram={instructor.monogram}
-              size={44}
-              tone="brand"
-              square
-              photo={photos?.avatar}
-            />
-            <View style={{ flex: 1, gap: 1 }}>
-              <AppText size={14.5} weight="semibold" tone="ink" numberOfLines={1}>
-                {instructor.name}
-              </AppText>
-              <AppText size={12.5} tone="muted" numberOfLines={1}>
-                {instructor.subject}
-                {state.teacher.centerName ? ` · ${state.teacher.centerName}` : ''}
-              </AppText>
-            </View>
-          </View>
-
-          {/* ---- stats ---- */}
-          <View style={[l.row, styles.statsRow]}>
-            <View style={styles.statBox}>
-              <Ionicons name="play-circle-outline" size={17} color={colors.brand} />
-              <View>
-                <AppText size={15} weight="bold" tone="ink">
-                  {publishedCount}
+          {/* ---- title + teacher ---- */}
+          <View style={{ gap: spacing.sm }}>
+            <AppText size={21} weight="bold" tone="ink" numberOfLines={3}>
+              {course.title}
+            </AppText>
+            <View style={[l.row, { gap: spacing.md }]}>
+              <Avatar
+                monogram={instructor.monogram}
+                size={40}
+                tone="brand"
+                square
+                photo={photos?.avatar}
+              />
+              <View style={{ flex: 1, gap: 1 }}>
+                <AppText size={13.5} weight="semibold" tone="ink" numberOfLines={1}>
+                  {instructor.name}
                 </AppText>
-                <AppText size={11} tone="muted">
-                  {rtl ? 'دروس' : 'leçons'}
+                <AppText size={11.5} tone="muted" numberOfLines={1}>
+                  {instructor.subject}
+                  {state.teacher.centerName ? ` · ${state.teacher.centerName}` : ''}
                 </AppText>
               </View>
             </View>
+          </View>
+
+          <View style={[l.row, { flexWrap: 'wrap', gap: spacing.sm }]}>
+            <Pill
+              label={`${publishedCount} ${rtl ? 'درس' : publishedCount === 1 ? 'leçon' : 'leçons'}`}
+              tone="neutral"
+            />
             {durationSec > 0 ? (
-              <View style={styles.statBox}>
-                <Ionicons name="time-outline" size={17} color={colors.brand} />
-                <View>
-                  <AppText size={15} weight="bold" tone="ink">
-                    {minutes}
-                  </AppText>
-                  <AppText size={11} tone="muted">
-                    {rtl ? 'دقيقة' : 'minutes'}
-                  </AppText>
-                </View>
-              </View>
+              <Pill label={curriculumDuration(durationSec, rtl)} tone="neutral" />
             ) : null}
+            <Pill label={course.level} tone="brand" />
           </View>
 
-          {/* ---- resume CTA ---- */}
-          {accessible && resumeLesson ? (
-            <PrimaryButton
-              label={
-                progress && progress.percent > 0
-                  ? `${rtl ? 'متابعة' : 'Continuer'} · ${rtl ? 'الدرس' : 'Leçon'} ${resumeIndex}`
-                  : rtl
-                    ? 'ابدأ الدورة'
-                    : 'Commencer le cours'
-              }
-              leadingIcon="play"
-              onPress={() => openLesson(resumeLesson)}
-            />
+          {/* ---- progress ---- */}
+          {progress ? (
+            <View style={styles.progressBlock}>
+              <View style={[l.rowBetween, { gap: spacing.sm }]}>
+                <AppText size={12.5} weight="semibold" tone="ink">
+                  {rtl ? 'تقدّمك' : 'Votre progression'}
+                </AppText>
+                <AppText size={12.5} weight="bold" tone="brand">
+                  {progress.percent}%
+                </AppText>
+              </View>
+              <ProgressBar value={progress.percent} height={6} />
+              <AppText size={11.5} tone="muted">
+                {progress.completed} {rtl ? 'من' : 'sur'} {progress.total}{' '}
+                {rtl ? 'دروس مكتملة' : 'leçons terminées'}
+              </AppText>
+            </View>
           ) : null}
 
           {/* ---- access notice ---- */}
@@ -321,195 +511,202 @@ export default function CourseDetailScreen() {
             />
           ) : null}
 
-          {/* ---- progress ---- */}
-          {progress ? (
-            <Card style={styles.progressCard}>
-              <View style={l.rowBetween}>
-                <Eyebrow>{rtl ? 'تقدّمك' : 'Votre progression'}</Eyebrow>
-                <AppText size={14} weight="bold" tone="brand">
-                  {progress.percent}%
-                </AppText>
+          {/* ---- tabs ---- */}
+          <View style={[styles.tabRow, l.rowBetween]}>
+            <View style={[l.row, { gap: spacing.xl, flex: 1 }]}>
+              {(
+                [
+                  ['sessions', rtl ? 'الجلسات' : 'Sessions'],
+                  ['plus', rtl ? 'المزيد' : 'Plus'],
+                ] as [PageTab, string][]
+              ).map(([key, label]) => {
+                const active = tab === key;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => setTab(key)}
+                    style={({ pressed }) => [styles.tab, pressed && { opacity: 0.7 }]}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={label}
+                  >
+                    <AppText size={14} weight={active ? 'bold' : 'semibold'} tone={active ? 'ink' : 'muted'}>
+                      {label}
+                    </AppText>
+                    <View
+                      style={[styles.tabUnderline, active && { backgroundColor: colors.ink }]}
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {tab === 'sessions' ? (
+              <DownloadButton
+                status={courseSummary.status}
+                progress={courseSummary.progress}
+                label={bulkLabel(courseSummary, 'course')}
+                disabled={!accessible || courseVideos.length === 0}
+                idleIcon="cloud-download-outline"
+                size={36}
+                onPress={() => bulkAction(courseVideos, courseSummary)}
+              />
+            ) : null}
+          </View>
+
+          {/* ---- sessions ---- */}
+          {tab === 'sessions' ? (
+            chapters.length === 0 ? (
+              <EmptyState
+                icon="documents-outline"
+                title={rtl ? 'لا دروس منشورة' : 'Aucune leçon publiée'}
+                description={
+                  rtl
+                    ? 'سيظهر هنا برنامج الدورة بمجرد أن ينشر الأستاذ دروسه.'
+                    : "Le programme apparaîtra dès que votre professeur publiera des leçons."
+                }
+              />
+            ) : (
+              <View style={{ gap: spacing.xl }}>
+                {semesters.map((semester) => (
+                  <View key={semester.id} style={{ gap: spacing.lg }}>
+                    {semesters.length > 1 ? <Eyebrow>{semester.title}</Eyebrow> : null}
+
+                    {semester.chapters.map((chapter) => {
+                      const sectionVideos = chapter.lessons.filter(
+                        (lesson) => lesson.kind === 'video' && !!lesson.file,
+                      );
+                      const sectionSummary = bulkSummary(sectionVideos);
+
+                      return (
+                        <View key={chapter.id} style={{ gap: spacing.sm }}>
+                          <CurriculumSectionHeader
+                            title={chapter.title}
+                            lessonCount={chapter.lessons.length}
+                            durationSec={lessonsDuration(chapter.lessons)}
+                            onDownloadAll={
+                              sectionVideos.length > 0
+                                ? () => bulkAction(sectionVideos, sectionSummary)
+                                : undefined
+                            }
+                            downloadAllLabel={bulkLabel(sectionSummary, 'section')}
+                            downloadAllDisabled={!accessible}
+                            downloadAllStatus={sectionSummary.status}
+                            downloadAllProgress={sectionSummary.progress}
+                          />
+
+                          <Card flush>
+                            {chapter.lessons.map((lesson, index) => {
+                              const record = downloadRecords.get(lesson.id);
+                              return (
+                                <CurriculumRow
+                                  key={lesson.id}
+                                  lesson={lesson}
+                                  number={index + 1}
+                                  first={index === 0}
+                                  current={
+                                    lesson.id === progress?.nextLessonId &&
+                                    (progress?.percent ?? 0) < 100
+                                  }
+                                  completed={!!progressOf(lesson.id)?.completed}
+                                  accessible={accessible}
+                                  status={downloadStatusFor(lesson.id)}
+                                  progress={record?.progress ?? 0}
+                                  onPress={() => openLesson(lesson)}
+                                  onDownload={
+                                    lesson.kind === 'video' || lesson.kind === 'pdf'
+                                      ? () => performDownload(lesson)
+                                      : undefined
+                                  }
+                                  downloadLabel={downloadLabelFor(lesson)}
+                                  bundled={lesson.kind === 'pdf'}
+                                />
+                              );
+                            })}
+                          </Card>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
               </View>
-              <ProgressBar value={progress.percent} />
-              <AppText size={12} tone="muted">
-                {progress.completed} {rtl ? 'من' : 'sur'} {progress.total}{' '}
-                {rtl ? 'دروس مكتملة' : 'leçons terminées'}
-              </AppText>
-            </Card>
+            )
           ) : null}
 
-          {/* ---- about ---- */}
-          <View style={styles.about}>
-            <Eyebrow>{rtl ? 'عن هذه الدورة' : 'À propos de ce cours'}</Eyebrow>
-            <AppText size={14.5} tone="body" style={{ lineHeight: 23 }}>
-              {course.summary}
-            </AppText>
-          </View>
+          {/* ---- plus ---- */}
+          {tab === 'plus' ? (
+            <View style={{ gap: spacing.lg }}>
+              <View style={{ gap: spacing.sm }}>
+                <Eyebrow>{rtl ? 'عن هذه الدورة' : 'À propos de ce cours'}</Eyebrow>
+                <AppText size={14} tone="body" style={{ lineHeight: 23 }}>
+                  {course.summary}
+                </AppText>
+              </View>
 
-          {/* ---- program: semesters → topics → lessons ---- */}
-          <View style={{ marginTop: spacing.xl, gap: spacing.xxl }}>
-            {semesters.map((semester, si) => {
-              const semesterLessons = semester.chapters.flatMap((c) => c.lessons);
-              const semesterSeconds = semesterLessons.reduce((sum, x) => sum + x.durationSec, 0);
-              const semesterDone = semesterLessons.filter((les) => progressOf(les.id)?.completed).length;
-              /** Topics already listed by the previous semesters. */
-              const offset = semesters
-                .slice(0, si)
-                .reduce((sum, s) => sum + s.chapters.length, 0);
-              return (
-                <View key={semester.id} style={{ gap: spacing.md }}>
-                  <View style={[styles.semesterHead, l.rowBetween]}>
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <AppText size={16.5} weight="bold" tone="ink">
-                        {semester.title}
-                      </AppText>
-                      <AppText size={11.5} tone="muted">
-                        {semester.chapters.length} {rtl ? 'فصول' : 'chapitres'} ·{' '}
-                        {semesterLessons.length} {rtl ? 'دروس' : 'leçons'}
-                        {semesterSeconds > 0 ? ` · ${durationLabel(semesterSeconds, rtl)}` : ''}
-                      </AppText>
-                    </View>
-                    {semesterLessons.length > 0 ? (
-                      <Pill
-                        label={`${semesterDone}/${semesterLessons.length}`}
-                        tone={semesterDone === semesterLessons.length ? 'success' : 'neutral'}
-                      />
-                    ) : null}
-                  </View>
+              <Card flush>
+                <ActionRow
+                  icon="share-social-outline"
+                  title={rtl ? 'شارك هذه الدورة' : 'Partager ce cours'}
+                  subtitle={
+                    rtl
+                      ? 'أرسل الدورة إلى زملائك'
+                      : 'Envoyez ce cours à vos camarades'
+                  }
+                  onPress={() => {
+                    void shareCourse();
+                  }}
+                  first
+                />
 
-                  {semester.chapters.map((chapter, ciLocal) => {
-                    const ci = offset + ciLocal;
-                    const isOpen = openId === chapter.id;
-                    const chapterSeconds = chapter.lessons.reduce((sum, x) => sum + x.durationSec, 0);
-                    return (
-                      <Card key={chapter.id} flush>
-                        <Pressable
-                          onPress={() => setOpenChapter(isOpen ? '' : chapter.id)}
-                          accessibilityRole="button"
-                          accessibilityState={{ expanded: isOpen }}
-                          accessibilityLabel={`${semester.title} — ${chapter.title}`}
-                          style={({ pressed }) => [
-                            styles.chapterHeader,
-                            l.row,
-                            pressed && { opacity: 0.85 },
-                          ]}
-                        >
-                          <View style={styles.chapterIndex} importantForAccessibility="no">
-                            <AppText size={12} weight="bold" tone="brand">
-                              {ci + 1}
-                            </AppText>
-                          </View>
-                          <View style={{ flex: 1, gap: 2 }}>
-                            <AppText size={14.5} weight="bold" tone="ink" numberOfLines={2}>
-                              {chapter.title}
-                            </AppText>
-                            <AppText size={11.5} tone="muted">
-                              {chapter.lessons.length} {rtl ? 'دروس' : 'leçons'}
-                              {chapterSeconds > 0 ? ` · ${durationLabel(chapterSeconds, rtl)}` : ''}
-                            </AppText>
-                          </View>
-                          <Ionicons
-                            name={isOpen ? 'chevron-up' : 'chevron-down'}
-                            size={18}
-                            color={colors.faint}
-                            importantForAccessibility="no"
-                          />
-                        </Pressable>
+                <ActionRow
+                  icon="chatbubbles-outline"
+                  title={rtl ? 'الأسئلة والأجوبة' : 'Q & R'}
+                  subtitle={
+                    questions.length === 0
+                      ? rtl
+                        ? 'اطرح أول سؤال في الدورة'
+                        : 'Posez la première question du cours'
+                      : unanswered.length > 0
+                        ? rtl
+                          ? `${questions.length} أسئلة · ${unanswered.length} بانتظار الرد`
+                          : `${questions.length} question${
+                              questions.length === 1 ? '' : 's'
+                            } · ${unanswered.length} sans réponse`
+                        : rtl
+                          ? `${questions.length} أسئلة · كلها تمت الإجابة عليها`
+                          : `${questions.length} question${
+                              questions.length === 1 ? '' : 's'
+                            } · toutes répondues`
+                  }
+                  onPress={() => navigation.navigate('Qna', { courseId: course.id })}
+                  trailing={
+                    unanswered.length > 0 ? (
+                      <Pill label={`${unanswered.length}`} tone="warning" dot />
+                    ) : questions.length > 0 ? (
+                      <Pill label="✓" tone="success" />
+                    ) : null
+                  }
+                />
 
-                        {isOpen ? (
-                          chapter.lessons.length === 0 ? (
-                            <View style={[styles.emptyRow, l.row]}>
-                              <Ionicons name="documents-outline" size={18} color={colors.faint} />
-                              <AppText size={12.5} tone="muted" style={{ flex: 1 }}>
-                                {rtl
-                                  ? 'لا دروس في هذا الفصل بعد.'
-                                  : 'Aucune leçon dans ce chapitre pour le moment.'}
-                              </AppText>
-                            </View>
-                          ) : (
-                            chapter.lessons.map((lesson, li) => {
-                              const p = progressOf(lesson.id);
-                              const tint = lessonTint(lesson.kind);
-                              const meta = lessonMetaText(lesson, lang);
-                              return (
-                                <Pressable
-                                  key={lesson.id}
-                                  onPress={() => openLesson(lesson)}
-                                  disabled={!accessible}
-                                  style={({ pressed }) => [
-                                    styles.lessonRow,
-                                    l.row,
-                                    pressed && accessible && { backgroundColor: colors.brandSofter },
-                                  ]}
-                                  accessibilityRole="button"
-                                  accessibilityLabel={`الدرس ${li + 1}: ${lesson.title} — ${
-                                    meta ?? ''
-                                  }${
-                                    p?.completed
-                                      ? '، مكتمل'
-                                      : p && p.positionSec > 5
-                                        ? '، قيد المشاهدة'
-                                        : ''
-                                  }${accessible ? '' : '، مقفل بانتظار التفعيل'}`}
-                                  accessibilityHint={
-                                    accessible ? 'يفتح الدرس' : 'الدرس مقفل — انتظر تفعيل الوصول'
-                                  }
-                                >
-                                  <View style={[styles.lessonIcon, { backgroundColor: tint.soft }]}>
-                                    <Ionicons
-                                      name={LESSON_ICONS[lesson.kind]}
-                                      size={15}
-                                      color={tint.dark}
-                                    />
-                                  </View>
-
-                                  <View style={{ flex: 1, gap: 3 }}>
-                                    <AppText
-                                      size={14}
-                                      weight="semibold"
-                                      tone={accessible ? 'ink' : 'faint'}
-                                      numberOfLines={2}
-                                    >
-                                      {li + 1}. {lesson.title}
-                                    </AppText>
-                                    <AppText size={11.5} tone="muted">
-                                      {meta ?? (rtl ? 'نص' : 'texte')}
-                                      {p?.completed
-                                        ? ` · ${rtl ? 'مكتمل ✓' : 'terminé ✓'}`
-                                        : p && p.positionSec > 5
-                                          ? ` · ${rtl ? 'قيد المشاهدة' : 'en cours'}`
-                                          : ''}
-                                    </AppText>
-                                  </View>
-
-                                  {p?.completed ? (
-                                    <Pill label="✓" tone="success" />
-                                  ) : (
-                                    <Ionicons
-                                      name={rtl ? 'chevron-back' : 'chevron-forward'}
-                                      size={18}
-                                      color={accessible ? colors.faint : colors.lineStrong}
-                                      importantForAccessibility="no"
-                                    />
-                                  )}
-                                </Pressable>
-                              );
-                            })
-                          )
-                        ) : null}
-                      </Card>
-                    );
-                  })}
-                </View>
-              );
-            })}
-          </View>
+                <ActionRow
+                  icon="folder-open-outline"
+                  title={rtl ? 'المكتبة' : 'Bibliothèque'}
+                  subtitle={
+                    rtl
+                      ? 'كل ملفات الدروس في مكان واحد'
+                      : 'Tous les fichiers de cours au même endroit'
+                  }
+                  onPress={() => navigation.navigate('Library')}
+                />
+              </Card>
+            </View>
+          ) : null}
 
           {!accessible && status === 'pending' ? (
             <PrimaryButton
               label={rtl ? 'تحديث حالة الوصول' : "Actualiser l'accès"}
               variant="outline"
-              style={{ marginTop: spacing.lg }}
+              style={{ marginTop: spacing.sm }}
               onPress={() => navigation.goBack()}
             />
           ) : null}
@@ -519,19 +716,67 @@ export default function CourseDetailScreen() {
   );
 }
 
+/** Tappable row used by the Plus tab. */
+function ActionRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  trailing,
+  first,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  trailing?: React.ReactNode;
+  first?: boolean;
+}) {
+  const { lang, dir } = useI18n();
+  const l = useLayout(lang);
+  const rtl = dir === 'rtl';
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.actionRow,
+        l.row,
+        !first && styles.actionDivider,
+        pressed && { backgroundColor: colors.brandSofter },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`${title} — ${subtitle}`}
+    >
+      <View style={styles.actionIcon} importantForAccessibility="no">
+        <Ionicons name={icon} size={19} color={colors.brand} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText size={14.5} weight="semibold" tone="ink">
+          {title}
+        </AppText>
+        <AppText size={11.5} tone="muted" numberOfLines={2}>
+          {subtitle}
+        </AppText>
+      </View>
+      {trailing}
+      <Ionicons
+        name={rtl ? 'chevron-back' : 'chevron-forward'}
+        size={18}
+        color={colors.faint}
+        importantForAccessibility="no"
+      />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingBottom: spacing.xxl * 2 },
   missingWrap: { padding: spacing.lg },
-  /* `overflow: hidden` keeps the header art inside the header — without it the
-     cover bleeds down the body, behind the cards. */
-  hero: { backgroundColor: '#0B1B2A', overflow: 'hidden' },
-  /*
-   * Absolute art layer that fills the header. Explicit percentages rather than
-   * `StyleSheet.absoluteFill`: an `Image` given only insets resolves to its own
-   * intrinsic pixel size instead, painting a magnified slice of the artwork far
-   * outside the header.
-   */
+  hero: { minHeight: 420, backgroundColor: '#0B1B2A', overflow: 'hidden' },
+  heroSafe: { flex: 1, minHeight: 420 },
+  /** Absolute art layer that fills the hero without resolving to intrinsic size. */
   heroArt: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   heroBar: {
     flexDirection: 'row',
@@ -545,65 +790,46 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     gap: spacing.sm,
   },
+  sessionPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.glassSoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    marginBottom: 2,
+  },
+  heroCta: { marginTop: spacing.sm },
   body: { padding: spacing.lg, gap: spacing.lg },
-  instructor: { gap: spacing.md },
-  statsRow: { gap: spacing.md },
-  statBox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  progressBlock: {
     gap: spacing.sm,
     backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.md,
   },
-  progressCard: { gap: spacing.md, backgroundColor: colors.surfaceAlt, borderColor: 'transparent' },
-  about: { gap: spacing.sm },
-  semesterHead: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    paddingBottom: spacing.xs,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.brandSoft,
-  },
-  chapterHeader: {
-    flexDirection: 'row',
+  tabRow: {
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  tab: { gap: 8, paddingTop: spacing.sm },
+  tabUnderline: {
+    height: 2.5,
+    width: '100%',
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+  },
+  actionRow: {
     gap: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  chapterIndex: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
-    backgroundColor: colors.brandSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lessonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-  },
-  lessonIcon: {
-    width: 34,
-    height: 34,
+  actionDivider: { borderTopWidth: 1, borderTopColor: colors.line },
+  actionIcon: {
+    width: 38,
+    height: 38,
     borderRadius: radius.sm,
+    backgroundColor: colors.brandSofter,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emptyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
   },
 });

@@ -28,7 +28,6 @@ const config = {
     extraNodeModules: {
       '@ostadiplus/shared': path.resolve(workspaceRoot, 'packages', 'shared'),
     },
-    sourceExts: ['ts', 'tsx', 'js', 'jsx', 'json', 'cjs', 'mjs'],
   },
 };
 

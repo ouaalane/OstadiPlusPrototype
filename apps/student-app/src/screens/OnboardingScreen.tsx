@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-2deg' }],
   },
   tileOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

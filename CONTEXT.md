@@ -16,7 +16,7 @@ presented as two apps sharing **one demo dataset**, aimed at investors / teacher
 | App | Path | Stack | Purpose |
 | --- | --- | --- | --- |
 | Teacher dashboard | `apps/teacher-dashboard` | React + TS + Vite 7 + Tailwind 4 + react-router 7 (HashRouter) + lucide-react | إدارة الدورات، الفصول والدروس، رفع/اختيار الملفات، التلاميذ والوصول، الإعلانات، الإعدادات |
-| Student app | `apps/student-app` | React Native / **Expo SDK 54** (RN 0.81.5) + TS + react-navigation + expo-video | Android: splash, اختيار الحساب, الرئيسية, دوراتي, تفاصيل الدورة, مشغل الفيديو, قارئ المستندات, الإعلانات, الملف الشخصي |
+| Student app | `apps/student-app` | React Native / **Expo SDK 57** (RN 0.86.3) + TS + react-navigation + expo-video | Android: splash, اختيار الحساب, الرئيسية, دوراتي, تفاصيل الدورة, مشغل الفيديو, قارئ المستندات, الإعلانات, الملف الشخصي |
 | Watermark API | `apps/api` | Node ≥ 23.6, zero deps (`node:http`, `node:sqlite`, `node:crypto`), migrations in SQL | إصدار رمز تتبّع لكل تشغيل فيديو (جدول `video_watermarks`) + البحث عن أي رمز مسرّب — `npm run api` (اختياري وقت التشغيل) |
 | Shared kernel | `packages/shared` | TS (no deps) | types, design tokens, seed dataset, selectors, `OSTADI1:` sync codec, media manifest |
 

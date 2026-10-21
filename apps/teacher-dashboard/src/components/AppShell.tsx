@@ -5,6 +5,7 @@ import {
   Layout,
   LayoutDashboard,
   Menu,
+  MessageCircleQuestion,
   Plus,
   Settings,
   Users,
@@ -29,6 +30,7 @@ const NAV: NavItem[] = [
   { to: '/', label: 'الرئيسية', short: 'الرئيسية', icon: LayoutDashboard, end: true },
   { to: '/courses', label: 'دروسي وفيديوهاتي', short: 'دروسي', icon: Video },
   { to: '/students', label: 'التلاميذ والاشتراكات', short: 'التلاميذ', icon: Users },
+  { to: '/questions', label: 'الأسئلة والأجوبة', short: 'الأسئلة', icon: MessageCircleQuestion },
   { to: '/reception', label: 'استقبال التلاميذ', short: 'الاستقبال', icon: Layout },
   { to: '/settings', label: 'الإعدادات', short: 'الإعدادات', icon: Settings },
 ];

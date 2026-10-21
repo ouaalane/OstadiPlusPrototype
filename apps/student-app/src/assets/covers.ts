@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * Course cover art (jpg) → bundled asset id.
  *

@@ -30,3 +30,6 @@ apps/api/data/
 .opencode/
 .playwright-mcp/
 
+# PDF build workspace (generated HTML, fonts, page previews)
+apps/student-app/.pdf-build/
+

@@ -383,7 +383,7 @@ export default function HomeScreen() {
           placeholder={
             rtl ? 'ابحث عن درس، مادة، أو أستاذ…' : 'Rechercher un cours, une matière…'
           }
-          onPress={() => navigation.navigate('Tabs', { screen: 'Courses' })}
+          onPress={() => navigation.navigate('Tabs', { screen: 'Search' })}
         />
 
         {/* ---- pick up where you left off ---- */}
@@ -470,7 +470,7 @@ export default function HomeScreen() {
             <SectionHead
               eyebrow={rtl ? 'موادي' : 'Mes matières'}
               action={rtl ? 'الكل' : 'Tout'}
-              onAction={() => navigation.navigate('Tabs', { screen: 'Courses' })}
+              onAction={() => navigation.navigate('Tabs', { screen: 'Learning' })}
             />
             <ScrollView
               horizontal
@@ -481,7 +481,7 @@ export default function HomeScreen() {
                 <SubjectTile
                   key={subject}
                   subject={subject}
-                  onPress={() => navigation.navigate('Tabs', { screen: 'Courses' })}
+                  onPress={() => navigation.navigate('Tabs', { screen: 'Search' })}
                 />
               ))}
             </ScrollView>
@@ -494,7 +494,7 @@ export default function HomeScreen() {
             <SectionHead
               eyebrow={rtl ? 'أحدث الدروس' : 'Dernières leçons'}
               action={rtl ? 'الكل' : 'Tout'}
-              onAction={() => navigation.navigate('Tabs', { screen: 'Courses' })}
+              onAction={() => navigation.navigate('Tabs', { screen: 'Learning' })}
             />
             <View style={{ gap: spacing.lg }}>
               {latestLessons.map(({ lesson, course }) => (
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
   continueBody: { padding: spacing.lg, gap: spacing.md },
   courseBody: { padding: spacing.md, gap: 6 },
   /** Centred play glyph over a full-width lesson cover. */
-  cardPlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  cardPlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   /** Length / pages badge — bottom-right corner of the cover. */
   cardMeta: {
     position: 'absolute',

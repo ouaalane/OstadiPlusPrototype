@@ -40,7 +40,9 @@ export async function prepareLessonAlertsAsync(): Promise<boolean> {
       name: 'الدروس الجديدة · Nouveaux cours',
       description: 'يُشعرك هذا القناة عند نشر الأستاذ لدرس جديد',
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
+      /* Omit `sound` on purpose: Android then uses the system default sound.
+         Passing 'default' makes expo-notifications look for a custom
+         `default.*` asset and log an error over the UI. */
       lightColor: '#0B5CFF',
       vibrationPattern: [0, 220, 120, 220],
     });

@@ -20,6 +20,7 @@ import {
   type EnrollmentStatus,
   type Lang,
   type Lesson,
+  type QnaReply,
   type TeacherProfile,
 } from '@ostadiplus/shared';
 
@@ -113,7 +114,8 @@ export type Action =
   | { type: 'teacher/update'; payload: Partial<TeacherProfile> }
   | { type: 'membership/approve'; payload: { membershipId: string } }
   | { type: 'membership/reject'; payload: { membershipId: string } }
-  | { type: 'membership/request'; payload: { studentId: string; centerId: string } };
+  | { type: 'membership/request'; payload: { studentId: string; centerId: string } }
+  | { type: 'qna/reply'; payload: { questionId: string; reply: QnaReply } };
 
 export interface NewCourse {
   id: string;
@@ -597,6 +599,17 @@ export function reducer(state: DemoState, action: Action): DemoState {
       return next;
     }
 
+    case 'qna/reply': {
+      const next = clone(state);
+      const question = (next.questions ?? []).find(
+        (item) => item.id === action.payload.questionId,
+      );
+      if (question) {
+        question.replies.push(action.payload.reply);
+      }
+      return next;
+    }
+
     case 'teacher/update': {
       const next = clone(state);
       Object.assign(next.teacher, action.payload);
@@ -647,7 +660,11 @@ function loadInitial(): DemoState {
         parsed.version === createDemoState().version &&
         Array.isArray(parsed.courses)
       ) {
-        return parsed;
+        /* Q & R was added after v8: keep the saved dashboard data and attach
+           the seeded threads so the inbox is not empty on first open. */
+        return parsed.questions === undefined
+          ? { ...parsed, questions: createDemoState().questions ?? [] }
+          : parsed;
       }
     }
   } catch {

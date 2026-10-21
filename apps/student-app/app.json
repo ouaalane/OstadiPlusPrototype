@@ -7,14 +7,8 @@
     "icon": "./assets/icon.png",
     "scheme": "ostadiplus",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "primaryColor": "#0B5CFF",
     "backgroundColor": "#F3F9FD",
-    "splash": {
-      "image": "./assets/adaptive-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F3F9FD"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -28,7 +22,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
@@ -51,7 +44,8 @@
           "backgroundColor": "#F3F9FD"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-status-bar"
     ]
   }
 }

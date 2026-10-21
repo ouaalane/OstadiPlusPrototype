@@ -55,7 +55,7 @@ interface FileEntry {
 
 export default function LibraryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { state, myCourses, progressOf, markCompleted } = useStore();
+  const { state, myCourses, progressOf } = useStore();
   const { lang } = useI18n();
   const l = useLayout(lang);
   const rtl = lang === 'ar';
@@ -90,13 +90,6 @@ export default function LibraryScreen() {
       return true;
     });
   }, [files, cat, query]);
-
-  const counts = useMemo(() => ({
-    all: files.length,
-    summary: files.filter((f) => f.cat === 'summary').length,
-    series: files.filter((f) => f.cat === 'series').length,
-    exam: files.filter((f) => f.cat === 'exam').length,
-  }), [files]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

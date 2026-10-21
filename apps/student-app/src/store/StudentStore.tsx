@@ -34,23 +34,34 @@ import {
   encodeDemoState,
   enrollmentFor,
   isEnrollmentExpired,
+  makeQuestion,
   progressFor,
+  questionsForCourse as selectQuestionsForCourse,
   type AppNotification,
   type CenterMembership,
   type Course,
   type DemoState,
   type Lang,
   type LessonProgress,
+  type QnaQuestion,
   type Student,
 } from '@ostadiplus/shared';
 
 import { videoAssets } from '../assets/registry';
 
 const STORAGE_KEY = 'ostadiplus.student.v3';
+const PREFS_KEY = 'ostadiplus.student.prefs.v1';
 
 interface Persisted {
   data: DemoState;
 }
+
+interface LibraryPrefs {
+  archived: string[];
+  favorites: string[];
+}
+
+const EMPTY_PREFS: LibraryPrefs = { archived: [], favorites: [] };
 
 interface StoreValue {
   hydrated: boolean;
@@ -83,12 +94,28 @@ interface StoreValue {
   respondToMembership: (membershipId: string, accept: boolean) => void;
   /** Downloads for the signed-in student, keyed by lessonId. */
   myDownloads: DownloadRecord[];
+  /** Archived ("Archivés") course ids, persisted locally. */
+  archivedCourseIds: string[];
+  /** Favourite ("Favoris") course ids, persisted locally. */
+  favoriteCourseIds: string[];
+  isArchived: (courseId: string) => boolean;
+  isFavorite: (courseId: string) => boolean;
+  toggleArchived: (courseId: string) => void;
+  toggleFavorite: (courseId: string) => void;
+  /** Shared course Q & R threads, newest first. */
+  questionsOfCourse: (courseId: string) => QnaQuestion[];
+  /** Post a question on a course (optionally attached to one lesson). */
+  askCourseQuestion: (courseId: string, body: string, lessonId?: string) => boolean;
   /** Start downloading a lesson (video or PDF). Returns the download record. */
   downloadLesson: (lessonId: string) => Promise<'ok' | 'already_downloaded' | 'error'>;
+  /** Start several downloads at once (section / course « download all »). */
+  downloadLessons: (lessonIds: string[]) => Promise<void>;
   /** Cancel an in-progress download. */
   cancelDownload: (lessonId: string) => void;
   /** Delete a downloaded file. */
   deleteDownload: (lessonId: string) => Promise<void>;
+  /** Delete several downloaded files at once (course / section bulk actions). */
+  deleteDownloads: (lessonIds: string[]) => Promise<void>;
   /** Get the local file URI for a downloaded lesson, if present. */
   downloadUriFor: (lessonId: string) => string | undefined;
   /** Get the download status for a lesson. */
@@ -132,6 +159,7 @@ type Action =
   | { type: 'progress'; lessonId: string; positionSec: number; completed: boolean }
   | { type: 'notification/read'; notifId: string }
   | { type: 'notification/new-lesson'; studentId: string; payload: Record<string, string> }
+  | { type: 'qna/ask'; question: QnaQuestion }
   | { type: 'membership/request'; centerId: string; studentId: string }
   | { type: 'membership/respond'; membershipId: string; accept: boolean; studentId: string }
   | { type: 'student/register'; student: Student };
@@ -228,6 +256,13 @@ function reducer(state: DemoState, action: Action): DemoState {
       };
     }
 
+    case 'qna/ask': {
+      return {
+        ...state,
+        questions: [...(state.questions ?? []), action.question],
+      };
+    }
+
     case 'membership/request': {
       const existing = (state.memberships ?? []).find(
         (m) =>
@@ -302,8 +337,11 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   const [hydrated, setHydrated] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
+  const [prefs, setPrefs] = useState<LibraryPrefs>(EMPTY_PREFS);
+  const [prefsHydrated, setPrefsHydrated] = useState(false);
   const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeDownloads = useRef<Map<string, () => void>>(new Map());
+  const progressTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -320,7 +358,13 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
             parsed.data.version === DEMO_STATE.version &&
             Array.isArray(parsed.data.courses)
           ) {
-            dispatch({ type: 'hydrate', state: parsed.data });
+            /* Q & R was added after v8. Payloads written before it keep their
+               courses/progress and simply receive the seeded threads. */
+            const hydratedState =
+              parsed.data.questions === undefined
+                ? { ...parsed.data, questions: createDemoState().questions ?? [] }
+                : parsed.data;
+            dispatch({ type: 'hydrate', state: hydratedState });
           }
         }
       } catch {
@@ -333,6 +377,37 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       cancelled = true;
     };
   }, []);
+
+  /* Library preferences (archive / favourites) live outside DemoState so a
+     teacher sync never overwrites personal shelf choices. */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(PREFS_KEY);
+        if (cancelled) return;
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<LibraryPrefs>;
+          setPrefs({
+            archived: Array.isArray(parsed.archived) ? parsed.archived : [],
+            favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
+          });
+        }
+      } catch {
+        /* unreadable preferences — start with an empty shelf */
+      } finally {
+        if (!cancelled) setPrefsHydrated(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!prefsHydrated) return;
+    AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)).catch(() => undefined);
+  }, [prefs, prefsHydrated]);
 
   /* Debounced persistence so playback progress does not thrash the disk. */
   useEffect(() => {
@@ -350,7 +425,6 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
 
   /* Ensure the downloads directory exists once the store is mounted. */
   useEffect(() => {
-    let cancelled = false;
     (async () => {
       try {
         const dir = new Directory(Paths.cache, 'ostadiplus', 'downloads');
@@ -362,9 +436,6 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         /* directory creation is non-fatal; downloads will fail gracefully */
       }
     })();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const me = useMemo(
@@ -493,6 +564,57 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
     [state.activeStudentId],
   );
 
+  const isArchived = useCallback(
+    (courseId: string) => prefs.archived.includes(courseId),
+    [prefs.archived],
+  );
+
+  const isFavorite = useCallback(
+    (courseId: string) => prefs.favorites.includes(courseId),
+    [prefs.favorites],
+  );
+
+  const toggleArchived = useCallback((courseId: string) => {
+    setPrefs((prev) => ({
+      ...prev,
+      archived: prev.archived.includes(courseId)
+        ? prev.archived.filter((id) => id !== courseId)
+        : [...prev.archived, courseId],
+    }));
+  }, []);
+
+  const toggleFavorite = useCallback((courseId: string) => {
+    setPrefs((prev) => ({
+      ...prev,
+      favorites: prev.favorites.includes(courseId)
+        ? prev.favorites.filter((id) => id !== courseId)
+        : [...prev.favorites, courseId],
+    }));
+  }, []);
+
+  const questionsOfCourse = useCallback(
+    (courseId: string) => selectQuestionsForCourse(state, courseId),
+    [state],
+  );
+
+  const askCourseQuestion = useCallback(
+    (courseId: string, body: string, lessonId?: string): boolean => {
+      const trimmed = body.trim();
+      if (!trimmed || !me) return false;
+      if (statusOf(courseId) !== 'active') return false;
+      const question = makeQuestion({
+        courseId,
+        lessonId,
+        studentId: me.id,
+        authorName: me.fullName,
+        body: trimmed,
+      });
+      dispatch({ type: 'qna/ask', question });
+      return true;
+    },
+    [me, statusOf],
+  );
+
   /** Whether a downloaded lesson can be played — the course subscription
    *  must be active and not expired. */
   const canPlayDownload = useCallback(
@@ -570,7 +692,30 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         { lessonId, status: 'downloading', progress: 0, localUri, sizeMb: lesson.sizeMb, downloadedAt: nowIso() },
       ]);
 
+      const stopTicker = () => {
+        const timer = progressTimers.current.get(lessonId);
+        if (timer) {
+          clearInterval(timer);
+          progressTimers.current.delete(lessonId);
+        }
+      };
+
+      /* The bundled asset resolves almost instantly; this ticker keeps the
+         ring alive long enough to communicate progress and to make cancelling
+         a real interaction instead of a no-op. */
+      const ticker = setInterval(() => {
+        setDownloads((prev) =>
+          prev.map((d) =>
+            d.lessonId === lessonId && d.status === 'downloading'
+              ? { ...d, progress: Math.min(92, d.progress + 6 + Math.round(Math.random() * 7)) }
+              : d,
+          ),
+        );
+      }, 180);
+      progressTimers.current.set(lessonId, ticker);
+
       const cancel = () => {
+        stopTicker();
         activeDownloads.current.delete(lessonId);
         setDownloads((prev) =>
           prev.map((d) =>
@@ -597,9 +742,10 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         // Copy the downloaded asset to our downloads directory.
         const srcFile = new File(asset.localUri ?? asset.uri);
         const destFile = new File(Paths.cache, 'ostadiplus', 'downloads', `${lessonId}.${ext}`);
-        srcFile.copy(destFile);
+        await srcFile.copy(destFile);
 
         activeDownloads.current.delete(lessonId);
+        stopTicker();
         const info = await destFile.info();
         setDownloads((prev) =>
           prev.map((d) =>
@@ -614,8 +760,9 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
           ),
         );
         return 'ok';
-      } catch (err) {
+      } catch {
         activeDownloads.current.delete(lessonId);
+        stopTicker();
         setDownloads((prev) =>
           prev.map((d) =>
             d.lessonId === lessonId ? { ...d, status: 'failed' } : d,
@@ -628,6 +775,11 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   );
 
   const cancelDownload = useCallback((lessonId: string) => {
+    const timer = progressTimers.current.get(lessonId);
+    if (timer) {
+      clearInterval(timer);
+      progressTimers.current.delete(lessonId);
+    }
     const cancel = activeDownloads.current.get(lessonId);
     if (cancel) {
       cancel();
@@ -635,10 +787,33 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const deleteDownload = useCallback(
-    async (lessonId: string) => {
-      const record = downloads.find((d) => d.lessonId === lessonId);
-      if (record) {
+  /**
+   * Downloads several lessons concurrently. Each lesson keeps its own
+   * progress record, so the section / course buttons can aggregate them
+   * without the engine knowing about the UI grouping.
+   */
+  const downloadLessons = useCallback(
+    async (lessonIds: string[]) => {
+      const unique = [...new Set(lessonIds)];
+      await Promise.all(
+        unique.map((lessonId) => downloadLesson(lessonId).catch(() => 'error' as const)),
+      );
+    },
+    [downloadLesson],
+  );
+
+  const deleteDownloads = useCallback(
+    async (lessonIds: string[]) => {
+      const ids = new Set(lessonIds);
+      const records = downloads.filter((d) => ids.has(d.lessonId));
+      for (const record of records) {
+        const timer = progressTimers.current.get(record.lessonId);
+        if (timer) {
+          clearInterval(timer);
+          progressTimers.current.delete(record.lessonId);
+        }
+        activeDownloads.current.get(record.lessonId)?.();
+        activeDownloads.current.delete(record.lessonId);
         try {
           const file = new File(record.localUri);
           await file.delete();
@@ -646,9 +821,16 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
           /* file may already be gone */
         }
       }
-      setDownloads((prev) => prev.filter((d) => d.lessonId !== lessonId));
+      setDownloads((prev) => prev.filter((d) => !ids.has(d.lessonId)));
     },
     [downloads],
+  );
+
+  const deleteDownload = useCallback(
+    async (lessonId: string) => {
+      await deleteDownloads([lessonId]);
+    },
+    [deleteDownloads],
   );
 
   const registerStudent = useCallback(
@@ -705,11 +887,21 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       myMemberships,
       requestCenterJoin,
       respondToMembership,
+      archivedCourseIds: prefs.archived,
+      favoriteCourseIds: prefs.favorites,
+      isArchived,
+      isFavorite,
+      toggleArchived,
+      toggleFavorite,
+      questionsOfCourse,
+      askCourseQuestion,
       myDownloads: downloads,
       canPlayDownload,
       downloadLesson,
+      downloadLessons,
       cancelDownload,
       deleteDownload,
+      deleteDownloads,
       downloadUriFor,
       downloadStatusFor,
       registerStudent,
@@ -737,11 +929,21 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       myMemberships,
       requestCenterJoin,
       respondToMembership,
+      prefs.archived,
+      prefs.favorites,
+      isArchived,
+      isFavorite,
+      toggleArchived,
+      toggleFavorite,
+      questionsOfCourse,
+      askCourseQuestion,
       downloads,
       canPlayDownload,
       downloadLesson,
+      downloadLessons,
       cancelDownload,
       deleteDownload,
+      deleteDownloads,
       downloadUriFor,
       downloadStatusFor,
       registerStudent,

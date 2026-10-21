@@ -262,13 +262,14 @@ function useRowDir(): 'row' | 'row-reverse' {
 /* Controls                                                            */
 /* ------------------------------------------------------------------ */
 
-export type ButtonVariant = 'primary' | 'soft' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'accent' | 'soft' | 'outline' | 'ghost' | 'danger';
 
 const BUTTON_VARIANTS: Record<
   ButtonVariant,
   { bg: string; fg: string; border: string; icon: string }
 > = {
   primary: { bg: colors.brand, fg: colors.white, border: 'transparent', icon: colors.white },
+  accent: { bg: colors.accent, fg: colors.ink, border: 'transparent', icon: colors.ink },
   soft: { bg: colors.brandSoft, fg: colors.brand, border: 'transparent', icon: colors.brand },
   outline: { bg: colors.surface, fg: colors.ink, border: colors.line, icon: colors.ink },
   ghost: { bg: 'transparent', fg: colors.brand, border: 'transparent', icon: colors.brand },
@@ -284,6 +285,8 @@ export function PrimaryButton({
   compact,
   icon,
   leadingIcon,
+  accessibilityLabel,
+  accessibilityHint,
   style,
 }: {
   label: string;
@@ -297,6 +300,9 @@ export function PrimaryButton({
   icon?: IconName;
   /** Leading glyph, e.g. «▶» on «Continue · Lecture 5». */
   leadingIcon?: IconName;
+  /** Overrides the visible label for screen readers (e.g. adds the item name). */
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
   style?: ViewStyle | ViewStyle[];
 }) {
   const v = BUTTON_VARIANTS[variant];
@@ -308,7 +314,8 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={off}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: off, busy: !!busy }}
       style={({ pressed }) => [
         styles.button,
@@ -617,6 +624,7 @@ export function EmptyState({
   title,
   description,
   action,
+  compact,
   style,
 }: {
   icon?: IconName;
@@ -625,31 +633,42 @@ export function EmptyState({
   title: string;
   description: string;
   action?: React.ReactNode;
+  /** Tighter variant for empty sections that sit above primary content. */
+  compact?: boolean;
   style?: ViewStyle;
 }) {
   return (
-    <View style={[styles.empty, style]}>
+    <View style={[styles.empty, compact && styles.emptyCompact, style]}>
       <View importantForAccessibility="no">
-        <View style={styles.emptyCircle}>
-          <Ionicons name={icon} size={34} color={colors.brand} />
+        <View style={[styles.emptyCircle, compact && styles.emptyCircleCompact]}>
+          <Ionicons name={icon} size={compact ? 26 : 34} color={colors.brand} />
         </View>
         {badgeIcon ? (
-          <View style={styles.emptyBadge}>
-            <Ionicons name={badgeIcon} size={13} color={colors.muted} />
+          <View style={[styles.emptyBadge, compact && styles.emptyBadgeCompact]}>
+            <Ionicons name={badgeIcon} size={compact ? 10 : 13} color={colors.muted} />
           </View>
         ) : null}
       </View>
-      <AppText size={20} weight="bold" tone="ink" style={{ textAlign: 'center', marginTop: spacing.xl }}>
+      <AppText
+        size={compact ? 17 : 20}
+        weight="bold"
+        tone="ink"
+        style={{ textAlign: 'center', marginTop: compact ? spacing.md : spacing.xl }}
+      >
         {title}
       </AppText>
       <AppText
-        size={14}
+        size={compact ? 13 : 14}
         tone="muted"
-        style={{ textAlign: 'center', lineHeight: 22, paddingHorizontal: spacing.sm }}
+        style={{
+          textAlign: 'center',
+          lineHeight: compact ? 19 : 22,
+          paddingHorizontal: spacing.sm,
+        }}
       >
         {description}
       </AppText>
-      {action ? <View style={{ alignSelf: 'stretch', marginTop: spacing.xs }}>{action}</View> : null}
+      {action ? <View style={{ alignSelf: 'stretch' }}>{action}</View> : null}
     </View>
   );
 }
@@ -1861,6 +1880,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxxl,
     paddingHorizontal: spacing.lg,
   },
+  emptyCompact: {
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+  },
   emptyCircle: {
     width: 96,
     height: 96,
@@ -1869,6 +1892,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptyCircleCompact: { width: 64, height: 64, borderRadius: 32 },
   emptyBadge: {
     position: 'absolute',
     top: 0,
@@ -1882,6 +1906,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptyBadgeCompact: { width: 24, height: 24, borderRadius: 12 },
 
   cover: { borderRadius: radius.lg, overflow: 'hidden', padding: spacing.md },
   coverBubbleLarge: {

@@ -82,6 +82,9 @@ const dict = {
 
   // ── Home ──────────────────────────────────────────────────────────
   home: { fr: 'Accueil', ar: 'الرئيسية' },
+  my_learning: { fr: 'Mon apprentissage', ar: 'تعلّمي' },
+  browse_categories: { fr: 'Parcourir les catégories', ar: 'تصفّح الفئات' },
+  top_searches: { fr: 'Recherches populaires', ar: 'الأكثر بحثاً' },
   continue_learning: { fr: 'Continuer à apprendre', ar: 'متابعة التعلم' },
   recent_lessons: { fr: 'Dernières leçons', ar: 'آخر الدروس' },
   my_courses_preview: { fr: 'Mes cours', ar: 'دوراتي' },

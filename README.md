@@ -10,7 +10,7 @@ One demo dataset, two finished-looking apps:
 | App | Stack | What it is |
 | --- | --- | --- |
 | `apps/teacher-dashboard` | React + TypeScript + Vite + Tailwind | لوحة الأستاذ — courses, chapters/lessons, uploads, students & access, announcements |
-| `apps/student-app` | React Native (Expo SDK 54) + TypeScript | تطبيق التلاميذ — Android, offline: splash, sign-in, home, my courses, course detail, video player, document reader, announcements, profile |
+| `apps/student-app` | React Native (Expo SDK 57) + TypeScript | تطبيق التلاميذ — Android, offline: splash, sign-in, home, my courses, course detail, video player, document reader, announcements, profile |
 | `apps/api` | Node ≥ 23.6, zero dependencies (`node:http`, `node:sqlite`) | Watermark API — issues + traces the per-playback video codes (optional at runtime) |
 
 Everything is **Arabic / RTL**, the brand name stays **OstadiPlus** in Latin script, and both apps read the same

@@ -5,9 +5,9 @@
  * mounted video surface across inline/fullscreen, poster/loading/error
  * states, draggable RTL-aware scrubber, ±10 s, previous/next lesson, pause on
  * blur/background). This screen owns the enrollment gate, the watermark
- * grant, screen-capture protection, the meta block, the Save / Download
- * chips, the Overview · Chapters · Resources tabs, and the sticky Prev /
- * «Complete & next» bar.
+ * grant, screen-capture protection, the meta block, the Save / Q & R chips,
+ * the Overview · Chapters · Resources tabs, and the sticky Prev /
+ * «Complete & next» bar. Downloads live on the compact chapter rows only.
  *
  * Playback is gated by the student's enrollment (published course + active,
  * non-expired subscription). Every playback start asks the watermark API
@@ -59,15 +59,19 @@ import { useLayout } from '../i18n/layout';
 import {
   ActionChip,
   AppText,
-  Badge,
   Card,
-  Eyebrow,
   NoticeCard,
   Pill,
   PrimaryButton,
   ProgressBar,
 } from '../components/ui';
-import { lessonMetaText, lessonRoute } from '../lib/lesson';
+import type { DownloadStatus } from '../store/StudentStore';
+import {
+  CurriculumRow,
+  CurriculumSectionHeader,
+  lessonsDuration,
+} from '../components/Curriculum';
+import { lessonRoute } from '../lib/lesson';
 import LessonPlayer from '../components/LessonPlayer';
 import { requestPlaybackGrant, type PlaybackGrant } from '../lib/watermark-api';
 import { resolveLessonMedia } from '../media/lookup';
@@ -148,7 +152,10 @@ export default function VideoScreen() {
     markCompleted,
     myDownloads,
     downloadLesson,
+    downloadLessons,
+    cancelDownload,
     deleteDownload,
+    deleteDownloads,
     downloadStatusFor,
   } = useStore();
   const { lang, dir } = useI18n();
@@ -277,9 +284,8 @@ export default function VideoScreen() {
   const progress = me ? courseProgress(state, me.id, course) : null;
   const courseFiles = lessons.filter((x) => x.kind === 'pdf');
 
-  const downloadStatus = downloadStatusFor(lesson.id);
   const downloadRecord = myDownloads.find((d) => d.lessonId === lesson.id);
-  const isDownloaded = downloadStatus === 'complete';
+  const isDownloaded = downloadStatusFor(lesson.id) === 'complete';
 
   const updatedAt = new Date(course.updatedAt);
   const updatedLabel = `${updatedAt.getFullYear()} ${
@@ -295,28 +301,139 @@ export default function VideoScreen() {
     else navigation.goBack();
   };
 
-  const onDownloadChip = () => {
-    if (isDownloaded) {
+  /** Per-row download action for the compact chapter list. */
+  const onLessonDownload = (item: Lesson) => {
+    if (item.kind === 'pdf') {
+      openLesson(item);
+      return;
+    }
+    if (!courseAuthorized) return;
+    const status = downloadStatusFor(item.id);
+    if (status === 'downloading') {
+      cancelDownload(item.id);
+      return;
+    }
+    if (status === 'complete') {
       Alert.alert(
-        rtl ? 'حذف الملف المحمّل' : 'Supprimer le fichier téléchargé',
+        rtl ? 'حذف التنزيل' : 'Supprimer le téléchargement',
         rtl
-          ? 'سيُحذف هذا الدرس من التخزين المحلي.'
-          : 'Cette leçon sera retirée du stockage local.',
+          ? `سيُحذف « ${item.title} » من هذا الجهاز.`
+          : `« ${item.title} » sera supprimé de cet appareil.`,
         [
           { text: rtl ? 'إلغاء' : 'Annuler', style: 'cancel' },
           {
             text: rtl ? 'حذف' : 'Supprimer',
             style: 'destructive',
             onPress: () => {
-              void deleteDownload(lesson.id);
+              void deleteDownload(item.id);
             },
           },
         ],
       );
       return;
     }
-    if (downloadStatus === 'downloading') return;
-    void downloadLesson(lesson.id);
+    void downloadLesson(item.id).then((result) => {
+      if (result === 'error') {
+        Alert.alert(
+          rtl ? 'فشل التحميل' : 'Échec du téléchargement',
+          rtl
+            ? 'تعذّر تحميل الملف. تحقق من اتصالك وحاول مجدداً.'
+            : 'Impossible de télécharger le fichier. Vérifiez votre connexion.',
+        );
+      }
+    });
+  };
+
+  const downloadLabelFor = (item: Lesson) => {
+    if (item.kind === 'pdf') {
+      return rtl ? 'فتح المستند المضمّن' : 'Ouvrir le document inclus';
+    }
+    const status = downloadStatusFor(item.id);
+    if (status === 'complete') return rtl ? 'حذف التنزيل' : 'Supprimer le téléchargement';
+    if (status === 'downloading') return rtl ? 'إلغاء التحميل' : 'Annuler le téléchargement';
+    return rtl ? 'تحميل الدرس' : 'Télécharger la leçon';
+  };
+
+  /** Aggregate state of a section's downloadable videos. */
+  const bulkSummary = (items: Lesson[]): {
+    status?: DownloadStatus;
+    progress: number;
+    complete: boolean;
+    downloading: boolean;
+  } => {
+    const videos = items.filter((item) => item.kind === 'video' && !!item.file);
+    if (videos.length === 0) return { progress: 0, complete: false, downloading: false };
+    const statuses = videos.map((item) => downloadStatusFor(item.id));
+    const complete = statuses.every((value) => value === 'complete');
+    const downloading = statuses.some((value) => value === 'downloading');
+    const progress = complete
+      ? 100
+      : Math.round(
+          videos.reduce((sum, item) => {
+            if (downloadStatusFor(item.id) === 'complete') return sum + 100;
+            return (
+              sum +
+              (myDownloads.find((download) => download.lessonId === item.id)?.progress ?? 0)
+            );
+          }, 0) / videos.length,
+        );
+    return {
+      status: complete ? 'complete' : downloading ? 'downloading' : undefined,
+      progress,
+      complete,
+      downloading,
+    };
+  };
+
+  const sectionAction = (items: Lesson[], summary: ReturnType<typeof bulkSummary>) => {
+    if (summary.complete) {
+      const ids = items
+        .filter((item) => item.kind === 'video')
+        .map((item) => item.id);
+      const records = myDownloads.filter((record) => ids.includes(record.lessonId));
+      if (records.length === 0) return;
+      Alert.alert(
+        rtl ? 'حذف التنزيلات' : 'Supprimer les téléchargements',
+        rtl
+          ? `سيُحذف ${records.length} ملف فيديو من هذا الجهاز.`
+          : `${records.length} vidéo${records.length === 1 ? '' : 's'} ${
+              records.length === 1 ? 'sera supprimée' : 'seront supprimées'
+            } de cet appareil.`,
+        [
+          { text: rtl ? 'إلغاء' : 'Annuler', style: 'cancel' },
+          {
+            text: rtl ? 'حذف' : 'Supprimer',
+            style: 'destructive',
+            onPress: () => {
+              void deleteDownloads(records.map((record) => record.lessonId));
+            },
+          },
+        ],
+      );
+      return;
+    }
+    if (summary.downloading) {
+      items.forEach((item) => {
+        if (downloadStatusFor(item.id) === 'downloading') cancelDownload(item.id);
+      });
+      return;
+    }
+    const ids = items
+      .filter(
+        (item) =>
+          item.kind === 'video' &&
+          !!item.file &&
+          downloadStatusFor(item.id) !== 'complete' &&
+          downloadStatusFor(item.id) !== 'downloading',
+      )
+      .map((item) => item.id);
+    if (ids.length > 0) void downloadLessons(ids);
+  };
+
+  const sectionLabel = (summary: ReturnType<typeof bulkSummary>) => {
+    if (summary.complete) return rtl ? 'حذف التنزيلات' : 'Supprimer les téléchargements';
+    if (summary.downloading) return rtl ? 'إلغاء التنزيلات' : 'Annuler les téléchargements';
+    return rtl ? 'تحميل دروس الفصل' : 'Télécharger la section';
   };
 
   const completeAndNext = () => {
@@ -412,22 +529,14 @@ export default function VideoScreen() {
               onPress={() => setBookmarked((b) => !b)}
             />
             <ActionChip
-              icon={isDownloaded ? 'checkmark-circle' : 'download-outline'}
-              label={
-                isDownloaded
-                  ? rtl
-                    ? 'محمّل'
-                    : 'Téléchargé'
-                  : downloadStatus === 'downloading'
-                    ? rtl
-                      ? `جارٍ التحميل ${Math.round(downloadRecord?.progress ?? 0)}%`
-                      : `Téléchargement ${Math.round(downloadRecord?.progress ?? 0)}%`
-                    : rtl
-                      ? 'تحميل'
-                      : 'Télécharger'
+              icon="chatbubbles-outline"
+              label={rtl ? 'الأسئلة' : 'Q & R'}
+              onPress={() =>
+                navigation.navigate('Qna', {
+                  courseId: course.id,
+                  lessonId: lesson.id,
+                })
               }
-              active={isDownloaded}
-              onPress={onDownloadChip}
             />
           </View>
 
@@ -487,7 +596,7 @@ export default function VideoScreen() {
           {tab === 'chapters' ? (
             <View style={{ gap: spacing.xl, marginTop: spacing.md }}>
               {course.semesters.map((semester) => (
-                <View key={semester.id} style={{ gap: spacing.md }}>
+                <View key={semester.id} style={{ gap: spacing.lg }}>
                   <View style={[l.row, { alignItems: 'center', gap: spacing.xs }]}>
                     <Ionicons name="layers-outline" size={14} color={colors.brand} />
                     <AppText size={13} weight="bold" tone="brand">
@@ -495,85 +604,62 @@ export default function VideoScreen() {
                     </AppText>
                   </View>
 
-                  {semester.chapters.map((chapter) => (
-                    <View key={chapter.id} style={{ gap: spacing.sm }}>
-                      <Eyebrow>{chapter.title}</Eyebrow>
-                      <Card flush>
-                        {chapter.lessons.map((item) => {
-                          const isCurrent = item.id === lesson.id;
-                          const isDone = progressOf(item.id)?.completed ?? false;
-                          const locked = !item.published;
-                          return (
-                            <Pressable
-                              key={item.id}
-                              disabled={locked}
-                              onPress={() => openLesson(item)}
-                              style={({ pressed }) => [
-                                styles.chapterRow,
-                                l.row,
-                                pressed && !locked && { backgroundColor: colors.brandSofter },
-                              ]}
-                              accessibilityRole="button"
-                              accessibilityLabel={`${item.title} — ${
-                                lessonMetaText(item, lang) ?? ''
-                              }${isCurrent ? '، يُشاهَد الآن' : isDone ? '، مكتمل' : ''}${
-                                locked ? '، مقفل' : ''
-                              }`}
-                              accessibilityHint={locked ? 'الدرس غير منشور بعد' : 'يفتح الدرس'}
-                            >
-                              <View
-                                style={[
-                                  styles.chapterStatus,
-                                  isCurrent && { backgroundColor: colors.brand },
-                                ]}
-                              >
-                                <Ionicons
-                                  name={
-                                    locked
-                                      ? 'lock-closed'
-                                      : isDone
-                                        ? 'checkmark'
-                                        : isCurrent
-                                          ? 'play'
-                                          : 'ellipse-outline'
-                                  }
-                                  size={13}
-                                  color={
-                                    isCurrent
-                                      ? colors.white
-                                      : isDone
-                                        ? colors.success
-                                        : colors.faint
-                                  }
-                                  importantForAccessibility="no"
-                                />
-                              </View>
-                              <View style={{ flex: 1, gap: 2 }}>
-                                <AppText
-                                  size={13.5}
-                                  weight={isCurrent ? 'bold' : 'medium'}
-                                  tone={locked ? 'faint' : 'ink'}
-                                  numberOfLines={2}
-                                >
-                                  {item.title}
-                                </AppText>
-                              </View>
-                              {isCurrent ? <Badge label={rtl ? 'الآن' : 'MAINT.'} /> : null}
-                              {!isCurrent ? (
-                                <AppText
-                                  size={11.5}
-                                  tone={locked ? 'faint' : 'muted'}
-                                  style={{ marginTop: 2 }}
-                                >
-                                  {lessonMetaText(item, lang) ?? ''}
-                                </AppText>
-                              ) : null}
-                            </Pressable>
-                          );
-                        })}
-                      </Card>
-                    </View>
-                  ))}
+                  {semester.chapters.map((chapter) => {
+                    const sectionLessons = chapter.lessons.filter((item) => item.published);
+                    const sectionSummary = bulkSummary(sectionLessons);
+
+                    return (
+                      <View key={chapter.id} style={{ gap: spacing.sm }}>
+                        <CurriculumSectionHeader
+                          title={chapter.title}
+                          lessonCount={sectionLessons.length}
+                          durationSec={lessonsDuration(sectionLessons)}
+                          onDownloadAll={
+                            sectionLessons.some(
+                              (item) => item.kind === 'video' && !!item.file,
+                            )
+                              ? () => sectionAction(sectionLessons, sectionSummary)
+                              : undefined
+                          }
+                          downloadAllLabel={sectionLabel(sectionSummary)}
+                          downloadAllDisabled={!courseAuthorized}
+                          downloadAllStatus={sectionSummary.status}
+                          downloadAllProgress={sectionSummary.progress}
+                        />
+                        <Card flush>
+                          {chapter.lessons.map((item, index) => {
+                            const isCurrent = item.id === lesson.id;
+                            const isDone = progressOf(item.id)?.completed ?? false;
+                            const locked = !item.published || !courseAuthorized;
+                            const record = myDownloads.find(
+                              (download) => download.lessonId === item.id,
+                            );
+                            return (
+                              <CurriculumRow
+                                key={item.id}
+                                lesson={item}
+                                number={index + 1}
+                                first={index === 0}
+                                current={isCurrent}
+                                completed={isDone}
+                                accessible={!locked}
+                                status={downloadStatusFor(item.id)}
+                                progress={record?.progress ?? 0}
+                                onPress={() => openLesson(item)}
+                                onDownload={
+                                  item.kind === 'video' || item.kind === 'pdf'
+                                    ? () => onLessonDownload(item)
+                                    : undefined
+                                }
+                                downloadLabel={downloadLabelFor(item)}
+                                bundled={item.kind === 'pdf'}
+                              />
+                            );
+                          })}
+                        </Card>
+                      </View>
+                    );
+                  })}
                 </View>
               ))}
             </View>
@@ -685,7 +771,7 @@ const styles = StyleSheet.create({
   playerSlot: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.black },
   /** In-app fullscreen: the SAME wrapper instance, only its style changes. */
   playerFullscreen: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 10,
     elevation: 10,
     backgroundColor: colors.black,
@@ -709,23 +795,6 @@ const styles = StyleSheet.create({
 
   panel: { marginTop: spacing.md },
 
-  chapterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-  },
-  chapterStatus: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   fileRow: {
     flexDirection: 'row',
     alignItems: 'center',

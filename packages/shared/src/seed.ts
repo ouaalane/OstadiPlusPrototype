@@ -7,6 +7,7 @@ import type {
   DemoState,
   Enrollment,
   Lesson,
+  QnaQuestion,
   Semester,
   Student,
   TeacherProfile,
@@ -611,6 +612,71 @@ const lessonsOf = (course: Course) =>
 const mathLessons = lessonsOf(courseMath);
 const physicsLessons = lessonsOf(coursePhysics);
 
+/* ------------------------------------------------------------------ */
+/* Shared course Q & R threads                                         */
+/* ------------------------------------------------------------------ */
+
+const questions: QnaQuestion[] = [
+  {
+    id: 'qna-001',
+    courseId: courseMath.id,
+    lessonId: mathLessons[0].id,
+    studentId: 'st-iman',
+    authorName: 'إيمان السيد',
+    body: 'أستاذ، عند حساب نهاية خارج دالتين، هل يجب التأكد من أن المقام لا يساوي صفراً قبل تطبيق القاعدة؟',
+    createdAt: '2026-10-16T18:24:00.000Z',
+    replies: [
+      {
+        id: 'qna-rpl-001',
+        authorId: teacher.id,
+        authorName: teacher.name,
+        authorRole: 'teacher',
+        body: 'سؤال ممتاز. نعم، يجب أولاً دراسة الحالة التي يكون فيها المقام منعدماً. إذا حصلت على صيغة غير محددة، نستعمل التحليل أو العامل المرافق أو قاعدة لوبيتال حسب الحالة.',
+        createdAt: '2026-10-16T20:05:00.000Z',
+      },
+    ],
+  },
+  {
+    id: 'qna-002',
+    courseId: courseMath.id,
+    lessonId: mathLessons[2].id,
+    studentId: 'st-iman',
+    authorName: 'إيمان السيد',
+    body: 'في ملخص قواعد النهايات، لم أفهم الفرق بين نهاية الجداء ونهاية المجموع. هل يمكن توضيح ذلك بمثال بسيط؟',
+    createdAt: '2026-10-17T19:10:00.000Z',
+    replies: [
+      {
+        id: 'qna-rpl-002',
+        authorId: teacher.id,
+        authorName: teacher.name,
+        authorRole: 'teacher',
+        body: 'نهاية المجموع هي مجموع النهايتين، ونهاية الجداء هي جداء النهايتين، بشرط أن تكون النهايتان موجودتين ومنتهيتين. مثلاً إذا كانت u→2 و v→3 فإن u+v→5 و u×v→6.',
+        createdAt: '2026-10-17T21:32:00.000Z',
+      },
+    ],
+  },
+  {
+    id: 'qna-003',
+    courseId: courseMath.id,
+    lessonId: mathLessons[5].id,
+    studentId: 'st-yassine',
+    authorName: 'ياسين المرابط',
+    body: 'لم أفهم لماذا إشارة المشتقة تحدد اتجاه تغير الدالة. هل يمكن توضيح العلاقة بمثال من درس دراسة الدوال؟',
+    createdAt: '2026-10-19T17:45:00.000Z',
+    replies: [],
+  },
+  {
+    id: 'qna-004',
+    courseId: coursePhysics.id,
+    lessonId: physicsLessons[1]?.id,
+    studentId: 'st-yassine',
+    authorName: 'ياسين المرابط',
+    body: 'في درس الموجات، ما الفرق بين الدور والتردد؟ وهل يمكن استعمال الوحدات نفسها في التمارين؟',
+    createdAt: '2026-10-18T16:20:00.000Z',
+    replies: [],
+  },
+];
+
 const progress: DemoState['progress'] = {
   'st-iman': [
     { lessonId: mathLessons[0].id, positionSec: mathLessons[0].durationSec, completed: true,  updatedAt: '2026-09-14T19:10:00.000Z' },
@@ -653,6 +719,7 @@ export const DEMO_STATE: DemoState = {
   notifications,
   activity,
   progress,
+  questions,
 };
 
 /** Deep-clone so callers can mutate freely. */

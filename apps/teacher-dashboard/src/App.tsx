@@ -4,6 +4,7 @@ import Overview from './pages/Overview';
 import Courses from './pages/Courses';
 import CourseEditor from './pages/CourseEditor';
 import Students from './pages/Students';
+import Questions from './pages/Questions';
 import Reception from './pages/Reception';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="courses" element={<Courses />} />
         <Route path="courses/:courseId" element={<CourseEditor />} />
         <Route path="students" element={<Students />} />
+        <Route path="questions" element={<Questions />} />
         <Route path="reception" element={<Reception />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
