@@ -336,14 +336,14 @@ export default function CourseDetailScreen() {
             <Image source={heroSource} style={styles.heroArt} resizeMode="cover" />
           ) : (
             <LinearGradient
-              colors={['#3D82FF', '#0546C8']}
+              colors={[colors.brand, colors.brandDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.heroArt}
             />
           )}
           <LinearGradient
-            colors={['rgba(11,18,32,0.18)', 'rgba(11,18,32,0.82)']}
+            colors={['rgba(41,30,43,0.18)', 'rgba(41,30,43,0.82)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.heroArt}
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingBottom: spacing.xxl * 2 },
   missingWrap: { padding: spacing.lg },
-  hero: { minHeight: 420, backgroundColor: '#0B1B2A', overflow: 'hidden' },
+  hero: { minHeight: 420, backgroundColor: colors.ink, overflow: 'hidden' },
   heroSafe: { flex: 1, minHeight: 420 },
   /** Absolute art layer that fills the hero without resolving to intrinsic size. */
   heroArt: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },

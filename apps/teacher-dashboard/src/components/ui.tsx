@@ -27,12 +27,12 @@ import { useStore } from '@/store/DemoStore';
 /* ------------------------------------------------------------------ */
 
 const AVATAR_TONES = [
-  ['#3D82FF', '#0546C8'],
-  ['#4F6BFF', '#2F3ED8'],
-  ['#22B8F5', '#0C7BD6'],
-  ['#12B8A6', '#0A7C8F'],
-  ['#6D5BF5', '#4226C8'],
-  ['#FF9F43', '#F07A00'],
+  [palette.gradientFrom, palette.gradientTo],
+  [palette.gradientFrom, palette.gradientTo],
+  [palette.gradientFrom, palette.gradientTo],
+  [palette.gradientFrom, palette.gradientTo],
+  [palette.gradientFrom, palette.gradientTo],
+  [palette.gradientFrom, palette.gradientTo],
 ] as const;
 
 export function Avatar({
@@ -80,10 +80,10 @@ export type PillTone =
 const PILL_STYLES: Record<PillTone, { bg: string; fg: string }> = {
   brand: { bg: 'var(--color-brand-soft)', fg: 'var(--color-brand-dark)' },
   success: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' },
-  warning: { bg: 'var(--color-accent-soft)', fg: '#8A5A00' },
+  warning: { bg: 'var(--color-accent-soft)', fg: 'var(--color-brand)' },
   danger: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)' },
   neutral: { bg: 'var(--color-surface-alt)', fg: 'var(--color-muted)' },
-  info: { bg: 'var(--color-info-soft)', fg: '#0B6E99' },
+  info: { bg: 'var(--color-info-soft)', fg: 'var(--color-info)' },
 };
 
 export function Pill({
@@ -183,7 +183,7 @@ export function CourseCover({
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(180deg, rgba(10,20,45,0.04) 0%, rgba(10,20,45,0.34) 100%)',
+            'linear-gradient(180deg, rgba(41,30,43,0.04) 0%, rgba(41,30,43,0.34) 100%)',
         }}
       />
       <div className="relative flex h-full flex-col justify-between p-4">
@@ -282,7 +282,7 @@ export function Modal({
         type="button"
         aria-label="إغلاق"
         onClick={onClose}
-        className="absolute inset-0 animate-fade bg-[rgba(8,14,30,0.55)]"
+        className="absolute inset-0 animate-fade bg-[rgba(41,30,43,0.55)]"
       />
       <div
         ref={panelRef}
@@ -340,7 +340,7 @@ export function ToastHost() {
           toast.tone === 'error'
             ? { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)' }
             : toast.tone === 'info'
-              ? { bg: 'var(--color-info-soft)', fg: '#0B6E99' }
+              ? { bg: 'var(--color-info-soft)', fg: 'var(--color-info)' }
               : { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' };
         const Icon =
           toast.tone === 'error' ? AlertCircle : toast.tone === 'info' ? Info : CheckCircle2;
@@ -639,7 +639,7 @@ export function DataTable<T>({
   const selectedCount = selectable ? selectedIds.size : 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0px_2px_8px_rgba(15,27,51,0.05),0px_12px_32px_rgba(15,27,51,0.06)]">
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0px_2px_8px_rgba(41,30,43,0.05),0px_12px_32px_rgba(41,30,43,0.06)]">
       {/* ---- Card head: title + description ---- */}
       {title ? (
         <div className="px-6 pt-6">
@@ -951,7 +951,7 @@ export function StatCard({
   const tones = {
     brand: { bg: 'var(--color-brand-soft)', fg: 'var(--color-brand-dark)' },
     success: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' },
-    accent: { bg: 'var(--color-accent-soft)', fg: '#8A5A00' },
+    accent: { bg: 'var(--color-accent-soft)', fg: 'var(--color-brand)' },
   } as const;
   const toneStyle = tones[tone];
   return (

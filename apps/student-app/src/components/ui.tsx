@@ -71,8 +71,8 @@ const TONE_COLOR: Record<TextTone, string> = {
   white: colors.white,
   danger: colors.danger,
   success: colors.success,
-  warning: '#B45309',
-  info: '#0B6E99',
+  warning: colors.brand,
+  info: colors.info,
 };
 
 export function AppText({
@@ -467,10 +467,10 @@ export function Pill({
   const tones = {
     brand: { bg: colors.brandSoft, fg: colors.brand },
     success: { bg: colors.successSoft, fg: colors.success },
-    warning: { bg: colors.accentSoft, fg: '#8A5A00' },
+    warning: { bg: colors.accentSoft, fg: colors.brand },
     danger: { bg: colors.dangerSoft, fg: colors.danger },
     neutral: { bg: colors.surfaceAlt, fg: colors.muted },
-    info: { bg: colors.infoSoft, fg: '#0B6E99' },
+    info: { bg: colors.infoSoft, fg: colors.info },
   } as const;
   const t = tones[tone];
   const rowDir = useRowDir();
@@ -496,7 +496,7 @@ export function Pill({
 /** Solid blue status pill — the player's «NOW» marker. */
 export function Badge({ label, tone = 'brand' }: { label: string; tone?: 'brand' | 'dark' | 'success' }) {
   const bg =
-    tone === 'dark' ? 'rgba(11,18,32,0.62)' : tone === 'success' ? colors.success : colors.brand;
+    tone === 'dark' ? 'rgba(41,30,43,0.62)' : tone === 'success' ? colors.success : colors.brand;
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
       <AppText size={11} weight="bold" tone="white" style={{ letterSpacing: 0.3 }}>
@@ -589,7 +589,7 @@ export function NoticeCard({
   const tones = {
     neutral: { bg: colors.surfaceAlt, border: colors.line, fg: colors.ink },
     brand: { bg: colors.brandSofter, border: colors.brandSoft, fg: colors.brand },
-    warning: { bg: colors.accentSoft, border: 'transparent', fg: '#8A5A00' },
+    warning: { bg: colors.accentSoft, border: 'transparent', fg: colors.brand },
     danger: { bg: colors.dangerSoft, border: 'transparent', fg: colors.danger },
   } as const;
   const t = tones[tone];
@@ -739,7 +739,7 @@ export function CourseCover({
       <View style={[styles.cover, { height, overflow: 'hidden' }]}>
         <Image source={source} style={styles.absoluteImage} resizeMode="cover" />
         <LinearGradient
-          colors={['rgba(10,20,45,0.05)', 'rgba(10,20,45,0.38)']}
+          colors={['rgba(41,30,43,0.05)', 'rgba(41,30,43,0.38)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -780,12 +780,12 @@ export function CourseCover({
 }
 
 const AVATAR_GRADIENTS: Record<string, [string, string]> = {
-  brand: ['#3D82FF', '#0546C8'],
-  accent: ['#FFB400', '#F07A00'],
-  teal: ['#12B8A6', '#0A7C8F'],
-  info: ['#22B8F5', '#0C7BD6'],
-  violet: ['#6D5BF5', '#4226C8'],
-  rose: ['#FF6B8A', '#D6304F'],
+  brand: [colors.brand, colors.brandDark],
+  accent: [colors.gradientFrom, colors.gradientTo],
+  teal: [colors.gradientFrom, colors.gradientTo],
+  info: [colors.gradientFrom, colors.gradientTo],
+  violet: [colors.gradientFrom, colors.gradientTo],
+  rose: [colors.gradientFrom, colors.gradientTo],
 };
 
 /**
@@ -970,7 +970,7 @@ export function Thumb({
       )}
       {overlay ? (
         <LinearGradient
-          colors={['rgba(10,20,45,0.0)', 'rgba(10,20,45,0.34)']}
+          colors={['rgba(41,30,43,0.0)', 'rgba(41,30,43,0.34)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -1040,7 +1040,7 @@ export function LessonGlyph({ kind, size = 30 }: { kind: LessonKind; size?: numb
 export function GradientHeader({
   children,
   style,
-  colors: gradient = ['#0B5CFF', '#0546C8'],
+  colors: gradient = [colors.brand, colors.brandDark],
 }: {
   children: React.ReactNode;
   style?: ViewStyle;

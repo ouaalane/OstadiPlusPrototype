@@ -46,7 +46,7 @@ export const KIND_META: Record<LessonKind, KindMeta> = {
     icon: ListChecks,
     label: 'اختبار',
     soft: 'var(--color-accent-soft)',
-    dark: '#8A5A00',
+    dark: 'var(--color-brand)',
   },
   image: {
     icon: ImageIcon,

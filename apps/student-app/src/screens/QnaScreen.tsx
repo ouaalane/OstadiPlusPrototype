@@ -247,7 +247,7 @@ export default function QnaScreen() {
         <SafeAreaView edges={['bottom']} style={styles.composerSafe}>
           {!accessible ? (
             <View style={[styles.lockedNote, l.row]}>
-              <Ionicons name="lock-closed-outline" size={15} color="#8A5A00" />
+              <Ionicons name="lock-closed-outline" size={15} color={colors.brand} />
               <AppText size={11.5} tone="muted" style={{ flex: 1 }}>
                 {rtl
                   ? 'يمكنك قراءة الأسئلة، لكن نشر سؤال يتطلب وصولاً نشطاً إلى الدورة.'
@@ -390,7 +390,7 @@ function QuestionCard({
         </View>
       ) : (
         <View style={[styles.waiting, l.row]}>
-          <Ionicons name="time-outline" size={14} color="#8A5A00" />
+          <Ionicons name="time-outline" size={14} color={colors.brand} />
           <AppText size={11.5} tone="muted" style={{ flex: 1 }}>
             {rtl
               ? 'لم يجب الأستاذ على هذا السؤال بعد.'

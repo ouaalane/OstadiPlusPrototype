@@ -7,8 +7,8 @@
     "icon": "./assets/icon.png",
     "scheme": "ostadiplus",
     "userInterfaceStyle": "light",
-    "primaryColor": "#0B5CFF",
-    "backgroundColor": "#F3F9FD",
+    "primaryColor": "#68234F",
+    "backgroundColor": "#F1E9F4",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -20,7 +20,9 @@
       "package": "ma.atlas.ostadiplus.student",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#68234F",
+        "backgroundImage": "./assets/adaptive-background.png",
+        "monochromeImage": "./assets/adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -31,21 +33,24 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#0B5CFF",
+          "color": "#68234F",
           "defaultChannel": "lessons"
         }
       ],
       [
         "expo-splash-screen",
         {
-          "image": "./assets/adaptive-icon.png",
+          "image": "./assets/splash-icon.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#F3F9FD"
+          "backgroundColor": "#F1E9F4"
         }
       ],
       "expo-asset",
       "expo-status-bar"
-    ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }

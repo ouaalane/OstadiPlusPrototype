@@ -1,3 +1,4 @@
+import { colors } from '../theme';
 /**
  * Lesson alerts — real notifications in the device's notification shade.
  *
@@ -43,7 +44,7 @@ export async function prepareLessonAlertsAsync(): Promise<boolean> {
       /* Omit `sound` on purpose: Android then uses the system default sound.
          Passing 'default' makes expo-notifications look for a custom
          `default.*` asset and log an error over the UI. */
-      lightColor: '#0B5CFF',
+      lightColor: colors.brand,
       vibrationPattern: [0, 220, 120, 220],
     });
   }
@@ -84,7 +85,7 @@ export async function presentLessonAlertAsync(
         : `« ${alert.lessonTitle} » dans ${alert.courseTitle}`,
       data,
       sound: 'default',
-      color: '#0B5CFF',
+      color: colors.brand,
     },
     /* A channel-aware trigger delivers immediately through the channel above. */
     trigger: { channelId: LESSON_CHANNEL },

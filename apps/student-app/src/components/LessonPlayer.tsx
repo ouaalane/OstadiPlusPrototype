@@ -448,12 +448,12 @@ function PlayerSurface({
       {/* Legibility scrims for the controls; never touchable. */}
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(4,9,18,0.5)', 'rgba(4,9,18,0)']}
+        colors={['rgba(41,30,43,0.5)', 'rgba(41,30,43,0)']}
         style={styles.topScrim}
       />
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(4,9,18,0)', 'rgba(4,9,18,0.68)']}
+        colors={['rgba(41,30,43,0)', 'rgba(41,30,43,0.68)']}
         style={styles.bottomScrim}
       />
 
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   controlButton: {
-    backgroundColor: 'rgba(11,18,32,0.42)',
+    backgroundColor: 'rgba(41,30,43,0.42)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(11,18,32,0.55)',
+    backgroundColor: 'rgba(41,30,43,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
 
   errorLayer: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(4,9,18,0.86)',
+    backgroundColor: 'rgba(41,30,43,0.86)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,

@@ -1,47 +1,60 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('/fonts/NotoSansArabic-Brand.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/BricolageGrotesque-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
 /* ------------------------------------------------------------------ */
 /* OstadiPlus design tokens — mirrors packages/shared/src/tokens.ts    */
 /* ------------------------------------------------------------------ */
 
 @theme {
   /* Brand */
-  --color-brand: #0b5cff;
-  --color-brand-dark: #0546c8;
-  --color-brand-soft: #e7f0ff;
-  --color-brand-softer: #f2f6ff;
-  --color-brand-from: #3d82ff;
-  --color-brand-via: #0b5cff;
-  --color-brand-to: #0546c8;
+  --color-brand: #68234F;
+  --color-brand-dark: #68234F;
+  --color-brand-soft: #F1E9F4;
+  --color-brand-softer: #F1E9F4;
+  --color-brand-from: #68234F;
+  --color-brand-via: #68234F;
+  --color-brand-to: #291E2B;
 
   /* Status */
-  --color-accent: #ffb400;
-  --color-accent-soft: #fff4d6;
-  --color-success: #12a66a;
-  --color-success-soft: #e3f6ee;
-  --color-danger: #d93025;
-  --color-danger-soft: #fde8e6;
-  --color-info: #0ea5e9;
-  --color-info-soft: #e4f4fe;
+  --color-accent: #FFCCA9;
+  --color-accent-soft: #FFCCA9;
+  --color-success: #68234F;
+  --color-success-soft: #F1E9F4;
+  --color-danger: #68234F;
+  --color-danger-soft: #FFCCA9;
+  --color-info: #68234F;
+  --color-info-soft: #F1E9F4;
 
   /* Surfaces */
-  --color-canvas: #f5f7fc;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f1f4fb;
+  --color-canvas: #F1E9F4;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F1E9F4;
 
   /* Text */
-  --color-ink: #0f1b33;
-  --color-body: #33415c;
-  --color-muted: #5b6882;
-  --color-faint: #8a94ac;
+  --color-ink: #291E2B;
+  --color-body: #291E2B;
+  --color-muted: #6F6072;
+  --color-faint: #6F6072;
 
   /* Lines */
-  --color-line: #e3e8f2;
-  --color-line-strong: #cfd8ea;
+  --color-line: #D7C6DA;
+  --color-line-strong: #796B7C;
 
   /* Type */
   --font-sans:
-    'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', system-ui,
+    'Noto Sans Arabic', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui,
     -apple-system, sans-serif;
   --font-num: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
 
@@ -52,9 +65,9 @@
   --radius-xl: 24px;
 
   /* Elevation — soft, tinted, never harsh */
-  --shadow-card: 0px 2px 8px rgba(15, 27, 51, 0.06);
-  --shadow-raised: 0px 8px 24px rgba(15, 27, 51, 0.1);
-  --shadow-overlay: 0px 24px 64px rgba(15, 27, 51, 0.22);
+  --shadow-card: 0px 2px 8px rgba(41, 30, 43, 0.06);
+  --shadow-raised: 0px 8px 24px rgba(41, 30, 43, 0.1);
+  --shadow-overlay: 0px 24px 64px rgba(41, 30, 43, 0.22);
 
   /* Motion — short and purposeful */
   --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -162,7 +175,7 @@
 
 @utility btn-soft {
   --btn-bg: var(--color-brand-soft);
-  --btn-bg-hover: #dbe4ff;
+  --btn-bg-hover: var(--color-line);
   --btn-fg: var(--color-brand-dark);
 }
 
@@ -180,14 +193,14 @@
 
 @utility btn-danger {
   --btn-bg: var(--color-danger-soft);
-  --btn-bg-hover: #fbdedb;
+  --btn-bg-hover: var(--color-danger-soft);
   --btn-fg: var(--color-danger);
 }
 
 /* Solid dark button — primary action in toolbars (matches the reference table). */
 @utility btn-dark {
   --btn-bg: var(--color-ink);
-  --btn-bg-hover: #1c2b4a;
+  --btn-bg-hover: var(--color-brand);
   --btn-fg: #ffffff;
 }
 
@@ -297,9 +310,9 @@
 @utility hero-gradient {
   background-image: linear-gradient(
     135deg,
-    #0546c8 0%,
-    #0b5cff 45%,
-    #3d82ff 100%
+    var(--color-brand-to) 0%,
+    var(--color-brand) 45%,
+    var(--color-brand-from) 100%
   );
 }
 

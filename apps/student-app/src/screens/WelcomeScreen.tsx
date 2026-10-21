@@ -66,7 +66,7 @@ export default function WelcomeScreen({
         {/* ---- brand hero ---- */}
         <View style={styles.hero}>
           <LinearGradient
-            colors={['#0B5CFF', '#0546C8']}
+            colors={[colors.brand, colors.brandDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logoTile}

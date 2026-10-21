@@ -178,7 +178,7 @@ export default function Students() {
                       enrollment.status === 'active'
                         ? 'bg-success-soft text-success'
                         : enrollment.status === 'pending'
-                          ? 'bg-accent-soft text-[#8A5A00]'
+                          ? 'bg-accent-soft text-brand'
                           : 'bg-surface-alt text-muted',
                     ].join(' ')}
                   >
@@ -563,7 +563,7 @@ function SummaryTile({
   const colors = {
     brand: { bg: 'var(--color-brand-soft)', fg: 'var(--color-brand-dark)' },
     success: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' },
-    warning: { bg: 'var(--color-accent-soft)', fg: '#8A5A00' },
+    warning: { bg: 'var(--color-accent-soft)', fg: 'var(--color-brand)' },
   } as const;
   const style = colors[tone];
   return (

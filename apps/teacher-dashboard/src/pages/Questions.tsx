@@ -97,7 +97,7 @@ export default function Questions() {
           </div>
         </div>
         <div className="card flex items-center gap-3 p-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-[#8A5A00]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-brand">
             <Clock3 size={19} />
           </span>
           <div>

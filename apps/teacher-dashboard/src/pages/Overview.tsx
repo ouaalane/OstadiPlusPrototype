@@ -62,7 +62,7 @@ export default function Overview() {
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm text-white/85">{today}</p>
-            <h1 className="mt-1 text-2xl font-bold sm:text-[26px]">
+            <h1 className="mt-1 text-2xl font-bold text-white sm:text-[26px]">
               {greeting}، {state.teacher.name}
             </h1>
             <p className="mt-1 text-sm text-white/85">

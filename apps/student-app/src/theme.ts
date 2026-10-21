@@ -2,57 +2,26 @@
  * OstadiPlus — mobile design tokens.
  *
  * Rebuilt to match the reference design system (white surfaces + hairline
- * borders, a single vivid blue, uppercase letter-spaced eyebrows, generous
- * corner radii and very soft shadows). The brand blue is also mirrored into
+ * borders, the mulberry/apricot identity, uppercase letter-spaced eyebrows, generous
+ * corner radii and very soft shadows). The brand palette is also mirrored into
  * `packages/shared/src/tokens.ts` and the teacher dashboard.
  *
- * Typography switches family by language: Arabic → IBM Plex Sans Arabic,
- * French (LTR) → Inter. Both are loaded in `App.tsx`.
+ * Typography switches family by language: Arabic regular → Noto Sans Arabic,
+ * French bold → Bricolage Grotesque; other weights retain their existing fonts. Both are loaded in `App.tsx`.
  */
 
 import { StyleSheet } from 'react-native';
-import type { Lang } from '@ostadiplus/shared';
+import { palette, type Lang } from '@ostadiplus/shared';
 
 export const colors = {
-  /** Primary interactive blue — buttons, links, active states. */
-  brand: '#0B5CFF',
-  brandDark: '#0546C8',
-  brandSoft: '#E7F0FF',
-  brandSofter: '#F2F6FF',
-
-  /** Page + surface. The reference is white-on-white with hairline borders. */
-  canvas: '#FFFFFF',
-  surface: '#FFFFFF',
-  /** Inset panels: progress cards, storage cards, quiz hero, notices. */
-  surfaceAlt: '#F4F6F8',
-
-  ink: '#0B1220',
-  body: '#4B5563',
-  muted: '#6B7280',
-  faint: '#9CA3AF',
-
-  line: '#E5E7EB',
-  lineStrong: '#D1D5DB',
-
-  accent: '#FFB400',
-  accentSoft: '#FFF4D6',
-
-  success: '#12B76A',
-  successSoft: '#E7F8F0',
-
-  danger: '#E5484D',
-  dangerSoft: '#FDECEC',
-
-  info: '#0EA5E9',
-  infoSoft: '#E4F4FE',
-
-  /** Translucent circles that sit on top of photo heroes. */
-  scrim: 'rgba(11,18,32,0.38)',
+  ...palette,
+  line: palette.border,
+  lineStrong: palette.borderStrong,
+  scrim: 'rgba(41,30,43,0.38)',
   glass: 'rgba(255,255,255,0.92)',
   glassSoft: 'rgba(255,255,255,0.22)',
-
   black: '#000000',
-  white: '#FFFFFF',
+  white: palette.surface,
 } as const;
 
 export const radius = {
@@ -76,7 +45,7 @@ export const spacing = {
 
 /** Font family names loaded in App.tsx. */
 export const fonts = {
-  regular: 'IBMPlexArabic_400Regular',
+  regular: 'NotoSansArabic_Brand',
   medium: 'IBMPlexArabic_500Medium',
   semibold: 'IBMPlexArabic_600SemiBold',
   bold: 'IBMPlexArabic_700Bold',
@@ -87,7 +56,7 @@ export const fontsLatin = {
   regular: 'Inter_400Regular',
   medium: 'Inter_500Medium',
   semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  bold: 'BricolageGrotesque_Bold',
 } as const;
 
 export type FontWeight = keyof typeof fonts;
@@ -118,21 +87,21 @@ export const tracking = {
 export const shadow = {
   /** Reference cards are border-first, shadow-second. */
   card: {
-    shadowColor: '#0B1220',
+    shadowColor: colors.ink,
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
   raised: {
-    shadowColor: '#0B1220',
+    shadowColor: colors.ink,
     shadowOpacity: 0.1,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 4,
   },
   overlay: {
-    shadowColor: '#0B1220',
+    shadowColor: colors.ink,
     shadowOpacity: 0.2,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },

@@ -383,7 +383,7 @@ function Curriculum({
             semester.chapters.map((chapter, ci) => {
               const isCollapsed = collapsed.has(chapter.id);
               return (
-                <section key={chapter.id} className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0px_2px_8px_rgba(15,27,51,0.05)]">
+                <section key={chapter.id} className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0px_2px_8px_rgba(41,30,43,0.05)]">
                   {/* Section header */}
                   <header className="flex items-center gap-2.5 border-b border-line px-4 py-3">
                     <GripVertical size={16} className="shrink-0 text-faint/70" />
@@ -590,7 +590,7 @@ function LessonRow({
         <button
           type="button"
           onClick={onOpen}
-          className="hidden shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-bold text-[#8A5A00] sm:block"
+          className="hidden shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-bold text-brand sm:block"
         >
           بلا محتوى
         </button>
@@ -1138,7 +1138,7 @@ function QuizBlockPreview({ lesson }: { lesson: Lesson }) {
           key={question.id}
           className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-alt/50 px-3.5 py-2.5"
         >
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-soft text-[11px] font-bold text-[#8A5A00]">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-soft text-[11px] font-bold text-brand">
             <span className="num">{index + 1}</span>
           </span>
           <span className="min-w-0">
@@ -1243,7 +1243,7 @@ function AddContentDrawer({
         type="button"
         aria-label="إغلاق"
         onClick={onClose}
-        className="absolute inset-0 animate-fade bg-[rgba(8,14,30,0.4)]"
+        className="absolute inset-0 animate-fade bg-[rgba(41,30,43,0.4)]"
       />
       <div className="animate-rise absolute inset-y-0 end-0 flex w-[340px] max-w-full flex-col border-s border-line bg-surface shadow-raised">
         <header className="flex items-center justify-between border-b border-line px-5 py-4">
@@ -1255,7 +1255,7 @@ function AddContentDrawer({
 
         <div className="scrollbar-slim flex-1 space-y-5 overflow-y-auto px-5 py-4">
           {hasExisting ? (
-            <p className="rounded-xl bg-accent-soft px-3.5 py-2.5 text-xs font-semibold text-[#8A5A00]">
+            <p className="rounded-xl bg-accent-soft px-3.5 py-2.5 text-xs font-semibold text-brand">
               سيتم استبدال محتوى «{KIND_META[lessonKind].label}» الحالي بالجديد.
             </p>
           ) : null}

@@ -23,8 +23,8 @@ function fontFaces() {
 const BASE_CSS = `
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --brand:#0B5CFF;--brand-dark:#0546C8;--brand-from:#0B5CFF;--brand-to:#0546C8;
-  --ink:#0B1220;--body:#4B5563;--muted:#6B7280;--line:#E5E7EB;--canvas:#F4F6F8;
+  --brand:#68234F;--brand-dark:#291E2B;--brand-from:#68234F;--brand-to:#291E2B;
+  --ink:#291E2B;--body:#291E2B;--muted:#6F6072;--line:#D7C6DA;--canvas:#F1E9F4;
 }
 html,body{background:#fff}
 body{font-family:'IBMPlexSansArabic','Segoe UI',sans-serif;color:var(--body);-webkit-font-smoothing:antialiased}
@@ -76,7 +76,7 @@ html,body{width:1280px;height:720px;overflow:hidden}
 body{position:relative;background:var(--canvas);display:flex;flex-direction:column;padding:64px 84px 0}
 body::before{content:'';position:absolute;top:0;right:0;left:0;height:8px;background:linear-gradient(90deg,var(--brand-from),var(--brand-to))}
 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
-.badge{background:#E7F0FF;color:var(--brand-dark);padding:8px 18px;border-radius:999px;font-size:17px;font-weight:600}
+.badge{background:#F1E9F4;color:var(--brand-dark);padding:8px 18px;border-radius:999px;font-size:17px;font-weight:600}
 h1{font-size:46px;line-height:1.3;color:var(--ink);font-weight:700}
 .rule{width:88px;height:5px;background:var(--brand);border-radius:99px;margin:22px 0 34px}
 ul{list-style:none;display:flex;flex-direction:column;gap:24px}
@@ -84,7 +84,7 @@ li{position:relative;padding-inline-start:44px;font-size:29px;line-height:1.65;c
 li::before{content:'';position:absolute;inset-inline-start:0;top:16px;width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,var(--brand-from),var(--brand-to))}
 li strong{color:var(--ink);font-weight:700}
 .note{position:absolute;inset-inline:84px;bottom:76px;background:#fff;border:1px solid var(--line);border-inline-start:6px solid var(--brand);border-radius:14px;padding:18px 24px;font-size:22px;line-height:1.6;color:var(--muted)}
-.footer{position:absolute;inset-inline:84px;bottom:26px;display:flex;align-items:center;justify-content:space-between;font-size:16px;color:#9CA3AF}
+.footer{position:absolute;inset-inline:84px;bottom:26px;display:flex;align-items:center;justify-content:space-between;font-size:16px;color:#6F6072}
 .counter{direction:ltr}
 </style></head>
 <body>
@@ -148,7 +148,7 @@ html,body{width:210mm;background:#fff}
 .brandmark img{width:9mm;height:9mm}
 .brandmark span{font-size:5mm}
 .brandmark.light span{color:#fff}
-.badge{background:#E7F0FF;color:var(--brand-dark);padding:2mm 5mm;border-radius:999px;font-size:4mm;font-weight:600}
+.badge{background:#F1E9F4;color:var(--brand-dark);padding:2mm 5mm;border-radius:999px;font-size:4mm;font-weight:600}
 .badge.ghost{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff}
 .doc-title{font-size:4mm;color:var(--muted);font-weight:600}
 h2{font-size:8.5mm;line-height:1.35;color:var(--ink);font-weight:700}
@@ -157,8 +157,8 @@ ul{list-style:none;display:flex;flex-direction:column;gap:5mm}
 li{position:relative;padding-inline-start:10mm;font-size:4.6mm;line-height:1.75;color:var(--body)}
 li::before{content:'';position:absolute;inset-inline-start:0;top:2.4mm;width:3.4mm;height:3.4mm;border-radius:1mm;background:linear-gradient(135deg,var(--brand-from),var(--brand-to))}
 li strong{color:var(--ink);font-weight:700}
-.note{margin-top:auto;background:#F4F6F8;border-inline-start:2mm solid var(--brand);border-radius:3mm;padding:5mm 6mm;font-size:4.2mm;line-height:1.7;color:var(--muted)}
-.foot{position:absolute;right:20mm;left:20mm;bottom:8mm;display:flex;justify-content:space-between;font-size:3.6mm;color:#9CA3AF}
+.note{margin-top:auto;background:#F1E9F4;border-inline-start:2mm solid var(--brand);border-radius:3mm;padding:5mm 6mm;font-size:4.2mm;line-height:1.7;color:var(--muted)}
+.foot{position:absolute;right:20mm;left:20mm;bottom:8mm;display:flex;justify-content:space-between;font-size:3.6mm;color:#6F6072}
 .counter{direction:ltr}
 .cover{background:linear-gradient(135deg,var(--brand-from) 0%,var(--brand-to) 100%);color:#fff}
 .cover::before{display:none}

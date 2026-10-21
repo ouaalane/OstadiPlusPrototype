@@ -39,7 +39,7 @@ export function Wordmark({
             color,
             fontSize: size * 0.5,
             letterSpacing: '-0.01em',
-            fontFamily: 'var(--font-num)',
+            fontFamily: "'Bricolage Grotesque', var(--font-num)",
           }}
           dir="ltr"
         >

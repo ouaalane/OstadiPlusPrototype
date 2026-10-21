@@ -46,7 +46,7 @@ export function lessonTint(kind: LessonKind): { soft: string; dark: string } {
     case 'video':
       return { soft: colors.brandSoft, dark: colors.brandDark };
     case 'quiz':
-      return { soft: colors.accentSoft, dark: '#8A5A00' };
+      return { soft: colors.accentSoft, dark: colors.brand };
     case 'text':
       return { soft: colors.successSoft, dark: colors.success };
     case 'pdf':

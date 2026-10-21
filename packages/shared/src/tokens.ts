@@ -1,57 +1,58 @@
 /**
  * OstadiPlus design tokens — single source of truth for both applications.
  *
- * Derived from the project's existing `DESIGN.md` (Atlas Academic) and the
- * OstadiPlus logo gradient. The web dashboard mirrors these values in
+ * Brand colors from oustadi-education-identity/colors.json. Status roles
+ * use mulberry/lilac or mulberry/apricot; muted text and borders are ink/lilac blends.
+ * The web dashboard mirrors these values in
  * `apps/teacher-dashboard/src/styles/theme.css`; the Android app consumes
  * this module directly.
  */
 
 export const palette = {
-  /** Primary interactive blue — buttons, links, active states. */
-  brand: '#0B5CFF',
-  brandDark: '#0546C8',
-  brandSoft: '#E7F0FF',
-  brandSofter: '#F2F6FF',
+  /** Primary interactive mulberry — buttons, links, active states. */
+  brand: '#68234F',
+  brandDark: '#68234F',
+  brandSoft: '#F1E9F4',
+  brandSofter: '#F1E9F4',
 
-  /** Logo gradient (graduation cap → play button). */
-  gradientFrom: '#3D82FF',
-  gradientVia: '#0B5CFF',
-  gradientTo: '#0546C8',
+  /** Brand surface gradient (mulberry → ink). */
+  gradientFrom: '#68234F',
+  gradientVia: '#68234F',
+  gradientTo: '#291E2B',
 
-  accent: '#FFB400',
-  accentSoft: '#FFF4D6',
-  success: '#12A66A',
-  successSoft: '#E3F6EE',
-  danger: '#D93025',
-  dangerSoft: '#FDE8E6',
-  info: '#0EA5E9',
-  infoSoft: '#E4F4FE',
+  accent: '#FFCCA9',
+  accentSoft: '#FFCCA9',
+  success: '#68234F',
+  successSoft: '#F1E9F4',
+  danger: '#68234F',
+  dangerSoft: '#FFCCA9',
+  info: '#68234F',
+  infoSoft: '#F1E9F4',
 
-  canvas: '#F5F7FC',
+  canvas: '#F1E9F4',
   surface: '#FFFFFF',
-  surfaceAlt: '#F1F4FB',
+  surfaceAlt: '#F1E9F4',
 
-  ink: '#0F1B33',
-  body: '#33415C',
-  muted: '#5B6882',
-  faint: '#8A94AC',
+  ink: '#291E2B',
+  body: '#291E2B',
+  muted: '#6F6072',
+  faint: '#6F6072',
 
-  border: '#E3E8F2',
-  borderStrong: '#CFD8EA',
+  border: '#D7C6DA',
+  borderStrong: '#796B7C',
 
   /** Cover / subject card gradients keyed by CoverKey. */
 } as const;
 
 export const coverGradients: Record<string, [string, string]> = {
-  blue: ['#3D82FF', '#0546C8'],
-  indigo: ['#4F6BFF', '#2F3ED8'],
-  violet: ['#6D5BF5', '#4226C8'],
-  cyan: ['#22B8F5', '#0C7BD6'],
-  teal: ['#12B8A6', '#0A7C8F'],
-  amber: ['#FFB400', '#F07A00'],
-  rose: ['#FF6B8A', '#D6304F'],
-  slate: ['#5B6B8C', '#2C3550'],
+  blue: [palette.gradientFrom, palette.gradientTo],
+  indigo: [palette.gradientFrom, palette.gradientTo],
+  violet: [palette.gradientFrom, palette.gradientTo],
+  cyan: [palette.gradientFrom, palette.gradientTo],
+  teal: [palette.gradientFrom, palette.gradientTo],
+  amber: [palette.gradientFrom, palette.gradientTo],
+  rose: [palette.gradientFrom, palette.gradientTo],
+  slate: [palette.gradientFrom, palette.gradientTo],
 };
 
 export const brandGradient = `linear-gradient(135deg, ${palette.gradientFrom} 0%, ${palette.gradientVia} 52%, ${palette.gradientTo} 100%)`;
@@ -65,9 +66,9 @@ export const radius = {
 } as const;
 
 export const shadow = {
-  card: '0px 2px 8px rgba(15, 27, 51, 0.06)',
-  raised: '0px 8px 24px rgba(15, 27, 51, 0.10)',
-  overlay: '0px 24px 64px rgba(15, 27, 51, 0.22)',
+  card: '0px 2px 8px rgba(41, 30, 43, 0.06)',
+  raised: '0px 8px 24px rgba(41, 30, 43, 0.10)',
+  overlay: '0px 24px 64px rgba(41, 30, 43, 0.22)',
 } as const;
 
 export const spacing = {
@@ -82,12 +83,12 @@ export const spacing = {
 
 export const typography = {
   /** Web family stack. */
-  web: `'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', system-ui, -apple-system, sans-serif`,
+  web: `'Noto Sans Arabic', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, -apple-system, sans-serif`,
   /** Latin/numerals family used alongside the Arabic face. */
-  latin: `'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif`,
+  latin: `'Bricolage Grotesque', 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif`,
   /** Android asset font file names (android/app/src/main/assets/fonts). */
   native: {
-    Regular: 'IBMPlexSansArabic-Regular',
+    Regular: 'NotoSansArabic-Brand',
     Medium: 'IBMPlexSansArabic-Medium',
     SemiBold: 'IBMPlexSansArabic-SemiBold',
     Bold: 'IBMPlexSansArabic-Bold',

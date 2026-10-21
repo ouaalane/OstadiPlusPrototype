@@ -120,7 +120,7 @@ export function AppShell() {
             type="button"
             aria-label="إغلاق القائمة"
             onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 animate-fade bg-[rgba(8,14,30,0.5)]"
+            className="absolute inset-0 animate-fade bg-[rgba(41,30,43,0.5)]"
           />
           <div className="animate-rise absolute inset-y-0 start-0 w-[280px] border-e border-line bg-surface">
             <button

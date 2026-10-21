@@ -17,6 +17,8 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 
+import { colors } from './src/theme';
+
 import RootNavigator from './src/navigation/RootNavigator';
 import { StudentStoreProvider } from './src/store/StudentStore';
 
@@ -25,6 +27,8 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
+    NotoSansArabic_Brand: require('./assets/fonts/NotoSansArabic-Brand.ttf'),
+    BricolageGrotesque_Bold: require('./assets/fonts/BricolageGrotesque-Bold.ttf'),
     IBMPlexArabic_400Regular: IBMPlexSansArabic_400Regular,
     IBMPlexArabic_500Medium: IBMPlexSansArabic_500Medium,
     IBMPlexArabic_600SemiBold: IBMPlexSansArabic_600SemiBold,
@@ -72,5 +76,5 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  launch: { flex: 1, backgroundColor: '#F3F9FD' },
+  launch: { flex: 1, backgroundColor: colors.canvas },
 });
