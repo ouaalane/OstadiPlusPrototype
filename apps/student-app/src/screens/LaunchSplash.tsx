@@ -5,8 +5,12 @@
  * it as soon as the first frame is painted, which can happen before the fonts
  * are in and the stored session has been read. Drawing the identical lockup here
  * — same mark, same size, same background as `expo-splash-screen` in `app.json`
- * — means the launch image never blinks away to a blank window: it simply stays
- * frozen until hydration finishes, then hands over to the app.
+ * — means the launch image never blinks away to a blank window: it simply holds
+ * the same frame until hydration finishes, then hands over to the app.
+ *
+ * A brand spinner at the bottom keeps that wait legible, so a slow launch never
+ * reads as a crash. It runs on the native animation driver and therefore keeps
+ * turning while the JS thread is busy with hydration and the first render.
  *
  * Deliberately has no hold time of its own: it stands down the moment the app
  * behind it is ready, so the launch costs no more than the work it hides.
@@ -15,14 +19,22 @@
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { colors, spacing } from '../theme';
 
 /** Must match the splash `backgroundColor` in `app.json`. */
 const BACKDROP = '#F3F9FD';
 /** Must match the splash `imageWidth` in `app.json`, so the mark does not jump. */
 const MARK_SIZE = 180;
 const FADE_MS = 260;
+
+/* Indeterminate brand spinner: small, quiet, and clear of the navigation bar. */
+const SPINNER_SIZE = 28;
+const SPINNER_STROKE = 3;
+const SPIN_MS = 850;
 
 /**
  * Bundled from the app-root `assets/` folder on purpose: `src/assets` is wiped
@@ -37,7 +49,44 @@ type Props = {
   onFinish: () => void;
 };
 
+/**
+ * Indeterminate brand spinner.
+ *
+ * The loop is handed to the native animation driver, so the rotation lives on
+ * the UI thread: hydration, storage reads and the first (heavy) render can
+ * occupy the JS thread without ever freezing the indicator.
+ */
+function BrandSpinner() {
+  const spin = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(spin, {
+        toValue: 1,
+        duration: SPIN_MS,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [spin]);
+
+  const rotate = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <Animated.View
+      accessibilityRole="progressbar"
+      style={[styles.spinner, { transform: [{ rotate }] }]}
+    />
+  );
+}
+
 export default function LaunchSplash({ ready, onFinish }: Props) {
+  const insets = useSafeAreaInsets();
   const fade = useRef(new Animated.Value(1)).current;
   const leaving = useRef(false);
 
@@ -61,6 +110,15 @@ export default function LaunchSplash({ ready, onFinish }: Props) {
       <Animated.View style={[styles.center, { opacity: fade }]} pointerEvents="none">
         <Image source={MARK} style={styles.mark} accessible={false} />
       </Animated.View>
+      <Animated.View
+        style={[
+          styles.spinnerHost,
+          { opacity: fade, paddingBottom: spacing.xxxl + insets.bottom },
+        ]}
+        pointerEvents="none"
+      >
+        <BrandSpinner />
+      </Animated.View>
     </View>
   );
 }
@@ -69,4 +127,19 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BACKDROP },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   mark: { width: MARK_SIZE, height: MARK_SIZE },
+  spinnerHost: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+  },
+  spinner: {
+    width: SPINNER_SIZE,
+    height: SPINNER_SIZE,
+    borderRadius: SPINNER_SIZE / 2,
+    borderWidth: SPINNER_STROKE,
+    borderColor: colors.brandSoft,
+    borderTopColor: colors.brand,
+  },
 });
