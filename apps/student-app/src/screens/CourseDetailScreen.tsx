@@ -28,6 +28,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import {
+  brand,
   allLessons,
   courseDurationSec,
   courseProgress,
@@ -320,7 +321,7 @@ export default function CourseDetailScreen() {
     try {
       await Share.share({
         title: course.title,
-        message: `${course.title} — ${instructor.name}\nOustadi Plus`,
+        message: `${course.title} — ${instructor.name}\n${brand.name}`,
       });
     } catch {
       /* user dismissed the share sheet */

@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Notifications } from '../notifications/client';
 
-import { allLessons, lessonProgress, relativeTime, shortDate } from '@ostadiplus/shared';
+import { brand, allLessons, lessonProgress, relativeTime, shortDate } from '@ostadiplus/shared';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -521,8 +521,8 @@ export default function ProfileScreen() {
           <AppText size={11} tone="faint" style={{ textAlign: 'center' }}>
             {pick(
               lang,
-              `Oustadi Plus v2.4.0 • المغرب 🇲🇦 · ${bundledAssetCount()} وسائط مدمجة`,
-              `Oustadi Plus v2.4.0 • Maroc 🇲🇦 · ${bundledAssetCount()} médias intégrés`,
+              `${brand.name} v2.4.0 • المغرب 🇲🇦 · ${bundledAssetCount()} وسائط مدمجة`,
+              `${brand.name} v2.4.0 • Maroc 🇲🇦 · ${bundledAssetCount()} médias intégrés`,
             )}
           </AppText>
         </Card>

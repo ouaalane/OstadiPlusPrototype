@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText, Card, Pill, PrimaryButton } from '../components/ui';
+import BrandWordmark from '../components/BrandWordmark';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
@@ -47,9 +48,7 @@ export default function SignInScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Image source={require('../../assets/logo.png')} style={styles.logo} />
-          <AppText size={24} weight="bold" tone="ink">
-            {dir === 'rtl' ? 'أستاذي بلوس' : 'oustadi plus'}
-          </AppText>
+          <BrandWordmark size={24} lang={lang} />
           <AppText size={13} tone="muted" style={styles.subtitle}>
             {dir === 'rtl' ? 'تطبيق التلاميذ · مركز الأطلس للدروس' : 'Application élèves · Centre Atlas'}
           </AppText>

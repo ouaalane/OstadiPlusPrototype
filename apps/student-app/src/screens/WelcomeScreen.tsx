@@ -9,12 +9,14 @@
  */
 
 import React from 'react';
+import { brand } from '@ostadiplus/shared';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText, PrimaryButton } from '../components/ui';
+import BrandWordmark from '../components/BrandWordmark';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { colors, radius, shadow, spacing } from '../theme';
@@ -74,9 +76,7 @@ export default function WelcomeScreen({
             <Image source={require('../../assets/logo.png')} style={styles.logo} />
           </LinearGradient>
 
-          <AppText size={27} weight="bold" tone="ink" style={{ textAlign: 'center' }}>
-            {rtl ? 'أستاذي بلوس' : 'oustadi plus'}
-          </AppText>
+          <BrandWordmark size={27} lang={lang} />
           <AppText
             size={11}
             weight="bold"
@@ -100,7 +100,7 @@ export default function WelcomeScreen({
         {/* ---- copy + actions ---- */}
         <View style={styles.sheet}>
           <AppText size={24} weight="bold" tone="ink" style={{ textAlign: 'center' }}>
-            {rtl ? 'مرحباً بك في أستاذي بلوس' : 'Bienvenue sur oustadi plus'}
+            {rtl ? `مرحباً بك في ${brand.name}` : `Bienvenue sur ${brand.name}`}
           </AppText>
           <AppText size={14.5} tone="muted" style={styles.subtitle}>
             {rtl

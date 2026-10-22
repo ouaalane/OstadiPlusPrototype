@@ -11,6 +11,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { brand } from '@ostadiplus/shared';
 import { Alert, Image, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -321,8 +322,8 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
             onPress={() =>
               Share.share({
                 message: rtl
-                  ? `بطاقة الطالب — أستاذي بلوس\nالمعرف الفريد: ${studentCode}\nأظهر هذا الرمز للأستاذ لتفعيل الوصول إلى الدروس.`
-                  : `Carte étudiant — Oustadi Plus\nIdentifiant unique : ${studentCode}\nPrésentez ce code à votre enseignant pour activer l’accès aux leçons.`,
+                  ? `بطاقة الطالب — ${brand.name}\nالمعرف الفريد: ${studentCode}\nأظهر هذا الرمز للأستاذ لتفعيل الوصول إلى الدروس.`
+                  : `Carte étudiant — ${brand.name}\nIdentifiant unique : ${studentCode}\nPrésentez ce code à votre enseignant pour activer l’accès aux leçons.`,
               }).catch(() => {})
             }
             accessibilityRole="button"
