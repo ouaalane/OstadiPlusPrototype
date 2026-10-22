@@ -13,6 +13,7 @@ import type {
   TeacherProfile,
 } from './types';
 import { pdfAsset, videoAsset } from './mediaLibrary';
+import { repairStudentCodes } from './student-code';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -24,7 +25,8 @@ const daysFrom = (base: string, days: number) =>
 let seq = 0;
 const uid = (prefix: string) => `${prefix}-${(++seq).toString(36).padStart(3, '0')}`;
 
-/** Generates a short readable student code like "UST-7F3K2". */
+/** Legacy demo identifiers are retained for continuity. Duplicate codes are
+ * repaired below; new accounts use createStudentCode instead. */
 function makeStudentCode(seed: string): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let hash = 0;
@@ -502,11 +504,11 @@ const studentInputs: StudentInput[] = [
   { id: 'st-fatima',  fullName: 'فاطمة الزهراء العلوي',   phone: '0638 74 60 13', level: '1ère Bac Lettres',   joinedAt: '2026-10-07T08:55:00.000Z', monogram: 'ف ع', studentType: 'bac-libre' },
 ];
 
-const students: Student[] = studentInputs.map((s) => ({
+const students: Student[] = repairStudentCodes(studentInputs.map((s) => ({
   ...s,
   email: `${s.id.replace('st-', '')}@example.ma`,
   studentCode: makeStudentCode(s.id),
-}));
+})));
 
 interface EnrollmentInput {
   studentId: string;

@@ -29,6 +29,8 @@ import {
   accessibleCourses,
   allLessons,
   createDemoState,
+  createStudentCode,
+  repairStudentCodes,
   decodeDemoState,
   DEMO_STATE,
   encodeDemoState,
@@ -55,20 +57,16 @@ import { videoAssets } from '../assets/registry';
 import { applyProfileDetails, profileErrors, type ProfileDetails } from '../lib/profile-details';
 import { loadDemoEndpoint, demoAssetUrl } from '../lib/demo-sync';
 import { setLocalPassword } from '../lib/local-password';
+import { registrationErrors } from '../lib/student-registration';
+import { EMPTY_LIBRARY_PREFS, readLibraryPreferences, type StudentLibraryPrefs } from '../lib/library-preferences';
 
 const STORAGE_KEY = 'ostadiplus.student.v3';
-const PREFS_KEY = 'ostadiplus.student.prefs.v1';
+const PREFS_KEY = 'ostadiplus.student.prefs.v2';
+const LEGACY_PREFS_KEY = 'ostadiplus.student.prefs.v1';
 
 interface Persisted {
   data: DemoState;
 }
-
-interface LibraryPrefs {
-  archived: string[];
-  favorites: string[];
-}
-
-const EMPTY_PREFS: LibraryPrefs = { archived: [], favorites: [] };
 
 interface StoreValue {
   hydrated: boolean;
@@ -81,6 +79,7 @@ interface StoreValue {
   statusOf: (courseId: string) => 'active' | 'pending' | 'suspended' | 'requested' | 'rejected' | 'cancelled' | 'none' | 'expired';
   /** Whether a lesson's download can be played (subscription must be active). */
   canPlayDownload: (lessonId: string) => boolean;
+  canAccessLesson: (lessonId: string) => boolean;
   signIn: (studentId: string) => void;
   signOut: () => void;
   saveProgress: (lessonId: string, positionSec: number, completed?: boolean) => void;
@@ -185,26 +184,12 @@ let _idCounter = 0;
 const newId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}-${(++_idCounter).toString(36)}`;
 
-/** Generates a short readable student code like "UST-7F3K2". */
-function makeStudentCode(seed: string): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  let code = '';
-  for (let i = 0; i < 5; i++) {
-    code += chars[hash % chars.length];
-    hash = (hash * 1664525 + 1013904223) >>> 0;
-  }
-  return `UST-${code}`;
-}
 
 function reducer(state: DemoState, action: Action): DemoState {
   switch (action.type) {
     case 'hydrate':
     case 'replace':
-      return action.state;
+      return { ...action.state, students: repairStudentCodes(action.state.students) };
 
     case 'signIn':
       return { ...state, activeStudentId: action.studentId };
@@ -364,9 +349,11 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   const [hydrated, setHydrated] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
-  const [prefs, setPrefs] = useState<LibraryPrefs>(EMPTY_PREFS);
+  const [prefsByStudent, setPrefs] = useState<StudentLibraryPrefs>({});
+  const prefs = prefsByStudent[state.activeStudentId] ?? EMPTY_LIBRARY_PREFS;
   const [prefsHydrated, setPrefsHydrated] = useState(false);
   const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousPersistedState = useRef<DemoState | undefined>(undefined);
   const activeDownloads = useRef<Map<string, () => void>>(new Map());
   const progressTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
@@ -411,15 +398,14 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
     let cancelled = false;
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(PREFS_KEY);
+        const [raw, legacy, stored] = await Promise.all([
+          AsyncStorage.getItem(PREFS_KEY),
+          AsyncStorage.getItem(LEGACY_PREFS_KEY),
+          AsyncStorage.getItem(STORAGE_KEY),
+        ]);
         if (cancelled) return;
-        if (raw) {
-          const parsed = JSON.parse(raw) as Partial<LibraryPrefs>;
-          setPrefs({
-            archived: Array.isArray(parsed.archived) ? parsed.archived : [],
-            favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
-          });
-        }
+        const owner = stored ? (JSON.parse(stored) as Persisted)?.data?.activeStudentId : '';
+        setPrefs(readLibraryPreferences(raw, legacy, typeof owner === 'string' ? owner : ''));
       } catch {
         /* unreadable preferences — start with an empty shelf */
       } finally {
@@ -433,18 +419,25 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (!prefsHydrated) return;
-    AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)).catch(() => undefined);
-  }, [prefs, prefsHydrated]);
+    AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefsByStudent)).catch(() => undefined);
+  }, [prefsByStudent, prefsHydrated]);
 
-  /* Debounced persistence so playback progress does not thrash the disk. */
+  /* Only playback progress is debounced. Identity/profile/sync changes must
+     reach storage immediately so a reload cannot restore the previous user. */
   useEffect(() => {
     if (!hydrated) return;
     if (writeTimer.current) clearTimeout(writeTimer.current);
-    writeTimer.current = setTimeout(() => {
+    const previous = previousPersistedState.current;
+    previousPersistedState.current = state;
+    const progressOnly = previous && (Object.keys(state) as (keyof DemoState)[])
+      .every(key => key === 'progress' || state[key] === previous[key]);
+    const write = () => {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ data: state })).catch(
         () => undefined,
       );
-    }, 350);
+    };
+    if (progressOnly) writeTimer.current = setTimeout(write, 350);
+    else write();
     return () => {
       if (writeTimer.current) clearTimeout(writeTimer.current);
     };
@@ -615,22 +608,26 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   );
 
   const toggleArchived = useCallback((courseId: string) => {
-    setPrefs((prev) => ({
-      ...prev,
-      archived: prev.archived.includes(courseId)
+    const studentId = state.activeStudentId;
+    if (!studentId) return;
+    setPrefs((all) => {
+      const prev = all[studentId] ?? EMPTY_LIBRARY_PREFS;
+      return { ...all, [studentId]: { ...prev, archived: prev.archived.includes(courseId)
         ? prev.archived.filter((id) => id !== courseId)
-        : [...prev.archived, courseId],
-    }));
-  }, []);
+        : [...prev.archived, courseId] } };
+    });
+  }, [state.activeStudentId]);
 
   const toggleFavorite = useCallback((courseId: string) => {
-    setPrefs((prev) => ({
-      ...prev,
-      favorites: prev.favorites.includes(courseId)
+    const studentId = state.activeStudentId;
+    if (!studentId) return;
+    setPrefs((all) => {
+      const prev = all[studentId] ?? EMPTY_LIBRARY_PREFS;
+      return { ...all, [studentId]: { ...prev, favorites: prev.favorites.includes(courseId)
         ? prev.favorites.filter((id) => id !== courseId)
-        : [...prev.favorites, courseId],
-    }));
-  }, []);
+        : [...prev.favorites, courseId] } };
+    });
+  }, [state.activeStudentId]);
 
   const questionsOfCourse = useCallback(
     (courseId: string) => selectQuestionsForCourse(state, courseId).filter(q => {
@@ -671,7 +668,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       // Find the course containing this lesson.
       let courseId: string | undefined;
       for (const course of state.courses) {
-        if (allLessons(course).some((l) => l.id === lessonId)) {
+        if (course.status === 'published' && allLessons(course).some((l) => l.id === lessonId && l.published)) {
           courseId = course.id;
           break;
         }
@@ -893,10 +890,12 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       password: string;
       profilePhoto?: string;
     }): Promise<string> => {
+      if (Object.keys(registrationErrors(args, state.students)).length)
+        throw new Error('INVALID_REGISTRATION');
       const id = newId('st');
       const parts = args.fullName.trim().split(/\s+/);
       const monogram = parts.slice(0, 2).map((p) => p[0]).join('');
-      const studentCode = makeStudentCode(id + args.phone);
+      const studentCode = createStudentCode(id + args.phone, state.students);
       const student: Student = {
         id,
         fullName: args.fullName.trim(),
@@ -913,7 +912,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       dispatch({ type: 'student/register', student });
       return id;
     },
-    [],
+    [state.students],
   );
 
   const setProfilePhoto = useCallback((photo: string) => {
@@ -966,6 +965,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       askCourseQuestion,
       myDownloads: downloads,
       canPlayDownload,
+      canAccessLesson: canPlayDownload,
       downloadLesson,
       downloadLessons,
       cancelDownload,

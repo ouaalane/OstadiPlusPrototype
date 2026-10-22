@@ -1657,6 +1657,7 @@ export function OptionRow({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole={multi ? 'checkbox' : 'radio'}
+      aria-checked={state !== 'idle'}
       accessibilityState={{ checked: state !== 'idle', disabled: !!disabled }}
       accessibilityLabel={label}
       style={({ pressed }) => [

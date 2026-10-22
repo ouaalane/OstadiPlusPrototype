@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "checks": [
+    "signup rejects empty fields, invalid/duplicate email, short password and invalid phone",
+    "new account has its own identity and empty course access; QR illustration retains its student code",
+    "browser profile image picker saves a durable processed JPEG thumbnail",
+    "profile validation, name/age/phone, password change, old-password denial, login and reload preserve identity",
+    "sync rejects invalid server address, recovers, registers the learner without granting courses",
+    "dashboard creates/uploads/publishes video, thumbnail, PDF and quiz; term subscription unlocks the same course on student UI",
+    "actual uploaded video plays with watermark; student UI question → teacher UI reply → student UI",
+    "timed quiz expires automatically and records exactly one result per attempt, including retry",
+    "uploaded PDF renders, zooms and has watermark; single/multiple quiz answers score correctly and results/progress reach dashboard",
+    "two populated guest accounts remain available; favorites/archive are isolated across accounts and reloads",
+    "search clears empty results and finds the enrolled mathematics course",
+    "bundled PDF zoom and reset work independently of uploaded PDF viewer",
+    "13 student screens in Arabic/French at 320/390/768 px: render and no page overflow",
+    "all 10 dashboard pages render at 320/390/1440 px without page overflow",
+    "direct lesson routes deny expired/missing subscription, unpurchased term and draft course/lessons for all four content types",
+    "no uncaught browser runtime errors in either app"
+  ],
+  "errors": [],
+  "nativeDeviceCoverage": false
+}

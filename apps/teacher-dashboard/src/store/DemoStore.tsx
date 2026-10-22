@@ -12,6 +12,8 @@ import {
 } from 'react';
 import {
   createDemoState,
+  createStudentCode,
+  repairStudentCodes,
   createAccessPeriod,
   type AccessPlan,
   type Center,
@@ -169,20 +171,6 @@ let counter = 0;
 export const newId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}-${(++counter).toString(36)}`;
 
-/** Generates a short readable student code. */
-function makeStudentCode(seed: string): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  let code = '';
-  for (let i = 0; i < 5; i++) {
-    code += chars[hash % chars.length];
-    hash = (hash * 1664525 + 1013904223) >>> 0;
-  }
-  return `UST-${code}`;
-}
 
 function expiresAt(durationMonths: number): string {
   const d = new Date();
@@ -241,7 +229,7 @@ function swap<T>(list: T[], index: number, dir: -1 | 1) {
 export function reducer(state: DemoState, action: Action): DemoState {
   switch (action.type) {
     case 'replace':
-      return action.state;
+      return { ...action.state, students: repairStudentCodes(action.state.students) };
 
     case 'reset':
       return createDemoState();
@@ -566,7 +554,7 @@ export function reducer(state: DemoState, action: Action): DemoState {
         .slice(0, 2)
         .map((p) => p[0])
         .join('');
-      const studentCode = makeStudentCode(id);
+      const studentCode = createStudentCode(id, state.students);
       next.students.unshift({
         id,
         fullName: action.payload.fullName.trim(),
@@ -740,9 +728,10 @@ function loadInitial(): DemoState {
       ) {
         /* Q & R was added after v8: keep the saved dashboard data and attach
            the seeded threads so the inbox is not empty on first open. */
-        return parsed.questions === undefined
-          ? { ...parsed, questions: createDemoState().questions ?? [] }
-          : parsed;
+        const repaired = { ...parsed, students: repairStudentCodes(parsed.students) };
+        return repaired.questions === undefined
+          ? { ...repaired, questions: createDemoState().questions ?? [] }
+          : repaired;
       }
     }
   } catch {

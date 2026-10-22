@@ -20,7 +20,8 @@
     "media:sync": "node scripts/sync-media.mjs",
     "demo": "node apps/api/src/main.mjs --demo",
     "dashboard:test": "node scripts/check-quiz-authoring.mjs && node scripts/check-teacher-workspace.mjs",
-    "access:test": "node scripts/check-access.mjs"
+    "access:test": "node scripts/check-access.mjs",
+    "test:journeys": "node scripts/check-student-codes.mjs && node scripts/check-app-journeys.mjs"
   },
   "devDependencies": {
     "pdf-to-img": "^7.0.1",

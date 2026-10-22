@@ -9,3 +9,4 @@ export * from './demoSync';
 export * from './i18n';
 
 export * from './access';
+export * from './student-code';

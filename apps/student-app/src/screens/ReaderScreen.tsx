@@ -20,13 +20,14 @@ import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { AppText, Card, Pill, PrimaryButton, TopBar } from '../components/ui';
 import { useStore } from '../store/StudentStore';
+import LessonUnavailable from '../components/LessonUnavailable';
 import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 export default function ReaderScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Reader'>>();
-  const { state, markCompleted, progressOf } = useStore();
+  const { state, markCompleted, progressOf, canAccessLesson } = useStore();
   const { lang, dir, t } = useI18n();
   const l = useLayout(lang);
   const rtl = dir === 'rtl';
@@ -39,7 +40,7 @@ export default function ReaderScreen() {
     return null;
   }, [state.courses, params.lessonId]);
 
-  if (!found) return null;
+  if (!found || !canAccessLesson(params.lessonId)) return <LessonUnavailable />;
   const { lesson } = found;
   const completed = progressOf(lesson.id)?.completed ?? false;
   const lines = (lesson.body ?? '').split('\n');

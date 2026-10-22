@@ -126,7 +126,7 @@ export default function VideoScreen() {
   const {
     state,
     me,
-    statusOf,
+    canAccessLesson,
     progressOf,
     saveProgress,
     markCompleted,
@@ -164,8 +164,8 @@ export default function VideoScreen() {
   const courseAuthorized = useMemo(() => {
     if (!found || !me) return false;
     if (found.course.status !== 'published') return false;
-    return statusOf(found.course.id) === 'active';
-  }, [found, me, statusOf]);
+    return canAccessLesson(found.lesson.id);
+  }, [found, me, canAccessLesson]);
 
   const media = found
     ? resolveLessonMedia(

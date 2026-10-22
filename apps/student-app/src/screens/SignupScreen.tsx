@@ -37,6 +37,7 @@ import { useLayout } from '../i18n/layout';
 import ProfilePhotoButton from '../components/ProfilePhotoButton';
 import { useStore } from '../store/StudentStore';
 import { LEVELS } from '../lib/education-levels';
+import { registrationErrors } from '../lib/student-registration';
 import { colors, radius, spacing } from '../theme';
 
 interface City {
@@ -161,7 +162,7 @@ export default function SignupScreen({
   onBack: () => void;
   onLogin: () => void;
 }) {
-  const { registerStudent } = useStore();
+  const { registerStudent, state } = useStore();
   const { lang } = useI18n();
   const l = useLayout(lang);
   const rtl = lang === 'ar';
@@ -221,21 +222,35 @@ export default function SignupScreen({
     return { score: 3, label: rtl ? 'قوية' : 'Fort', color: colors.success };
   }, [password, rtl]);
 
+  const validatePersonalDetails = () => {
+    const issues = registrationErrors({
+      fullName: name, email, phone: phone ? `+212 ${phone}` : '',
+      level: level.title[lang], password,
+      studentType: levelId === 'free' ? 'bac-libre' : 'moutamadris',
+    }, state.students);
+    const messages: Record<string, string> = {
+      name: rtl ? 'أدخل اسمك الكامل.' : 'Entrez votre nom complet.',
+      email: rtl ? 'أدخل بريداً إلكترونياً صالحاً.' : 'Entrez une adresse e-mail valide.',
+      duplicate: rtl ? 'هذا البريد مرتبط بحساب آخر.' : 'Cette adresse appartient à un autre compte.',
+      phone: rtl ? 'أدخل رقم هاتف صالحاً.' : 'Entrez un numéro de téléphone valide.',
+      password: rtl ? 'استعمل 8 أحرف على الأقل.' : 'Utilisez au moins 8 caractères.',
+    };
+    setErrors(Object.fromEntries(Object.entries(issues).map(([field, code]) => [field, messages[code]])));
+    return Object.keys(issues).length === 0;
+  };
+
   const next = () => {
-    if (step === 1) {
-      const e: Record<string, string> = {};
-      if (!name.trim()) e.name = rtl ? 'أدخل اسمك الكامل.' : 'Entrez votre nom complet.';
-      if (!email.trim()) e.email = rtl ? 'أدخل بريدك الإلكتروني.' : 'Entrez votre adresse e-mail.';
-      if (!password) e.password = rtl ? 'أنشئ كلمة سر.' : 'Créez un mot de passe.';
-      setErrors(e);
-      if (Object.keys(e).length) return;
-    }
+    if (step === 1 && !validatePersonalDetails()) return;
     setErrors({});
     setStep((s) => Math.min(3, s + 1));
   };
 
   const finish = async () => {
     if (saving) return;
+    if (!validatePersonalDetails()) {
+      setStep(1);
+      return;
+    }
     if (!agreed) {
       setErrors({
         agreed: rtl
@@ -316,6 +331,7 @@ export default function SignupScreen({
                 prefix="+212"
                 value={phone}
                 onChangeText={setPhone}
+                error={errors.phone}
                 placeholder="6 12 34 56 78"
                 keyboardType="phone-pad"
                 autoComplete="tel"

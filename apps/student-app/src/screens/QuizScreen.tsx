@@ -33,6 +33,7 @@ import {
   type OptionState,
 } from '../components/ui';
 import { lessonRoute } from '../lib/lesson';
+import LessonUnavailable from '../components/LessonUnavailable';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
@@ -49,7 +50,7 @@ function formatClock(totalSec: number): string {
 export default function QuizScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Quiz'>>();
-  const { state, markCompleted, progressOf, recordQuizResult } = useStore();
+  const { state, markCompleted, progressOf, recordQuizResult, canAccessLesson } = useStore();
   const { lang, t, dir } = useI18n();
   const l = useLayout(lang);
   const rtl = dir === 'rtl';
@@ -71,11 +72,13 @@ export default function QuizScreen() {
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   const [remaining, setRemaining] = useState(0);
+  const authorized = canAccessLesson(params.lessonId);
   useEffect(() => {
     const limit = found?.lesson.timeLimitSec ?? 0;
-    if (phase !== 'running' || !startedAt || !limit || !found) return;
+    if (!authorized || phase !== 'running' || !startedAt || !limit || !found) return;
     const lesson = found.lesson;
     const tick = () => {
+      if (!canAccessLesson(lesson.id)) return;
       const left = Math.max(0, Math.ceil((startedAt + limit * 1000 - Date.now()) / 1000));
       setRemaining(left);
       if (left === 0) {
@@ -85,9 +88,9 @@ export default function QuizScreen() {
       }
     };
     tick(); const interval = setInterval(tick, 500); return () => clearInterval(interval);
-  }, [phase, startedAt, found, answers, markCompleted, recordQuizResult]);
+  }, [phase, startedAt, found, answers, markCompleted, recordQuizResult, authorized, canAccessLesson]);
 
-  if (!found) return null;
+  if (!found || !authorized) return <LessonUnavailable />;
   const { course, lesson } = found;
   const questions = lesson.questions ?? [];
   const alreadyDone = progressOf(lesson.id)?.completed ?? false;
@@ -111,7 +114,9 @@ export default function QuizScreen() {
     if (phase === 'result') return;
     setAnswers((prev) => {
       const selected = prev[question.id] ?? [];
-      const next = selected.includes(optionId)
+      const next = question.correctIds.length === 1
+        ? [optionId]
+        : selected.includes(optionId)
         ? selected.filter((id) => id !== optionId)
         : [...selected, optionId];
       return { ...prev, [question.id]: next };

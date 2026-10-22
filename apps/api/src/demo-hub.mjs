@@ -14,6 +14,7 @@ import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import {
   createDemoState,
+  repairStudentCodes,
   allLessons,
   enrollmentHasAccess,
   enrollmentAllowsLesson,
@@ -68,7 +69,9 @@ export function createDemoHub(directory) {
   let state = existsSync(statePath)
     ? JSON.parse(readFileSync(statePath, 'utf8'))
     : createDemoState();
+  state = { ...state, students: repairStudentCodes(state.students) };
   function persist(next) {
+    next.students = repairStudentCodes(next.students);
     const tmp = statePath + '.tmp';
     writeFileSync(tmp, JSON.stringify(next));
     renameSync(tmp, statePath);

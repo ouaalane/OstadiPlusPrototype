@@ -28,6 +28,7 @@ import ZoomablePdfPage from '../components/ZoomablePdfPage';
 import { clampPdfTransform, scalePdfTransform, PDF_INITIAL_TRANSFORM, PDF_MIN_ZOOM, PDF_MAX_ZOOM, PDF_ZOOM_STEP } from '../lib/pdf-zoom';
 import VideoWatermark from '../components/VideoWatermark';
 import RemotePdf from '../components/RemotePdf';
+import LessonUnavailable from '../components/LessonUnavailable';
 import { localFallbackCode } from '../lib/watermark';
 import { requestDocumentGrant, WATERMARK_ALLOW_OFFLINE_FALLBACK, type PlaybackGrant } from '../lib/watermark-api';
 import { lessonRoute } from '../lib/lesson';
@@ -39,7 +40,7 @@ import type { RootStackParamList } from '../navigation/types';
 export default function PdfScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Pdf'>>();
-  const { state, me, progressOf, markCompleted } = useStore();
+  const { state, me, progressOf, markCompleted, canAccessLesson } = useStore();
   const focused = useIsFocused();
   const { lang, t } = useI18n();
   const l = useLayout(lang);
@@ -59,9 +60,10 @@ export default function PdfScreen() {
   }, [state.courses, params.lessonId]);
 
   const studentId = me?.id ?? '';
+  const authorized = canAccessLesson(params.lessonId);
   const courseId = found?.course.id ?? '';
   const documentId = found?.lesson.id ?? '';
-  const sessionKey = studentId && found?.lesson.kind === 'pdf'
+  const sessionKey = authorized && studentId && found?.lesson.kind === 'pdf'
     ? JSON.stringify([studentId, courseId, documentId])
     : '';
   // The standalone demo already permits unregistered offline codes. Show one
@@ -90,7 +92,7 @@ export default function PdfScreen() {
   }, [sessionKey, studentId, courseId, documentId, provisionalCode]);
   const watermarkCode = issued?.key === sessionKey ? issued.grant.code : provisionalCode;
 
-  if (!found) return null;
+  if (!found || !authorized) return <LessonUnavailable />;
 
   const media = resolveLessonMedia(found.lesson.file, 'pdf', 0);
   if (media.kind === 'remote-pdf') {
