@@ -15,7 +15,8 @@ import { createRequire } from 'node:module';
 import {
   createDemoState,
   allLessons,
-  isEnrollmentExpired,
+  enrollmentHasAccess,
+  enrollmentAllowsLesson,
 } from '@ostadiplus/shared';
 
 const require = createRequire(import.meta.url);
@@ -124,17 +125,13 @@ export function createDemoHub(directory) {
           : [],
       );
       for (const enrollment of next.enrollments.filter(
-        (e) =>
-          e.courseId === course.id &&
-          e.status === 'active' &&
-          !isEnrollmentExpired(e),
+        (e) => e.courseId === course.id && enrollmentHasAccess(e),
       )) {
         const newlyActive = !old.enrollments.some(
           (e) =>
             e.studentId === enrollment.studentId &&
             e.courseId === course.id &&
-            e.status === 'active' &&
-            !isEnrollmentExpired(e),
+            enrollmentHasAccess(e),
         );
         if (newlyActive)
           next.notifications.push({
@@ -147,7 +144,10 @@ export function createDemoHub(directory) {
           });
         if (course.status === 'published')
           for (const lesson of allLessons(course).filter(
-            (l) => l.published && !oldPublished.has(l.id),
+            (l) =>
+              l.published &&
+              !oldPublished.has(l.id) &&
+              enrollmentAllowsLesson(enrollment, course, l.id),
           ))
             next.notifications.push({
               id: randomUUID(),
@@ -212,8 +212,7 @@ export function createDemoHub(directory) {
             (e) =>
               e.studentId === s.id &&
               e.courseId === c.id &&
-              e.status === 'active' &&
-              !isEnrollmentExpired(e),
+              enrollmentAllowsLesson(e, c, lessonId),
           ),
       );
     const ownQuestions = (body.questions ?? [])
@@ -224,6 +223,7 @@ export function createDemoHub(directory) {
           q.body.trim() &&
           Array.isArray(q.replies) &&
           q.studentId === s.id &&
+          (!q.lessonId || allowed(q.lessonId)) &&
           state.courses.some(
             (c) =>
               c.id === q.courseId &&
@@ -231,8 +231,7 @@ export function createDemoHub(directory) {
                 (e) =>
                   e.studentId === s.id &&
                   e.courseId === c.id &&
-                  e.status === 'active' &&
-                  !isEnrollmentExpired(e),
+                  enrollmentHasAccess(e),
               ),
           ),
       )

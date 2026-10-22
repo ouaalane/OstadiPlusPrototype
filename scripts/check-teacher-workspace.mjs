@@ -284,21 +284,90 @@ try {
   await studentRow
     .getByRole('button', { name: 'إدارة الوصول', exact: true })
     .click();
-  const grant = page
-    .getByRole('dialog')
-    .locator('li')
-    .filter({ hasText: courseTitle });
-  await grant.getByRole('button', { name: 'تفعيل', exact: true }).click();
-  await page.waitForTimeout(100);
-  assert.ok(
-    await grant
-      .getByRole('button', { name: 'تفعيل', exact: true })
-      .isDisabled(),
-  );
-  await page
-    .getByRole('button', { name: 'إغلاق النافذة', exact: true })
+  const grant = page.getByRole('dialog');
+  await grant.getByLabel('الأستاذ والمقرر').selectOption(courseId);
+  await grant.getByRole('button', { name: 'ثلاثة أشهر', exact: true }).click();
+  await grant
+    .getByRole('button', { name: 'حفظ الاشتراك', exact: true })
     .click();
-  done('access activation immediately updates its control state');
+  await grant
+    .getByRole('status')
+    .filter({ hasText: 'تم حفظ الاشتراك' })
+    .waitFor();
+  const subscription = (await stored()).enrollments.find(
+    (e) =>
+      e.studentId ===
+        state.students.find((s) => s.fullName === 'إيمان السيد').id &&
+      e.courseId === courseId,
+  );
+  assert.equal(subscription.accessPeriods[0].durationMonths, 3);
+  assert.equal(
+    await grant.getByRole('button', { name: 'إيقاف', exact: true }).count(),
+    0,
+  );
+  await grant
+    .getByRole('button', { name: 'إضافة اشتراك', exact: true })
+    .click();
+  const testCourse = (await stored()).courses.find((c) => c.id === courseId);
+  await grant
+    .getByRole('button', { name: testCourse.semesters[0].title, exact: true })
+    .click();
+  await grant.getByLabel('آخر يوم للوصول').fill('2027-06-30');
+  await grant
+    .getByRole('button', { name: 'حفظ الاشتراك', exact: true })
+    .click();
+  await grant
+    .getByRole('status')
+    .filter({ hasText: 'تم حفظ الاشتراك' })
+    .waitFor();
+  assert.equal(
+    (await stored()).enrollments.find((e) => e.id === subscription.id)
+      .accessPeriods.length,
+    2,
+  );
+  const termRow = grant
+    .locator('li')
+    .filter({ hasText: testCourse.semesters[0].title });
+  await termRow.getByRole('button', { name: 'تعديل', exact: true }).click();
+  await grant.getByLabel('آخر يوم للوصول').fill('2027-07-31');
+  await grant
+    .getByRole('button', { name: 'حفظ الاشتراك', exact: true })
+    .click();
+  await grant
+    .getByRole('status')
+    .filter({ hasText: 'تم حفظ الاشتراك' })
+    .waitFor();
+  const updatedPeriods = (await stored()).enrollments.find(
+    (e) => e.id === subscription.id,
+  ).accessPeriods;
+  assert.equal(updatedPeriods.length, 2);
+  assert.equal(
+    updatedPeriods.find((p) => p.kind === 'semester').endsOn,
+    '2027-07-31',
+  );
+  await page.waitForTimeout(4500);
+  const screenshots = process.env.OUSTADI_SCREENSHOT_DIR || join(directory, 'screenshots');
+  await mkdir(screenshots, { recursive: true });
+  await page.screenshot({
+    path: join(screenshots, 'subscriptions-desktop.png'),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+    'subscription dialog fits mobile viewport',
+  );
+  await page.screenshot({
+    path: join(screenshots, 'subscriptions-mobile.png'),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1050 });
+  await grant.getByRole('button', { name: 'إغلاق', exact: true }).click();
+  done(
+    'custom monthly and semester subscriptions persist without stop/activate toggles',
+  );
   await page.goto(base + '/#/sync');
   await page
     .getByRole('button', { name: 'نشر التحديثات للتطبيق', exact: true })

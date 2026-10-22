@@ -1,3 +1,4 @@
+import { enrollmentHasAccess, courseWithEnrollmentScope } from './access';
 import type {
   Chapter,
   Course,
@@ -31,17 +32,24 @@ export function countChapters(course: Course): number {
 export function findChapter(
   course: Course,
   chapterId: string,
-): {
-  semester: Semester;
-  semesterIndex: number;
-  chapter: Chapter;
-  chapterIndex: number;
-} | undefined {
+):
+  | {
+      semester: Semester;
+      semesterIndex: number;
+      chapter: Chapter;
+      chapterIndex: number;
+    }
+  | undefined {
   for (let si = 0; si < course.semesters.length; si++) {
     const semester = course.semesters[si];
     const chapterIndex = semester.chapters.findIndex((c) => c.id === chapterId);
     if (chapterIndex >= 0) {
-      return { semester, semesterIndex: si, chapter: semester.chapters[chapterIndex], chapterIndex };
+      return {
+        semester,
+        semesterIndex: si,
+        chapter: semester.chapters[chapterIndex],
+        chapterIndex,
+      };
     }
   }
   return undefined;
@@ -55,7 +63,10 @@ export function courseDurationSec(course: Course): number {
   return allLessons(course).reduce((sum, l) => sum + l.durationSec, 0);
 }
 
-export function findCourse(state: DemoState, courseId: string): Course | undefined {
+export function findCourse(
+  state: DemoState,
+  courseId: string,
+): Course | undefined {
   return state.courses.find((c) => c.id === courseId);
 }
 
@@ -77,13 +88,15 @@ export function courseTeacher(state: DemoState, course: Course): CourseTeacher {
 export function findLesson(
   state: DemoState,
   lessonId: string,
-): {
-  course: Course;
-  lesson: Lesson;
-  semesterIndex: number;
-  chapterIndex: number;
-  lessonIndex: number;
-} | undefined {
+):
+  | {
+      course: Course;
+      lesson: Lesson;
+      semesterIndex: number;
+      chapterIndex: number;
+      lessonIndex: number;
+    }
+  | undefined {
   for (const course of state.courses) {
     for (let si = 0; si < course.semesters.length; si++) {
       const chapters = course.semesters[si].chapters;
@@ -143,7 +156,13 @@ export function lessonRows(course: Course): LessonRow[] {
 
 /** Returns true when the enrollment's access window has elapsed. */
 export function isEnrollmentExpired(e: Enrollment): boolean {
-  return e.status === 'active' && new Date(e.expiresAt) < new Date();
+  return (
+    e.status === 'active' &&
+    (e.accessPeriods
+      ? e.accessPeriods.length > 0 &&
+        e.accessPeriods.every((p) => +new Date(p.expiresAt) <= Date.now())
+      : +new Date(e.expiresAt) <= Date.now())
+  );
 }
 
 export function enrollmentsOf(state: DemoState, studentId: string) {
@@ -153,7 +172,7 @@ export function enrollmentsOf(state: DemoState, studentId: string) {
 /** Active enrollments that have not expired. */
 export function activeEnrollments(state: DemoState, studentId: string) {
   return state.enrollments.filter(
-    (e) => e.studentId === studentId && e.status === 'active' && !isEnrollmentExpired(e),
+    (e) => e.studentId === studentId && enrollmentHasAccess(e),
   );
 }
 
@@ -168,18 +187,20 @@ export function expiredEnrollments(state: DemoState, studentId: string) {
  * Courses a student may actually open: published + active + not expired.
  * Mirrors PRD rule ENR-06.
  */
-export function accessibleCourses(state: DemoState, studentId: string): Course[] {
+export function accessibleCourses(
+  state: DemoState,
+  studentId: string,
+): Course[] {
   const ids = new Set(
     state.enrollments
-      .filter(
-        (e) =>
-          e.studentId === studentId &&
-          e.status === 'active' &&
-          !isEnrollmentExpired(e),
-      )
+      .filter((e) => e.studentId === studentId && enrollmentHasAccess(e))
       .map((e) => e.courseId),
   );
-  return state.courses.filter((c) => c.status === 'published' && ids.has(c.id));
+  return state.courses
+    .filter((c) => c.status === 'published' && ids.has(c.id))
+    .map((c) =>
+      courseWithEnrollmentScope(c, enrollmentFor(state, studentId, c.id)),
+    );
 }
 
 export function enrollmentFor(
@@ -192,14 +213,14 @@ export function enrollmentFor(
   );
 }
 
-export function activeStudentCount(state: DemoState, courseId?: string): number {
+export function activeStudentCount(
+  state: DemoState,
+  courseId?: string,
+): number {
   const set = new Set(
     state.enrollments
       .filter(
-        (e) =>
-          e.status === 'active' &&
-          !isEnrollmentExpired(e) &&
-          (!courseId || e.courseId === courseId),
+        (e) => enrollmentHasAccess(e) && (!courseId || e.courseId === courseId),
       )
       .map((e) => e.studentId),
   );
@@ -218,11 +239,13 @@ export function expiredStudentCount(state: DemoState): number {
 /* ------------------------------------------------------------------ */
 
 /** Unread notification count for a student. */
-export function unreadNotificationCount(state: DemoState, studentId: string): number {
+export function unreadNotificationCount(
+  state: DemoState,
+  studentId: string,
+): number {
   if (!state.notifications) return 0;
-  return state.notifications.filter(
-    (n) => n.studentId === studentId && !n.read,
-  ).length;
+  return state.notifications.filter((n) => n.studentId === studentId && !n.read)
+    .length;
 }
 
 /** Active center memberships for a student. */
@@ -266,7 +289,12 @@ export function courseProgress(
   studentId: string,
   course: Course,
 ): CourseProgress {
-  const lessons = allLessons(course);
+  const lessons = allLessons(
+    courseWithEnrollmentScope(
+      course,
+      enrollmentFor(state, studentId, course.id),
+    ),
+  );
   const tracked = progressFor(state, studentId);
   let completed = 0;
   let nextLessonId: string | null = null;
@@ -316,7 +344,9 @@ export function continueLearning(
   for (const course of accessibleCourses(state, studentId)) {
     const progress = courseProgress(state, studentId, course);
     if (!progress.nextLessonId) continue;
-    const lesson = allLessons(course).find((l) => l.id === progress.nextLessonId);
+    const lesson = allLessons(course).find(
+      (l) => l.id === progress.nextLessonId,
+    );
     if (!lesson) continue;
     candidates.push({
       course,
@@ -350,7 +380,10 @@ export function relativeTime(iso: string, locale = 'ar'): string {
     typeof Intl.RelativeTimeFormat === 'function'
       ? new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
       : null;
-  const fmt = (value: number, unit: 'minute' | 'hour' | 'day' | 'month'): string => {
+  const fmt = (
+    value: number,
+    unit: 'minute' | 'hour' | 'day' | 'month',
+  ): string => {
     if (rtf) return rtf.format(value, unit);
     if (locale === 'fr') {
       const past = value < 0;

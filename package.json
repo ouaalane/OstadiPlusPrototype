@@ -19,7 +19,8 @@
     "media:pdfs": "node scripts/media/import-pdfs.mjs",
     "media:sync": "node scripts/sync-media.mjs",
     "demo": "node apps/api/src/main.mjs --demo",
-    "dashboard:test": "node scripts/check-quiz-authoring.mjs && node scripts/check-teacher-workspace.mjs"
+    "dashboard:test": "node scripts/check-quiz-authoring.mjs && node scripts/check-teacher-workspace.mjs",
+    "access:test": "node scripts/check-access.mjs"
   },
   "devDependencies": {
     "pdf-to-img": "^7.0.1",

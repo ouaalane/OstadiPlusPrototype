@@ -1,8 +1,7 @@
+import SubscriptionManager from '@/components/SubscriptionManager';
 import { useMemo, useState } from 'react';
 import {
-  CheckCircle2,
   ClipboardPaste,
-  PauseCircle,
   QrCode,
   ScanLine,
   ShieldCheck,
@@ -12,6 +11,8 @@ import {
 } from 'lucide-react';
 import {
   relativeTime,
+  enrollmentHasAccess,
+  isEnrollmentExpired,
   type CenterMembership,
   type Enrollment,
   type EnrollmentStatus,
@@ -22,32 +23,21 @@ import {
   DataTable,
   EmptyState,
   Field,
-  Modal,
   Pill,
   Segmented,
   type DataTableColumn,
-  type PillTone,
 } from '@/components/ui';
 import { useAction, useStore } from '@/store/DemoStore';
 
-type Filter = 'all' | EnrollmentStatus;
+type Filter = 'all' | EnrollmentStatus | 'expired' | 'scheduled';
 
 const FILTERS: [Filter, string][] = [
   ['all', 'الكل'],
   ['active', 'نشط'],
-  ['pending', 'بانتظار التفعيل'],
-  ['suspended', 'موقوف'],
+  ['expired', 'اشتراك منتهي'],
+  ['scheduled', 'يبدأ لاحقاً'],
+  ['pending', 'بدون اشتراك محدد'],
 ];
-
-const STATUS_META: Record<EnrollmentStatus, { label: string; tone: PillTone }> =
-  {
-    active: { label: 'نشط', tone: 'success' },
-    pending: { label: 'معلّ — بانتظار التفعيل', tone: 'warning' },
-    suspended: { label: 'موقوف', tone: 'danger' },
-    requested: { label: 'طلب قيد المراجعة', tone: 'info' },
-    rejected: { label: 'تم رفض الطلب', tone: 'danger' },
-    cancelled: { label: 'ملغي', tone: 'neutral' },
-  };
 
 export default function Students() {
   const { state, pendingMemberships, findStudentByCode } = useStore();
@@ -66,7 +56,7 @@ export default function Students() {
     text: string;
   } | null>(null);
 
-  /* Stitch «تفعيل تلميذ جديد بالمعرف أو رمز QR» — lookup by the student's
+  /* Stitch «ربط تلميذ بالمركز بالمعرف أو رمز QR» — lookup by the student's
    * opaque code (UST-XXXXX), never by name or phone (multi-center privacy). */
   const [method, setMethod] = useState<'code' | 'qr'>('code');
   const [codeInput, setCodeInput] = useState('');
@@ -85,7 +75,20 @@ export default function Students() {
           return { student, enrollments };
         })
         .filter(({ enrollments }) => {
-          if (filter !== 'all' && !enrollments.some((e) => e.status === filter))
+          if (
+            filter !== 'all' &&
+            !enrollments.some((e) =>
+              filter === 'active'
+                ? enrollmentHasAccess(e)
+                : filter === 'expired'
+                  ? isEnrollmentExpired(e)
+                  : filter === 'scheduled'
+                    ? e.status === 'active' &&
+                      !enrollmentHasAccess(e) &&
+                      !isEnrollmentExpired(e)
+                    : e.status === filter,
+            )
+          )
             return false;
           return true;
         }),
@@ -96,7 +99,7 @@ export default function Students() {
     const total = state.students.length;
     const active = new Set(
       state.enrollments
-        .filter((e) => e.status === 'active')
+        .filter((e) => enrollmentHasAccess(e))
         .map((e) => e.studentId),
     ).size;
     const pending = new Set(
@@ -162,14 +165,14 @@ export default function Students() {
         align: 'center',
         width: '130px',
         sortValue: ({ enrollments }) =>
-          enrollments.filter((e) => e.status === 'active').length,
+          enrollments.filter((e) => enrollmentHasAccess(e)).length,
         render: ({ enrollments }) => {
-          const activeCount = enrollments.filter(
-            (e) => e.status === 'active',
+          const activeCount = enrollments.filter((e) =>
+            enrollmentHasAccess(e),
           ).length;
           return activeCount > 0 ? (
             <Pill tone="success" dot>
-              <span className="num">{activeCount}</span> دورة نشطة
+              <span className="num">{activeCount}</span> اشتراك سارٍ
             </Pill>
           ) : (
             <Pill tone="warning" dot>
@@ -200,10 +203,10 @@ export default function Students() {
                 return (
                   <span
                     key={course.id}
-                    title={`${course.title} — ${STATUS_META[enrollment.status].label}`}
+                    title={`${course.title} — ${isEnrollmentExpired(enrollment) ? 'اشتراك منتهي' : enrollmentHasAccess(enrollment) ? 'اشتراك ساري' : 'بدون وصول حالياً'}`}
                     className={[
                       'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                      enrollment.status === 'active'
+                      enrollmentHasAccess(enrollment)
                         ? 'bg-success-soft text-success'
                         : enrollment.status === 'pending'
                           ? 'bg-accent-soft text-brand'
@@ -326,7 +329,7 @@ export default function Students() {
         </button>
       </div>
 
-      {/* تفعيل تلميذ جديد بالمعرف أو رمز QR */}
+      {/* ربط تلميذ بالمركز بالمعرف أو رمز QR */}
       {activationOpen ? (
         <div className="card mb-5 overflow-hidden p-0">
           <div className="flex flex-wrap items-center gap-3 border-b border-line bg-brand-softer px-5 py-4">
@@ -334,7 +337,7 @@ export default function Students() {
               <UserPlus size={19} />
             </div>
             <h2 className="min-w-0 flex-1 text-base font-bold text-ink">
-              تفعيل تلميذ جديد
+              ربط تلميذ بالمركز
             </h2>
           </div>
 
@@ -500,7 +503,7 @@ export default function Students() {
         <SummaryTile label="تلاميذ مسجّلون" value={counts.total} />
         <SummaryTile label="وصول نشط" value={counts.active} tone="success" />
         <SummaryTile
-          label="بانتظار التفعيل"
+          label="بدون اشتراك محدد"
           value={counts.pending}
           tone="warning"
         />
@@ -553,107 +556,12 @@ export default function Students() {
         />
       )}
 
-      {/* ---- Per-course access manager (modal) ---- */}
-      <Modal
-        open={managing !== null}
-        onClose={() => setManaging(null)}
-        title={managing ? `حالة الوصول — ${managing.student.fullName}` : ''}
-        description="حالة الوصول لكل دورة — انشر التحديثات بعد التعديل لتصل إلى تطبيق التلميذ."
-        size="md"
-      >
-        {managing ? (
-          <ul className="space-y-2">
-            {state.courses.map((course) => {
-              const enrollment = state.enrollments.find(
-                (e) =>
-                  e.studentId === managing.student.id &&
-                  e.courseId === course.id,
-              );
-              const status = enrollment?.status;
-              return (
-                <li
-                  key={course.id}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white px-4 py-3"
-                >
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
-                    {course.title}
-                  </span>
-                  <Pill
-                    tone={status ? STATUS_META[status].tone : 'neutral'}
-                    dot
-                  >
-                    {status ? STATUS_META[status].label : 'غير مشترك'}
-                  </Pill>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      className="btn btn-soft btn-sm"
-                      disabled={status === 'active'}
-                      onClick={() => {
-                        action(
-                          {
-                            type: 'enrollment/setStatus',
-                            payload: {
-                              studentId: managing.student.id,
-                              courseId: course.id,
-                              status: 'active',
-                            },
-                          },
-                          `${managing.student.fullName} يستطيع الآن فتح «${course.title}» في التطبيق`,
-                        );
-                      }}
-                    >
-                      <CheckCircle2 size={14} />
-                      تفعيل
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      disabled={status === 'pending'}
-                      onClick={() =>
-                        action(
-                          {
-                            type: 'enrollment/setStatus',
-                            payload: {
-                              studentId: managing.student.id,
-                              courseId: course.id,
-                              status: 'pending',
-                            },
-                          },
-                          'أُعيد الطلب إلى حالة المراجعة',
-                        )
-                      }
-                    >
-                      <PauseCircle size={14} />
-                      انتظار
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      disabled={status === 'suspended'}
-                      onClick={() =>
-                        action(
-                          {
-                            type: 'enrollment/setStatus',
-                            payload: {
-                              studentId: managing.student.id,
-                              courseId: course.id,
-                              status: 'suspended',
-                            },
-                          },
-                          `تم إيقاف وصول ${managing.student.fullName}`,
-                        )
-                      }
-                    >
-                      إيقاف
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </Modal>
+      {managing && (
+        <SubscriptionManager
+          studentId={managing.student.id}
+          onClose={() => setManaging(null)}
+        />
+      )}
     </>
   );
 }

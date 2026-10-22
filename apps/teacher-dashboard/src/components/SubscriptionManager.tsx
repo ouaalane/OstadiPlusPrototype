@@ -1,0 +1,296 @@
+import { useState } from 'react';
+import {
+  centerToday,
+  createAccessPeriod,
+  courseTeacher,
+  type AccessPlan,
+} from '@ostadiplus/shared';
+import { Modal } from '@/components/ui';
+import { useAction, useStore } from '@/store/DemoStore';
+
+export default function SubscriptionManager({
+  studentId,
+  initialCourseId,
+  onClose,
+}: {
+  studentId: string;
+  initialCourseId?: string;
+  onClose: () => void;
+}) {
+  const { state } = useStore();
+  const action = useAction();
+  const [courseId, setCourseId] = useState(
+    initialCourseId ?? state.courses[0]?.id ?? '',
+  );
+  const [choice, setChoice] = useState('months:1');
+  const [months, setMonths] = useState(1);
+  const [startsOn, setStartsOn] = useState(centerToday());
+  const [endsOn, setEndsOn] = useState('');
+  const [periodId, setPeriodId] = useState<string>();
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const course = state.courses.find((c) => c.id === courseId);
+  const enrollment = state.enrollments.find(
+    (e) => e.studentId === studentId && e.courseId === courseId,
+  );
+  const student = state.students.find((s) => s.id === studentId);
+  const plan: AccessPlan = choice.startsWith('semester:')
+    ? { kind: 'semester', semesterId: choice.slice(9), startsOn, endsOn }
+    : { kind: 'months', durationMonths: months, startsOn };
+  let preview = '';
+  try {
+    if (course) preview = createAccessPeriod(plan, course, 'preview').endsOn;
+  } catch {
+    /* form errors appear on submit */
+  }
+  const reset = () => {
+    setPeriodId(undefined);
+    setChoice('months:1');
+    setMonths(1);
+    setStartsOn(centerToday());
+    setEndsOn('');
+    setError('');
+    setSaved(false);
+  };
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`إدارة الاشتراكات — ${student?.fullName ?? ''}`}
+      description="اختر الأستاذ والمقرر، ثم مدة الاشتراك أو الدورة الدراسية. انشر التحديثات لمزامنتها مع تطبيق التلميذ."
+      size="lg"
+    >
+      <form
+        className="space-y-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError('');
+          try {
+            if (!course) throw new Error('اختر المقرر');
+            createAccessPeriod(plan, course, 'validate');
+            action(
+              {
+                type: 'enrollment/grant',
+                payload: { studentId, courseId, plan, periodId },
+              },
+              'تم حفظ الاشتراك',
+            );
+            setSaved(true);
+            setPeriodId(undefined);
+          } catch (reason) {
+            setError(
+              reason instanceof Error ? reason.message : 'تعذر حفظ الاشتراك',
+            );
+          }
+        }}
+      >
+        <label className="block text-sm font-semibold">
+          الأستاذ والمقرر
+          <select
+            aria-label="الأستاذ والمقرر"
+            className="input w-full mt-2"
+            value={courseId}
+            onChange={(e) => {
+              setCourseId(e.target.value);
+              reset();
+            }}
+          >
+            {state.courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {courseTeacher(state, c).name} — {c.title} · {c.level}
+              </option>
+            ))}
+          </select>
+        </label>
+        <section className="rounded-xl border border-line p-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-sm">الاشتراكات المسجلة</h3>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={reset}
+            >
+              إضافة اشتراك
+            </button>
+          </div>
+          {!enrollment ? (
+            <p className="text-sm text-muted">لا يوجد اشتراك لهذا المقرر.</p>
+          ) : !enrollment.accessPeriods ? (
+            <p className="text-sm text-muted">
+              اشتراك سابق للمقرر كاملاً حتى {enrollment.expiresAt.slice(0, 10)}.
+              الحفظ الأول يستبدله بالاشتراك المحدد أدناه.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {enrollment.accessPeriods.map((p) => {
+                const status =
+                  Date.now() < +new Date(p.startsAt)
+                    ? 'يبدأ لاحقاً'
+                    : Date.now() >= +new Date(p.expiresAt)
+                      ? 'منتهي'
+                      : 'ساري';
+                return (
+                  <li
+                    key={p.id}
+                    className="flex justify-between gap-3 text-sm bg-surface rounded-lg p-3"
+                  >
+                    <div>
+                      <strong>
+                        {p.kind === 'months'
+                          ? `${p.durationMonths} شهر — المقرر كاملاً`
+                          : course?.semesters.find((s) => s.id === p.semesterId)
+                              ?.title}
+                      </strong>
+                      <p className="text-xs text-muted mt-1" dir="ltr">
+                        {p.startsOn} → {p.endsOn} · {status}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => {
+                        setPeriodId(p.id);
+                        setChoice(
+                          p.kind === 'months'
+                            ? `months:${p.durationMonths}`
+                            : `semester:${p.semesterId}`,
+                        );
+                        setMonths(p.durationMonths ?? 1);
+                        setStartsOn(p.startsOn);
+                        setEndsOn(p.endsOn);
+                        setSaved(false);
+                        setError('');
+                      }}
+                    >
+                      تعديل
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-bold mb-3">
+            {periodId ? 'تعديل الاشتراك' : 'اشتراك جديد'}
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={choice === `months:${n}`}
+                className={`btn btn-sm ${choice === `months:${n}` ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => {
+                  setChoice(`months:${n}`);
+                  setMonths(n);
+                  setSaved(false);
+                }}
+              >
+                {n === 1 ? 'شهر' : n === 2 ? 'شهران' : 'ثلاثة أشهر'}
+              </button>
+            ))}
+            {course?.semesters.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={choice === `semester:${s.id}`}
+                className={`btn btn-sm ${choice === `semester:${s.id}` ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => {
+                  setChoice(`semester:${s.id}`);
+                  setSaved(false);
+                }}
+              >
+                {s.title}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted">
+            {plan.kind === 'months'
+              ? 'اشتراك بالشهور: جميع دروس المقرر خلال المدة المحددة.'
+              : 'اشتراك دورة: دروس هذه الدورة فقط. تاريخ النهاية يحدده المركز.'}
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="text-sm">
+              تاريخ البداية
+              <input
+                aria-label="تاريخ البداية"
+                required
+                type="date"
+                className="input w-full mt-2"
+                value={startsOn}
+                onChange={(e) => {
+                  setStartsOn(e.target.value);
+                  setSaved(false);
+                }}
+              />
+            </label>
+            {plan.kind === 'semester' ? (
+              <label className="text-sm">
+                آخر يوم للوصول
+                <input
+                  aria-label="آخر يوم للوصول"
+                  required
+                  type="date"
+                  min={startsOn}
+                  className="input w-full mt-2"
+                  value={endsOn}
+                  onChange={(e) => {
+                    setEndsOn(e.target.value);
+                    setSaved(false);
+                  }}
+                />
+              </label>
+            ) : (
+              <label className="text-sm">
+                عدد الشهور (قابل للتخصيص)
+                <input
+                  aria-label="عدد الشهور"
+                  type="number"
+                  min={1}
+                  max={24}
+                  required
+                  className="input w-full mt-2"
+                  value={months}
+                  onChange={(e) => {
+                    setMonths(Number(e.target.value));
+                    setChoice(`months:${e.target.value}`);
+                    setSaved(false);
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        </fieldset>
+        {preview && (
+          <p className="rounded-lg bg-surface p-3 text-sm">
+            الوصول من {startsOn} إلى نهاية يوم {preview} بتوقيت المغرب. يتوقف
+            تلقائياً بعد النهاية.
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
+        {saved && (
+          <p role="status" className="text-sm text-brand">
+            تم حفظ الاشتراك. انشر التحديثات من صفحة المزامنة.
+          </p>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={saved || !course}
+            className="btn btn-primary"
+          >
+            حفظ الاشتراك
+          </button>
+          <button type="button" className="btn btn-outline" onClick={onClose}>
+            إغلاق
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}

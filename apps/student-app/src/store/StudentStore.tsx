@@ -34,6 +34,9 @@ import {
   encodeDemoState,
   enrollmentFor,
   isEnrollmentExpired,
+  enrollmentHasAccess,
+  enrollmentAllowsLesson,
+  courseWithEnrollmentScope,
   makeQuestion,
   progressFor,
   questionsForCourse as selectQuestionsForCourse,
@@ -469,9 +472,21 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
 
   const lang = state.lang ?? 'ar';
 
+  const [accessClock, setAccessClock] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setAccessClock(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const studentViewState = useMemo(() => ({
+    ...state,
+    courses: state.courses.map(course => courseWithEnrollmentScope(
+      course, enrollmentFor(state, state.activeStudentId, course.id), accessClock,
+    )),
+  }), [state, accessClock]);
+
   const myCourses = useMemo(
-    () => accessibleCourses(state, state.activeStudentId),
-    [state],
+    () => accessibleCourses(studentViewState, state.activeStudentId),
+    [state.activeStudentId, studentViewState],
   );
 
   const statusOf = useCallback(
@@ -480,6 +495,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       const enrollment = enrollmentFor(state, state.activeStudentId, courseId);
       if (!enrollment) return 'none';
       if (enrollment.status === 'active' && isEnrollmentExpired(enrollment)) return 'expired';
+      if (enrollment.status === 'active' && !enrollmentHasAccess(enrollment)) return 'pending';
       return enrollment.status;
     },
     [state],
@@ -617,7 +633,13 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const questionsOfCourse = useCallback(
-    (courseId: string) => selectQuestionsForCourse(state, courseId),
+    (courseId: string) => selectQuestionsForCourse(state, courseId).filter(q => {
+      if (!q.lessonId) return true;
+      const course = state.courses.find(c => c.id === courseId);
+      return !!course && enrollmentAllowsLesson(
+        enrollmentFor(state, state.activeStudentId, courseId), course, q.lessonId,
+      );
+    }),
     [state],
   );
 
@@ -626,6 +648,8 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       const trimmed = body.trim();
       if (!trimmed || !me) return false;
       if (statusOf(courseId) !== 'active') return false;
+      const course = state.courses.find(c => c.id === courseId);
+      if (lessonId && (!course || !enrollmentAllowsLesson(enrollmentFor(state, me.id, courseId), course, lessonId))) return false;
       const question = makeQuestion({
         courseId,
         lessonId,
@@ -636,7 +660,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       dispatch({ type: 'qna/ask', question });
       return true;
     },
-    [me, statusOf],
+    [me, statusOf, state],
   );
 
   /** Whether a downloaded lesson can be played — the course subscription
@@ -656,7 +680,8 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       const enrollment = enrollmentFor(state, state.activeStudentId, courseId);
       if (!enrollment) return false;
       if (enrollment.status !== 'active') return false;
-      return !isEnrollmentExpired(enrollment);
+      const course = state.courses.find(c => c.id === courseId);
+      return !!course && enrollmentAllowsLesson(enrollment, course, lessonId);
     },
     [state],
   );
@@ -704,7 +729,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       // Verify the student can access this course.
       if (!courseId) return 'error';
       const enrollment = enrollmentFor(state, state.activeStudentId, courseId);
-      if (!enrollment || enrollment.status !== 'active' || isEnrollmentExpired(enrollment)) {
+      if (!enrollment || !enrollmentAllowsLesson(enrollment, state.courses.find(c => c.id === courseId)!, lessonId)) {
         return 'error';
       }
 
@@ -910,7 +935,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   const value = useMemo<StoreValue>(
     () => ({
       hydrated,
-      state,
+      state: studentViewState,
       me,
       myCourses,
       lang,
@@ -955,7 +980,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
     }),
     [
       hydrated,
-      state,
+      studentViewState,
       me,
       myCourses,
       lang,

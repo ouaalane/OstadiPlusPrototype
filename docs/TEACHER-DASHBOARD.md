@@ -75,3 +75,19 @@ The hub is opt-in (`npm run demo` or `--demo`); `npm run api` alone retains the 
 Teacher content/access is authoritative; server student profiles/progress survive stale teacher publishes. Questions and replies merge by ID, so stale student sync does not erase teacher replies. Existing memberships are resolved by teacher publish; new student requests cannot grant course access themselves. The server returns the shared demo dataset, matching the existing prototype model rather than a production per-user API.
 
 Research sources and access limits are recorded in [the redesign research report](DASHBOARD-DESIGN-RESEARCH.md).
+
+## اشتراكات المركز: مدة أو دورة دراسية
+
+من «التلاميذ ← إدارة الوصول» أو «الاستقبال ← إدارة الاشتراك»، اختر الأستاذ والمقرر ثم:
+
+- شهر، شهرين، ثلاثة أشهر، أو مدة مخصصة من 1 إلى 24 شهراً: تتيح جميع دروس المقرر خلال المدة المختارة.
+- الدورة الأولى أو الثانية: تتيح محتوى الدورة المختارة فقط، مع تاريخ بداية وآخر يوم للوصول يحددهما المركز. تاريخ النهاية إلزامي؛ لا توجد نهاية مدرسية مفترضة.
+- «إضافة اشتراك» تحتفظ بالاشتراكات السابقة؛ «تعديل» يغير الاشتراك المحدد دون إضافة نسخة. يمكن الجمع بين اشتراكي الدورتين أو تسجيل مدة لاحقة مقدماً.
+
+الحساب بتوقيت `Africa/Casablanca`. بداية الاشتراك منتصف ليل يوم البداية. نهاية الدورة تشمل اليوم المحدد كاملاً؛ الاشتراك الشهري ينتهي عند منتصف ليل تاريخ الذكرى الشهرية، مع ضبط يوم 29/30/31 إلى آخر يوم متاح في الشهر الهدف. تعرض الواجهة آخر يوم وصول، وليس حد الانتهاء الحصري.
+
+الاشتراكات القديمة التجريبية تحتفظ بصلاحياتها حتى تخصيصها لأول مرة؛ أول حفظ يستبدل الوصول القديم الكامل بالاشتراك المختار، وتوضح الواجهة ذلك قبل الحفظ. لا توجد أزرار تفعيل/إيقاف في مدير الاشتراكات الجديد.
+
+انشر التعديلات من صفحة «المزامنة»، ثم حدّث بيانات تطبيق التلميذ. يطبق التطبيق نطاق الدورة على الدروس والتقدم والتحميلات، ويعيد تقييم العرض كل 30 ثانية. يتحقق خادم النموذج من الصلاحية فور كل طلب فتح فيديو/PDF ومن تقدم التلميذ ومحاولاته وأسئلته عند المزامنة. هذا امتداد للنموذج التجريبي المحلي؛ رابط ملفات الوسائط التجريبي ليس تخزيناً خاصاً للإنتاج.
+
+التحقق: `npm run access:test` لقواعد المدة والدورات وحدود التواريخ، و`node scripts/check-demo-sync.mjs` للمزامنة ورفض محتوى دورة أخرى، و`npm run dashboard:test` لتسجيل الاشتراكات عبر المتصفح.

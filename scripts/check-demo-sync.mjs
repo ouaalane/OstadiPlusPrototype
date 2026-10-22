@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 register('../apps/api/src/resolve.mjs', import.meta.url);
 const { createWatermarkApi } = await import('../apps/api/src/server.mjs');
+const { createAccessPeriod } = await import('@ostadiplus/shared');
 const directory = await mkdtemp(join(tmpdir(), 'oustadi-sync-'));
 let api;
 let base;
@@ -279,11 +280,109 @@ try {
   });
   assert.equal(response.status, 201);
   checks++;
+  // Explicit semester subscriptions must be enforced after teacher publication,
+  // including direct media requests and student-originated sync writes.
+  const scopedCourse = state.courses.find((c) => c.id === course.id);
+  const second = scopedCourse.semesters[1];
+  const restrictedVideo = { ...lesson, id: 'restricted-video' };
+  const restrictedPdf = { ...lesson, id: 'restricted-pdf', kind: 'pdf' };
+  const restrictedQuiz = { ...quiz, id: 'restricted-quiz' };
+  if (!second.chapters.length)
+    second.chapters.push({ id: 'scope-chapter', title: 'Scope', lessons: [] });
+  second.chapters[0].lessons.push(
+    restrictedVideo,
+    restrictedPdf,
+    restrictedQuiz,
+  );
+  const thisYear = new Date().getUTCFullYear();
+  const term = createAccessPeriod(
+    {
+      kind: 'semester',
+      semesterId: scopedCourse.semesters[0].id,
+      startsOn: `${thisYear}-01-01`,
+      endsOn: `${thisYear}-12-31`,
+    },
+    scopedCourse,
+    'first-term-access',
+  );
+  const scopedEnrollment = state.enrollments.find(
+    (e) => e.studentId === newcomer.id && e.courseId === course.id,
+  );
+  scopedEnrollment.accessPeriods = [term];
+  scopedEnrollment.expiresAt = term.expiresAt;
+  state = await request('/api/demo/state', state);
+  for (const [path, key, id] of [
+    ['/api/playback/start', 'videoId', restrictedVideo.id],
+    ['/api/documents/open', 'documentId', restrictedPdf.id],
+  ]) {
+    response = await fetch(base + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: newcomer.id,
+        courseId: course.id,
+        [key]: id,
+      }),
+    });
+    assert.equal(response.status, 403, path);
+    checks++;
+  }
+  state = await request('/api/demo/student', {
+    student: newcomer,
+    progress: [
+      {
+        lessonId: restrictedVideo.id,
+        positionSec: 30,
+        completed: true,
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+    quizAttempts: [
+      {
+        id: 'restricted-attempt',
+        studentId: newcomer.id,
+        lessonId: restrictedQuiz.id,
+        correct: 1,
+        total: 1,
+        elapsedSec: 1,
+        submittedAt: new Date().toISOString(),
+      },
+    ],
+    questions: [
+      {
+        ...question,
+        id: 'restricted-question',
+        studentId: newcomer.id,
+        lessonId: restrictedVideo.id,
+      },
+    ],
+  });
+  assert.equal(
+    (state.progress[newcomer.id] ?? []).some(
+      (p) => p.lessonId === restrictedVideo.id,
+    ),
+    false,
+  );
+  assert.equal(
+    state.quizAttempts.some((a) => a.id === 'restricted-attempt'),
+    false,
+  );
+  assert.equal(
+    state.questions.some((q) => q.id === 'restricted-question'),
+    false,
+  );
+  checks++;
   await api.close();
   await start();
   state = await request('/api/demo/state');
   assert.ok(state.questions.find((q) => q.id === question.id).replies.length);
   assert.equal((await fetch(base + file)).status, 200);
+  assert.equal(
+    state.enrollments.find(
+      (e) => e.studentId === newcomer.id && e.courseId === course.id,
+    ).accessPeriods[0].semesterId,
+    scopedCourse.semesters[0].id,
+  );
   checks++;
   response = await fetch(base + '/api/demo/pdfjs/pdf.mjs');
   assert.equal(response.status, 200);

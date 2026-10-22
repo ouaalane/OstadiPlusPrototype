@@ -1,3 +1,4 @@
+import SubscriptionManager from '@/components/SubscriptionManager';
 /**
  * Reception desk («استقبال») — simplified interface for center staff.
  *
@@ -15,8 +16,19 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { Inbox } from 'lucide-react';
-import { isEnrollmentExpired, type CenterMembership, type EnrollmentStatus } from '@ostadiplus/shared';
-import { DataTable, Field, Pill, Segmented, type DataTableColumn } from '@/components/ui';
+import {
+  enrollmentHasAccess,
+  isEnrollmentExpired,
+  type CenterMembership,
+  type EnrollmentStatus,
+} from '@ostadiplus/shared';
+import {
+  DataTable,
+  Field,
+  Pill,
+  Segmented,
+  type DataTableColumn,
+} from '@/components/ui';
 import { useAction, useStore } from '@/store/DemoStore';
 
 type Tab = 'active' | 'expired' | 'all';
@@ -32,7 +44,7 @@ const STATUS_META: Record<
   { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }
 > = {
   active: { label: 'نشط', tone: 'success' },
-  pending: { label: 'بانتظار التفعيل', tone: 'warning' },
+  pending: { label: 'بدون اشتراك محدد', tone: 'warning' },
   suspended: { label: 'موقوف', tone: 'danger' },
   requested: { label: 'طلب قيد المراجعة', tone: 'neutral' },
   rejected: { label: 'تم رفض الطلب', tone: 'neutral' },
@@ -43,10 +55,18 @@ export default function Reception() {
   const { state, pendingMemberships, findStudentByCode } = useStore();
   const action = useAction();
 
+  const [subscriptionCourse, setSubscriptionCourse] = useState<string | null>(
+    null,
+  );
   const [tab, setTab] = useState<Tab>('all');
   const [searchCode, setSearchCode] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<ReturnType<typeof findStudentByCode> | null>(null);
-  const [result, setResult] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<ReturnType<
+    typeof findStudentByCode
+  > | null>(null);
+  const [result, setResult] = useState<{
+    tone: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const center = state.centers[0];
 
@@ -63,7 +83,10 @@ export default function Reception() {
       return;
     }
     setSelectedStudent(student);
-    setResult({ tone: 'success', text: `تم العثور على ${student.fullName} (${student.studentCode}).` });
+    setResult({
+      tone: 'success',
+      text: `تم العثور على ${student.fullName} (${student.studentCode}).`,
+    });
   }, [searchCode, findStudentByCode]);
 
   const enrollmentsOfStudent = useMemo(() => {
@@ -74,8 +97,9 @@ export default function Reception() {
   const filteredEnrollments = useMemo(() => {
     return enrollmentsOfStudent.filter((e) => {
       if (tab === 'all') return true;
-      if (tab === 'active') return e.status === 'active' && !isEnrollmentExpired(e);
-      if (tab === 'expired') return e.status === 'active' && isEnrollmentExpired(e);
+      if (tab === 'active') return enrollmentHasAccess(e);
+      if (tab === 'expired')
+        return e.status === 'active' && isEnrollmentExpired(e);
       return true;
     });
   }, [enrollmentsOfStudent, tab]);
@@ -85,47 +109,14 @@ export default function Reception() {
     [state.courses],
   );
 
-  const activateCourse = useCallback(
-    (courseId: string) => {
-      if (!selectedStudent) return;
-      if (!center) {
-        setResult({ tone: 'error', text: 'لم يتم إعداد مركز.' });
-        return;
-      }
-      action({
-        type: 'enrollment/setStatus',
-        payload: {
-          studentId: selectedStudent.id,
-          courseId,
-          status: 'active',
-          durationMonths: 6,
-        },
-      });
-      const course = state.courses.find((c) => c.id === courseId);
-      setResult({ tone: 'success', text: `تم تفعيل «${course?.title ?? ''}» لـ ${selectedStudent.fullName}` });
-    },
-    [selectedStudent, state, action, center],
+  const manageSubscription = useCallback(
+    (courseId: string) => setSubscriptionCourse(courseId),
+    [],
   );
 
-  const renewCourse = useCallback(
-    (courseId: string) => {
-      if (!selectedStudent) return;
-      action({
-        type: 'enrollment/renew',
-        payload: {
-          studentId: selectedStudent.id,
-          courseId,
-          durationMonths: 6,
-        },
-      });
-      const course = state.courses.find((c) => c.id === courseId);
-      setResult({ tone: 'success', text: `تم تجديد «${course?.title ?? ''}» لـ ${selectedStudent.fullName}` });
-    },
-    [selectedStudent, state, action],
-  );
-
-  /* ---- Table columns ---- */
-  const enrollmentColumns: DataTableColumn<(typeof filteredEnrollments)[number]>[] = useMemo(
+  const enrollmentColumns: DataTableColumn<
+    (typeof filteredEnrollments)[number]
+  >[] = useMemo(
     () => [
       {
         key: 'course',
@@ -143,7 +134,9 @@ export default function Reception() {
                 <p className="truncate text-[14.5px] font-bold text-ink">
                   {course?.title ?? '—'}
                 </p>
-                <p className="truncate text-xs text-muted">{course?.subject ?? ''}</p>
+                <p className="truncate text-xs text-muted">
+                  {course?.subject ?? ''}
+                </p>
               </div>
             </div>
           );
@@ -157,13 +150,21 @@ export default function Reception() {
         sortValue: (e) => e.status,
         render: (e) => {
           const expired = e.status === 'active' && isEnrollmentExpired(e);
-          const meta = expired ? { label: 'منتهي', tone: 'danger' as const } : STATUS_META[e.status];
-          return <Pill tone={meta.tone} dot>{meta.label}</Pill>;
+          const meta = expired
+            ? { label: 'منتهي', tone: 'danger' as const }
+            : e.status === 'active' && !enrollmentHasAccess(e)
+              ? { label: 'يبدأ لاحقاً', tone: 'neutral' as const }
+              : STATUS_META[e.status];
+          return (
+            <Pill tone={meta.tone} dot>
+              {meta.label}
+            </Pill>
+          );
         },
       },
       {
         key: 'activated',
-        header: 'تاريخ التفعيل',
+        header: 'تاريخ التسجيل',
         align: 'center',
         hideOnMobile: true,
         sortValue: (e) => e.authorizedAt,
@@ -188,10 +189,17 @@ export default function Reception() {
                   expired ? 'text-danger' : 'text-ink',
                 ].join(' ')}
               >
-                {new Date(e.expiresAt).toLocaleDateString('ar-MA')}
+                {e.accessPeriods?.length
+                  ? e.accessPeriods
+                      .map((p) => p.endsOn)
+                      .sort()
+                      .at(-1)
+                  : new Date(e.expiresAt).toLocaleDateString('ar-MA')}
               </span>
               {expired ? (
-                <p className="mt-0.5 text-[11px] font-semibold text-danger">منتهي الصلاحية</p>
+                <p className="mt-0.5 text-[11px] font-semibold text-danger">
+                  منتهي الصلاحية
+                </p>
               ) : null}
             </div>
           );
@@ -208,23 +216,26 @@ export default function Reception() {
           return (
             <button
               type="button"
-              className={['btn btn-sm', needsAction ? 'btn-primary' : 'btn-outline'].join(' ')}
-              onClick={() => (expired ? renewCourse(e.courseId) : activateCourse(e.courseId))}
-              disabled={!needsAction}
+              className={[
+                'btn btn-sm',
+                needsAction ? 'btn-primary' : 'btn-outline',
+              ].join(' ')}
+              onClick={() => manageSubscription(e.courseId)}
             >
-              {expired ? 'تجديد' : e.status === 'active' ? 'مفعل' : 'تفعيل'}
+              إدارة الاشتراك
             </button>
           );
         },
       },
     ],
-    [coursesMap, renewCourse, activateCourse],
+    [coursesMap, manageSubscription],
   );
 
   const handleRegisterLink = useCallback(() => {
     if (!selectedStudent) return;
     const existing = pendingMemberships.find(
-      (m: CenterMembership) => m.studentId === selectedStudent.id && m.status === 'requested',
+      (m: CenterMembership) =>
+        m.studentId === selectedStudent.id && m.status === 'requested',
     );
     if (existing) {
       setResult({
@@ -296,9 +307,13 @@ export default function Reception() {
                 type="button"
                 className="btn btn-outline"
                 onClick={handleRegisterLink}
-                disabled={!!pendingMemberships.find(
-                  (m: CenterMembership) => m.studentId === selectedStudent.id && m.status === 'requested',
-                )}
+                disabled={
+                  !!pendingMemberships.find(
+                    (m: CenterMembership) =>
+                      m.studentId === selectedStudent.id &&
+                      m.status === 'requested',
+                  )
+                }
               >
                 ربط بالمركز
               </button>
@@ -312,19 +327,27 @@ export default function Reception() {
           {/* ---- Student identity ---- */}
           <div className="card flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4">
             <div>
-              <h2 className="text-base font-bold text-ink">{selectedStudent.fullName}</h2>
+              <h2 className="text-base font-bold text-ink">
+                {selectedStudent.fullName}
+              </h2>
               <p className="text-xs text-muted">
-                {selectedStudent.studentType === 'bac-libre' ? 'باك حر' : 'متمدرس'} ·{' '}
-                {selectedStudent.level}
+                {selectedStudent.studentType === 'bac-libre'
+                  ? 'باك حر'
+                  : 'متمدرس'}{' '}
+                · {selectedStudent.level}
               </p>
             </div>
             <span className="text-xs text-muted">
               <span className="font-semibold">الرمز:</span>{' '}
-              <span dir="ltr" className="num">{selectedStudent.studentCode}</span>
+              <span dir="ltr" className="num">
+                {selectedStudent.studentCode}
+              </span>
             </span>
             <span className="text-xs text-muted">
               <span className="font-semibold">الهاتف:</span>{' '}
-              <span dir="ltr" className="num">{selectedStudent.phone}</span>
+              <span dir="ltr" className="num">
+                {selectedStudent.phone}
+              </span>
             </span>
           </div>
 
@@ -355,14 +378,16 @@ export default function Reception() {
                 </p>
               </div>
             }
-            highlightRow={(e) => e.status === 'active' && isEnrollmentExpired(e)}
+            highlightRow={(e) =>
+              e.status === 'active' && isEnrollmentExpired(e)
+            }
           />
 
           {/* ---- Available courses to activate ---- */}
           <div className="card overflow-hidden mt-6">
             <div className="px-5 py-4 border-b border-line bg-surface">
               <h3 className="text-sm font-bold text-ink">
-                تفعيل وصول لمقرر جديد
+                تسجيل اشتراك مع أستاذ
               </h3>
             </div>
             <div className="px-5 py-4">
@@ -371,23 +396,19 @@ export default function Reception() {
                   const already = enrollmentsOfStudent.find(
                     (e) => e.courseId === course.id,
                   );
-                  const canActivate =
-                    !already || (already.status === 'active' && isEnrollmentExpired(already));
+                  const hasAccess = already && enrollmentHasAccess(already);
                   return (
                     <div
                       key={course.id}
                       className={[
                         'card rounded-xl p-4 border border-line transition-all hover:border-brand/30 hover:shadow-sm',
-                        !canActivate
-                          ? 'border-dashed border-dashed bg-surface/50 hover:shadow-none'
-                          : '',
                       ].join(' ')}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand-dark font-medium text-[10px]">
                           {course.title.charAt(0)}
                         </div>
-                        {already && !canActivate ? (
+                        {hasAccess ? (
                           <span className="text-[10px] font-semibold text-muted bg-surface-alt rounded-full px-2 py-0.5">
                             مسجل
                           </span>
@@ -403,14 +424,11 @@ export default function Reception() {
                         type="button"
                         className={[
                           'w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors border',
-                          !canActivate
-                            ? 'bg-surface border-line text-muted cursor-not-allowed hover:!bg-surface hover:!text-muted'
-                            : 'bg-brand border-transparent text-white hover:bg-brand-dark shadow-sm hover:shadow-md',
+                          'bg-brand border-transparent text-white hover:bg-brand-dark shadow-sm hover:shadow-md',
                         ].join(' ')}
-                        disabled={!canActivate}
-                        onClick={() => canActivate && activateCourse(course.id)}
+                        onClick={() => manageSubscription(course.id)}
                       >
-                        {already && isEnrollmentExpired(already) ? 'تجديد' : 'تفعيل'}
+                        تخصيص الاشتراك
                       </button>
                     </div>
                   );
@@ -434,10 +452,15 @@ export default function Reception() {
               ) : (
                 <ul className="divide-y divide-line/50">
                   {pendingMemberships.map((membership: CenterMembership) => {
-                    const student = state.students.find((s) => s.id === membership.studentId);
+                    const student = state.students.find(
+                      (s) => s.id === membership.studentId,
+                    );
                     if (!student) return null;
                     return (
-                      <li key={membership.id} className="flex items-center justify-between gap-3 py-3">
+                      <li
+                        key={membership.id}
+                        className="flex items-center justify-between gap-3 py-3"
+                      >
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-ink truncate">
                             {student.fullName}
@@ -458,6 +481,14 @@ export default function Reception() {
           </div>
         </>
       ) : null}
+      {subscriptionCourse && selectedStudent && (
+        <SubscriptionManager
+          key={`${selectedStudent.id}:${subscriptionCourse}`}
+          studentId={selectedStudent.id}
+          initialCourseId={subscriptionCourse}
+          onClose={() => setSubscriptionCourse(null)}
+        />
+      )}
     </div>
   );
 }

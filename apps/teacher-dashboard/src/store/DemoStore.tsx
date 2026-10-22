@@ -12,6 +12,8 @@ import {
 } from 'react';
 import {
   createDemoState,
+  createAccessPeriod,
+  type AccessPlan,
   type Center,
   type CenterMembership,
   type Course,
@@ -29,6 +31,15 @@ import {
 /* ------------------------------------------------------------------ */
 
 export type Action =
+  | {
+      type: 'enrollment/grant';
+      payload: {
+        studentId: string;
+        courseId: string;
+        plan: AccessPlan;
+        periodId?: string;
+      };
+    }
   | { type: 'replace'; state: DemoState }
   | { type: 'reset' }
   | { type: 'setLang'; lang: Lang }
@@ -114,7 +125,10 @@ export type Action =
   | { type: 'teacher/update'; payload: Partial<TeacherProfile> }
   | { type: 'membership/approve'; payload: { membershipId: string } }
   | { type: 'membership/reject'; payload: { membershipId: string } }
-  | { type: 'membership/request'; payload: { studentId: string; centerId: string } }
+  | {
+      type: 'membership/request';
+      payload: { studentId: string; centerId: string };
+    }
   | { type: 'qna/reply'; payload: { questionId: string; reply: QnaReply } };
 
 export interface NewCourse {
@@ -352,7 +366,10 @@ export function reducer(state: DemoState, action: Action): DemoState {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
       const { chapter } = findChapter(course, action.payload.chapterId);
-      chapter.lessons.push({ ...action.payload.lesson, id: action.payload.lesson.id ?? newId('lsn') });
+      chapter.lessons.push({
+        ...action.payload.lesson,
+        id: action.payload.lesson.id ?? newId('lsn'),
+      });
       touch(next, course.id);
       logActivity(
         next,
@@ -366,7 +383,9 @@ export function reducer(state: DemoState, action: Action): DemoState {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
       const { chapter } = findChapter(course, action.payload.chapterId);
-      const target = chapter.lessons.find((l) => l.id === action.payload.lessonId);
+      const target = chapter.lessons.find(
+        (l) => l.id === action.payload.lessonId,
+      );
       if (!target) throw new Error('الدرس غير موجود');
       Object.assign(target, action.payload.patch);
       touch(next, course.id);
@@ -400,7 +419,9 @@ export function reducer(state: DemoState, action: Action): DemoState {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
       const { chapter } = findChapter(course, action.payload.chapterId);
-      const target = chapter.lessons.find((l) => l.id === action.payload.lessonId);
+      const target = chapter.lessons.find(
+        (l) => l.id === action.payload.lessonId,
+      );
       if (!target) throw new Error('الدرس غير موجود');
       target.published = action.payload.published;
       touch(next, course.id);
@@ -411,6 +432,54 @@ export function reducer(state: DemoState, action: Action): DemoState {
     }
 
     /* ---------------- enrollment ---------------- */
+
+    case 'enrollment/grant': {
+      const next = clone(state);
+      const { studentId, courseId, plan, periodId } = action.payload;
+      const course = requireCourse(next, courseId);
+      if (!next.students.some((s) => s.id === studentId))
+        throw new Error('التلميذ غير موجود');
+      const period = createAccessPeriod(
+        plan,
+        course,
+        periodId ?? newId('access'),
+      );
+      let enrollment = next.enrollments.find(
+        (e) => e.studentId === studentId && e.courseId === courseId,
+      );
+      if (!enrollment) {
+        enrollment = {
+          id: newId('enrollment'),
+          studentId,
+          courseId,
+          status: 'active',
+          authorizedAt: new Date().toISOString(),
+          authorizedBy: next.teacher.name,
+          expiresAt: period.expiresAt,
+        };
+        next.enrollments.push(enrollment);
+      }
+      // First explicit customization replaces the old blanket course grant.
+      const periods = enrollment.accessPeriods ?? [];
+      enrollment.accessPeriods = [
+        ...periods.filter((p) => p.id !== period.id),
+        period,
+      ];
+      enrollment.status = 'active';
+      enrollment.authorizedAt = new Date().toISOString();
+      enrollment.authorizedBy = next.teacher.name;
+      enrollment.expiresAt = enrollment.accessPeriods
+        .map((p) => p.expiresAt)
+        .sort()
+        .at(-1)!;
+      delete enrollment.durationMonths;
+      logActivity(
+        next,
+        'student',
+        `تم تخصيص اشتراك «${course.title}» إلى ${period.endsOn}`,
+      );
+      return next;
+    }
 
     case 'enrollment/setStatus': {
       const next = clone(state);
@@ -474,7 +543,9 @@ export function reducer(state: DemoState, action: Action): DemoState {
         enrollment.status = 'active';
         enrollment.authorizedAt = new Date().toISOString();
       }
-      const student = next.students.find((s) => s.id === action.payload.studentId);
+      const student = next.students.find(
+        (s) => s.id === action.payload.studentId,
+      );
       const course = next.courses.find((c) => c.id === action.payload.courseId);
       logActivity(
         next,
@@ -491,7 +562,10 @@ export function reducer(state: DemoState, action: Action): DemoState {
       const nowIso = new Date().toISOString();
       const id = newId('st');
       const parts = action.payload.fullName.trim().split(/\s+/);
-      const monogram = parts.slice(0, 2).map((p) => p[0]).join('');
+      const monogram = parts
+        .slice(0, 2)
+        .map((p) => p[0])
+        .join('');
       const studentCode = makeStudentCode(id);
       next.students.unshift({
         id,
@@ -645,7 +719,9 @@ interface StoreValue {
   /** Active center memberships awaiting approval. */
   pendingMemberships: DemoState['memberships'];
   /** Look up a student by their unique studentCode. */
-  findStudentByCode: (code: string) => DemoState['students'][number] | undefined;
+  findStudentByCode: (
+    code: string,
+  ) => DemoState['students'][number] | undefined;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -760,7 +836,9 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+  return (
+    <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+  );
 }
 
 export function useStore(): StoreValue {
@@ -783,4 +861,3 @@ export function useAction() {
 
 // Re-export Center for convenience
 export type { Center, CenterMembership };
-

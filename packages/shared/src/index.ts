@@ -7,3 +7,5 @@ export * from './selectors';
 export * from './qna';
 export * from './demoSync';
 export * from './i18n';
+
+export * from './access';

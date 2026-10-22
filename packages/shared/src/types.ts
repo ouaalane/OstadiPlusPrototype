@@ -244,6 +244,8 @@ export interface CenterMembership {
 /* ------------------------------------------------------------------ */
 
 export interface Enrollment {
+  /** Explicit subscriptions; absent on legacy demo enrollments. */
+  accessPeriods?: import('./access').AccessPeriod[];
   id: string;
   studentId: string;
   courseId: string;

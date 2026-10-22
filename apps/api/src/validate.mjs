@@ -15,19 +15,34 @@ import {
   DEMO_STATE,
   allLessons,
   findCourse,
-  isEnrollmentExpired,
+  enrollmentHasAccess,
+  enrollmentAllowsLesson,
 } from '@ostadiplus/shared';
 
 /**
  * @returns `{ ok: true, student, course, lesson }` or
  *          `{ ok: false, status, error }` ready to send as the response.
  */
-export function validatePlayback({ studentId, courseId, videoId }, state = DEMO_STATE) {
-  return validateLessonAccess({ studentId, courseId, lessonId: videoId }, 'video', state);
+export function validatePlayback(
+  { studentId, courseId, videoId },
+  state = DEMO_STATE,
+) {
+  return validateLessonAccess(
+    { studentId, courseId, lessonId: videoId },
+    'video',
+    state,
+  );
 }
 
-export function validateDocument({ studentId, courseId, documentId }, state = DEMO_STATE) {
-  return validateLessonAccess({ studentId, courseId, lessonId: documentId }, 'pdf', state);
+export function validateDocument(
+  { studentId, courseId, documentId },
+  state = DEMO_STATE,
+) {
+  return validateLessonAccess(
+    { studentId, courseId, lessonId: documentId },
+    'pdf',
+    state,
+  );
 }
 
 function validateLessonAccess({ studentId, courseId, lessonId }, kind, state) {
@@ -43,16 +58,28 @@ function validateLessonAccess({ studentId, courseId, lessonId }, kind, state) {
     (e) =>
       e.studentId === studentId &&
       e.courseId === courseId &&
-      e.status === 'active' &&
-      !isEnrollmentExpired(e),
+      enrollmentHasAccess(e),
   );
   if (!enrolled) return { ok: false, status: 403, error: 'not-enrolled' };
 
   const lesson = allLessons(course).find((l) => l.id === lessonId);
   if (!lesson || lesson.kind !== kind || !lesson.published) {
-    return { ok: false, status: 404, error: kind === 'pdf' ? 'unknown-document' : 'unknown-video' };
+    return {
+      ok: false,
+      status: 404,
+      error: kind === 'pdf' ? 'unknown-document' : 'unknown-video',
+    };
   }
 
+  if (
+    !state.enrollments.some(
+      (e) =>
+        e.studentId === studentId &&
+        e.courseId === courseId &&
+        enrollmentAllowsLesson(e, course, lessonId),
+    )
+  )
+    return { ok: false, status: 403, error: 'lesson-not-in-subscription' };
   return { ok: true, student, course, lesson };
 }
 
@@ -81,7 +108,16 @@ export function resolveWatermarkRecord(record, state = DEMO_STATE) {
       phone: student.phone,
       email: student.email,
     },
-    course: course && { id: course.id, title: course.title, level: course.level },
-    lesson: lesson && { id: lesson.id, kind: lesson.kind, title: lesson.title, file: lesson.file },
+    course: course && {
+      id: course.id,
+      title: course.title,
+      level: course.level,
+    },
+    lesson: lesson && {
+      id: lesson.id,
+      kind: lesson.kind,
+      title: lesson.title,
+      file: lesson.file,
+    },
   };
 }
