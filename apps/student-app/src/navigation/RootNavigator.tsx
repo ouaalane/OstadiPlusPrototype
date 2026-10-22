@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { BrandText as Text } from '../components/BrandText';
-import { StyleSheet } from 'react-native';
+import { Easing, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -38,6 +38,7 @@ import QuizScreen from '../screens/QuizScreen';
 import StudentCardScreen from '../screens/StudentCardScreen';
 import LessonAlerts from '../notifications/LessonAlertsBridge';
 import { navigationRef } from './ref';
+import AnimatedTabButton, { useReducedTabMotion } from './AnimatedTabButton';
 import { useStore } from '../store/StudentStore';
 import { useI18n } from '../i18n/useI18n';
 import { brandFontWeight, colors, familyFor, radius } from '../theme';
@@ -58,6 +59,7 @@ function Tabs() {
   const { t, lang, dir } = useI18n();
   const rtl = dir === 'rtl';
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedTabMotion();
 
   const labels: Record<keyof TabParamList, string> = {
     Home: t('home'),
@@ -85,6 +87,15 @@ function Tabs() {
       initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
+        // Mount the four tabs once, rather than during their first press.
+        lazy: false,
+        animation: reducedMotion ? 'none' : 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: { duration: reducedMotion ? 0 : 160, easing: Easing.out(Easing.cubic) },
+        },
+        tabBarButton: props => <AnimatedTabButton {...props} reducedMotion={reducedMotion} />,
+        tabBarButtonTestID: `bottom-tab-${route.name}`,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: [
