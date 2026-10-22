@@ -36,13 +36,11 @@ import {
   AppText,
   Card,
   CourseCover,
-  EmptyState,
   Eyebrow,
   IconButton,
   LessonGlyph,
   MetricChip,
   PlayGlyph,
-  PrimaryButton,
   ProgressBar,
   SearchBar,
   SectionHead,
@@ -52,6 +50,7 @@ import {
 import { resolvePoster } from '../media/lookup';
 import { lessonKindOf, lessonMetaText, lessonRoute } from '../lib/lesson';
 import { useStore } from '../store/StudentStore';
+import PendingEnrollment from '../components/PendingEnrollment';
 import { colors, radius, shadow, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { useScrollToTopOnTabPress } from '../navigation/useScrollToTopOnTabPress';
@@ -311,6 +310,10 @@ export default function HomeScreen() {
   const hasActiveAccess = myCourses.length > 0;
   const unreadCount = myNotifications.filter((n) => !n.read).length;
 
+  if (!hasActiveAccess && me) {
+    return <PendingEnrollment student={me} onShowCard={() => navigation.navigate('StudentCard')} />;
+  }
+
   return (
     <View style={styles.root}>
       {/* ---- white header ---- */}
@@ -511,27 +514,6 @@ export default function HomeScreen() {
           </>
         ) : null}
 
-        {/* ---- access-needed state (no active subscription) ---- */}
-        {!hasActiveAccess && me ? (
-          <View style={styles.emptyStateWrap}>
-            <EmptyState
-              icon="lock-closed-outline"
-              title={rtl ? 'لا يوجد وصول نشط' : 'Aucun accès actif'}
-              description={
-                rtl
-                  ? 'طلب وصولك قيد المعالجة أو لم يُفعَّل بعد. تواصل مع مركزك لتفعيل الدروس.'
-                  : "Votre demande d'accès est en cours ou n'est pas encore activée. Contactez votre centre."
-              }
-              action={
-                <PrimaryButton
-                  label={rtl ? 'بطاقة الطالب' : 'Ma carte étudiante'}
-                  variant="soft"
-                  onPress={() => navigation.navigate('StudentCard')}
-                />
-              }
-            />
-          </View>
-        ) : null}
       </ScrollView>
 
       {/* ---- notifications sheet ---- */}

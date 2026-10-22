@@ -30,6 +30,7 @@ import { AppText, AuthAppBar, LabeledField, PrimaryButton } from '../components/
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
+import { studentForLogin } from '../lib/student-login';
 import { colors, radius, spacing } from '../theme';
 
 export default function LoginScreen({
@@ -54,13 +55,7 @@ export default function LoginScreen({
   const [banner, setBanner] = useState<string | null>(null);
   const passwordRef = useRef<TextInput>(null);
 
-  /** First student with an active enrollment (the "signed-in" demo user). */
-  const targetId = useMemo(() => {
-    const active = state.students.find((s) =>
-      state.enrollments.some((e) => e.studentId === s.id && e.status === 'active'),
-    );
-    return (active ?? state.students[0])?.id;
-  }, [state.students, state.enrollments]);
+  const targetId = useMemo(() => studentForLogin(state.students, identifier)?.id, [state.students, identifier]);
 
   const submit = () => {
     if (busy) return;

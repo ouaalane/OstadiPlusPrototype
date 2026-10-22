@@ -67,7 +67,7 @@ interface Category {
 
 export default function SearchScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { state } = useStore();
+  const { state, myCourses } = useStore();
   const { lang, t, dir } = useI18n();
   const l = useLayout(lang);
   const rtl = dir === 'rtl';
@@ -75,10 +75,10 @@ export default function SearchScreen() {
   useScrollToTopOnTabPress(scrollRef);
   const [query, setQuery] = useState('');
 
-  /** Every published course is discoverable, whether enrolled or not. */
+  /** The catalogue becomes discoverable once the centre activates access. */
   const catalogue = useMemo(
-    () => state.courses.filter((course) => course.status === 'published'),
-    [state.courses],
+    () => myCourses.length ? state.courses.filter((course) => course.status === 'published') : [],
+    [state.courses, myCourses.length],
   );
 
   const categories = useMemo<Category[]>(() => {

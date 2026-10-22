@@ -18,6 +18,7 @@ import { AppText, AuthAppBar, CodeInput, PrimaryButton } from '../components/ui'
 import { useI18n } from '../i18n/useI18n';
 import { colors, spacing } from '../theme';
 import { useStore } from '../store/StudentStore';
+import { studentForLogin } from '../lib/student-login';
 
 /** Code lifetime in seconds. */
 const CODE_TTL = 300;
@@ -49,14 +50,10 @@ export default function VerifyCodeScreen({
   const [resent, setResent] = useState(false);
   const mounted = useRef(true);
 
-  /** Demo account to sign in: the one resolved during login, else the first active. */
   const targetId = useMemo(() => {
-    if (studentId) return studentId;
-    const active = state.students.find((s) =>
-      state.enrollments.some((e) => e.studentId === s.id && e.status === 'active'),
-    );
-    return (active ?? state.students[0])?.id;
-  }, [studentId, state.students, state.enrollments]);
+    if (studentId) return state.students.find(student => student.id === studentId)?.id;
+    return studentForLogin(state.students, email)?.id;
+  }, [studentId, state.students, email]);
 
   /** Real countdown — resets whenever a new code is "sent". */
   useEffect(() => {

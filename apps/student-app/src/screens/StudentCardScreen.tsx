@@ -10,7 +10,7 @@
  * the prototype — visually identical to the Stitch design.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { brand } from '@ostadiplus/shared';
 import { Alert, Image, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,63 +18,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 
+import StudentQr from '../components/StudentQr';
 import { AppText, Pill } from '../components/ui';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, shadow, spacing } from '../theme';
-
-const GRID = 21; // modules per side (QR v1 size)
-const FINDER = 7;
-
-/** Deterministic 0/1 matrix seeded from the student's unique ID. */
-function buildMatrix(seedStr: string): number[][] {
-  // xorshift PRNG seeded from the string
-  let h = 2166136261;
-  for (let i = 0; i < seedStr.length; i++) {
-    h ^= seedStr.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const rnd = () => {
-    h ^= h << 13; h ^= h >>> 17; h ^= h << 5; h |= 0;
-    return (h >>> 0) / 4294967296;
-  };
-
-  const m: number[][] = Array.from({ length: GRID }, () => Array(GRID).fill(0));
-
-  const inFinder = (r: number, c: number) =>
-    (r < FINDER && c < FINDER) ||
-    (r < FINDER && c >= GRID - FINDER) ||
-    (r >= GRID - FINDER && c < FINDER);
-
-  for (let r = 0; r < GRID; r++) {
-    for (let c = 0; c < GRID; c++) {
-      if (inFinder(r, c)) continue;
-      m[r][c] = rnd() > 0.5 ? 1 : 0;
-    }
-  }
-
-  // Finder patterns (7x7 ring + 3x3 core) at three corners.
-  const drawFinder = (r0: number, c0: number) => {
-    for (let r = 0; r < FINDER; r++) {
-      for (let c = 0; c < FINDER; c++) {
-        const edge = r === 0 || r === FINDER - 1 || c === 0 || c === FINDER - 1;
-        const core = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-        m[r0 + r][c0 + c] = edge || core ? 1 : 0;
-      }
-    }
-  };
-  drawFinder(0, 0);
-  drawFinder(0, GRID - FINDER);
-  drawFinder(GRID - FINDER, 0);
-
-  // Timing patterns.
-  for (let i = 8; i < GRID - 8; i++) {
-    m[6][i] = i % 2 === 0 ? 1 : 0;
-    m[i][6] = i % 2 === 0 ? 1 : 0;
-  }
-  return m;
-}
 
 export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
   const { state, me } = useStore();
@@ -88,7 +37,6 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
    *  by the store, never implied by possession of the code. */
   const studentCode = me?.studentCode ?? '';
 
-  const matrix = useMemo(() => buildMatrix(studentCode), [studentCode]);
   const pending = !state.enrollments.some((e) => e.studentId === me?.id && e.status === 'active');
 
   const enrollment = state.enrollments.find((e) => e.studentId === me?.id);
@@ -140,7 +88,7 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
                 {rtl ? 'بطاقة الطالب الرقمية' : 'Carte étudiant numérique'}
               </AppText>
               <AppText size={12} tone="white" style={{ opacity: 0.8 }}>
-                {rtl ? 'دورة 2025' : 'Promotion 2025'}
+                {pending ? (rtl ? 'في انتظار مركزك' : 'En attente de votre centre') : (rtl ? 'بطاقتك الشخصية' : 'Votre carte personnelle')}
               </AppText>
             </View>
             <View style={styles.headerBtn}>
@@ -151,18 +99,10 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
           {/* identity row */}
           <View style={[l.row, styles.identity]}>
             <View style={styles.avatar}>
-              {me ? (
-                <Image
-                  source={require('../assets/student-avatar.jpg')}
-                  style={styles.avatarImg}
-                  resizeMode="cover"
-                  accessibilityIgnoresInvertColors
-                  accessibilityLabel={me.fullName}
-                />
+              {!pending && me ? (
+                <Image source={require('../assets/student-avatar.jpg')} style={styles.avatarImg} resizeMode="cover" accessibilityIgnoresInvertColors accessibilityLabel={me.fullName} />
               ) : (
-                <AppText size={18} weight="bold" tone="white">
-                  ?
-                </AppText>
+                <AppText size={18} weight="bold" tone="white">{me?.monogram ?? '?'}</AppText>
               )}
             </View>
             <View style={{ flex: 1, gap: 3 }}>
@@ -219,21 +159,7 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
             style={styles.qrFrame}
           >
             <View style={styles.qrInner}>
-              <View style={styles.qrGrid}>
-                {matrix.map((row, r) => (
-                  <View key={r} style={styles.qrRow}>
-                    {row.map((cell, c) => (
-                      <View
-                        key={c}
-                        style={[
-                          styles.qrCell,
-                          { backgroundColor: cell ? colors.ink : colors.transparent },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                ))}
-              </View>
+              <StudentQr code={studentCode} />
             </View>
           </LinearGradient>
 
@@ -387,7 +313,6 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-const CELL = 10; // px per module
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
@@ -451,9 +376,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  qrGrid: { gap: 0 },
-  qrRow: { flexDirection: 'row' },
-  qrCell: { width: CELL, height: CELL },
 
   idBox: {
     alignItems: 'center',

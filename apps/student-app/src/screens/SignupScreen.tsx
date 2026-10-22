@@ -7,7 +7,7 @@
  *   2. مسارك الدراسي     — choose a level + track + city
  *   3. تأكيد            — summary, terms checkbox, «إنشاء الحساب»
  *
- * No backend: creating the account signs the student into the demo dataset.
+ * No backend: creates an independent local student with no course access.
  */
 
 import React, { useMemo, useRef, useState } from 'react';
@@ -214,7 +214,7 @@ export default function SignupScreen({
   onBack: () => void;
   onLogin: () => void;
 }) {
-  const { state, signIn } = useStore();
+  const { registerStudent } = useStore();
   const { lang } = useI18n();
   const l = useLayout(lang);
   const rtl = lang === 'ar';
@@ -272,14 +272,6 @@ export default function SignupScreen({
     return { score: 3, label: rtl ? 'قوية' : 'Fort', color: colors.success };
   }, [password, rtl]);
 
-  /** First student with an active enrollment — the demo "signed-in" account. */
-  const targetId = useMemo(() => {
-    const active = state.students.find((s) =>
-      state.enrollments.some((e) => e.studentId === s.id && e.status === 'active'),
-    );
-    return (active ?? state.students[0])?.id;
-  }, [state.students, state.enrollments]);
-
   const next = () => {
     if (step === 1) {
       const e: Record<string, string> = {};
@@ -302,7 +294,11 @@ export default function SignupScreen({
       });
       return;
     }
-    if (targetId) signIn(targetId);
+    registerStudent({
+      fullName: name, email, phone: phone ? `+212 ${phone}` : '', password,
+      level: level.title[lang],
+      studentType: levelId === 'free' ? 'bac-libre' : 'moutamadris',
+    });
   };
 
   return (

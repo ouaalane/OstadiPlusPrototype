@@ -1,5 +1,17 @@
 # Preview in Expo Go
 
+Signup and “Continue as guest” create independent local prototype students.
+They open an empty welcome screen with their own code and centre instructions;
+courses appear only after that student's access is activated in the demo data.
+Login resolves the entered email/phone and never falls back to another pupil.
+The QR illustration is a placeholder, not a scannable encoder; registration,
+verification and centre activation are still local demo flows, without an auth
+backend. Check account matching with:
+
+```sh
+node --test apps/student-app/scripts/test-student-login.cjs
+```
+
 Video screens now allow the phone's automatic rotation and expand the same
 player to fill a landscape window, keeping its controls and watermark. Leaving
 the video restores portrait. Enable system auto-rotate when testing on Android.

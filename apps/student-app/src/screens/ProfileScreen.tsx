@@ -174,11 +174,11 @@ export default function ProfileScreen() {
 
         <View style={styles.identity}>
           <View style={styles.avatar}>
-            <Image
-              source={require('../assets/student-avatar.jpg')}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
+            {myCourses.length ? (
+              <Image source={require('../assets/student-avatar.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <AppText size={25} weight="bold" tone="brand">{me.monogram}</AppText>
+            )}
             <View style={styles.cameraBadge}>
               <Ionicons name="camera" size={12} color={colors.white} />
             </View>
@@ -265,7 +265,7 @@ export default function ProfileScreen() {
               <InfoLine label={t('school_level')} value={me.level} />
               <InfoLine
                 label={t('center_label')}
-                value={`${state.teacher.centerName} · ${state.teacher.centerCity}`}
+                value={myCourses.length ? `${state.teacher.centerName} · ${state.teacher.centerCity}` : pick(lang, 'لم يتم الربط بمركز بعد', 'Aucun centre pour le moment')}
               />
               <InfoLine label={t('phone')} value={me.phone} />
             </View>
