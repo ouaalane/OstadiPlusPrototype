@@ -5,7 +5,7 @@
  * mounted video surface across inline/fullscreen, poster/loading/error
  * states, draggable RTL-aware scrubber, ±10 s, previous/next lesson, pause on
  * blur/background). This screen owns the enrollment gate, the watermark
- * grant, screen-capture protection, the meta block, the Save / Q & R chips,
+ * grant, screenshot-attempt feedback, the meta block, the Save / Q & R chips,
  * the Overview · Chapters · Resources tabs, and the sticky Prev /
  * «Complete & next» bar. Downloads live on the compact chapter rows only.
  *
@@ -13,9 +13,8 @@
  * non-expired subscription). Every playback start asks the watermark API
  * for a fresh traceability code (server-side generation only, see apps/api)
  * which `LessonPlayer` renders as a moving overlay; the platform's
- * screen-capture protection is engaged while this screen is open on physical
- * devices. Android emulators cannot composite FLAG_SECURE video into their
- * host display, so protection is skipped there to keep the video visible.
+ * app-wide native capture protection is owned by CaptureProtectionBoundary,
+ * including pause-on-capture on iOS. There is no emulator exemption.
  * Fullscreen
  * is rendered in-app (the player wrapper expands; the video view is never
  * remounted) so the watermark and custom controls remain visible there too.
@@ -31,7 +30,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   BackHandler,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -43,8 +41,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useVideoRotation } from '../hooks/useVideoRotation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { addScreenshotListener, usePreventScreenCapture } from 'expo-screen-capture';
-import * as Device from 'expo-device';
+import { subscribeScreenshotAttempt } from '../lib/capture-protection';
 
 import {
   allLessons,
@@ -122,30 +119,6 @@ const MONTHS_AR = [
   'نونبر',
   'دجنبر',
 ];
-
-/**
- * Screen-capture blocking (FLAG_SECURE on Android / recording protection on
- * iOS). Physical devices only: Android emulators cannot composite a secure
- * video surface into the host display, so FLAG_SECURE makes the lesson video
- * fully black there while the timeline keeps advancing.
- *
- * `Device.isDevice` is not enough: Play Store emulator images report `true`
- * (their fingerprint is `google/sdk_gphone64...`, not `generic`), so the
- * fingerprint/model are checked as well.
- */
-const CAPTURE_PROTECTION =
-  Device.isDevice &&
-  !(
-    Platform.OS === 'android' &&
-    /sdk_gphone|generic|goldfish|ranchu|vbox|emulator/i.test(
-      `${Device.osBuildFingerprint ?? ''} ${Device.modelName ?? ''}`,
-    )
-  );
-
-function ScreenCaptureGuard() {
-  usePreventScreenCapture('lesson-player');
-  return null;
-}
 
 export default function VideoScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -225,7 +198,7 @@ export default function VideoScreen() {
 
   const [captureNonce, setCaptureNonce] = useState(0);
   useEffect(() => {
-    const subscription = addScreenshotListener(() => {
+    const subscription = subscribeScreenshotAttempt(() => {
       console.log('[watermark] screen capture detected — re-randomising the overlay');
       setCaptureNonce((n) => n + 1);
     });
@@ -475,7 +448,6 @@ export default function VideoScreen() {
   return (
     <View style={styles.root}>
       {focused ? <StatusBar hidden={fullscreen} style={fullscreen ? 'light' : 'dark'} /> : null}
-      {CAPTURE_PROTECTION ? <ScreenCaptureGuard /> : null}
       {/*
        * Pinned player. In fullscreen only this wrapper's style changes: the
        * LessonPlayer (and therefore the native video surface) stays mounted

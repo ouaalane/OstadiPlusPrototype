@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
 import { colors } from './src/theme';
+import CaptureProtectionBoundary from './src/components/CaptureProtectionBoundary';
 import { initializeAppOrientation } from './src/lib/screen-orientation';
 
 import RootNavigator from './src/navigation/RootNavigator';
@@ -45,15 +46,19 @@ export default function App() {
      — in development the fonts alone stream in over Metro for a few seconds.
      Painting the launch background while they load keeps that gap the same
      colour as the splash instead of leaving the bare window showing. */
-  if (!fontsReady) return <View style={styles.launch} />;
-
   return (
-    <SafeAreaProvider>
-      <StudentStoreProvider>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </StudentStoreProvider>
-    </SafeAreaProvider>
+    <CaptureProtectionBoundary>
+      {!fontsReady ? (
+        <View style={styles.launch} />
+      ) : (
+        <SafeAreaProvider>
+          <StudentStoreProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </StudentStoreProvider>
+        </SafeAreaProvider>
+      )}
+    </CaptureProtectionBoundary>
   );
 }
 

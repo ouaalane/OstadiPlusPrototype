@@ -95,3 +95,5 @@ Research sources and access limits are recorded in [the redesign research report
 التحقق: `npm run access:test` لقواعد المدة والدورات وحدود التواريخ، و`node scripts/check-demo-sync.mjs` للمزامنة ورفض محتوى دورة أخرى، و`npm run dashboard:test` لتسجيل الاشتراكات عبر المتصفح.
 
 Video watermark reliability and the full-catalog playback check are documented in [VIDEO-WATERMARK-VERIFICATION.md](VIDEO-WATERMARK-VERIFICATION.md).
+
+App-wide native capture protection, its platform limits, device acceptance checklist and rebuild instructions: [Arabic technical report](SCREEN-CAPTURE-PROTECTION-AR.md). A new native build is required; Expo Go and older binaries cannot load the new protection module.

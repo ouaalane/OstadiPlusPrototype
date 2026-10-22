@@ -41,7 +41,12 @@
           }
         }
       ],
-      ["expo-screen-orientation", { "initialOrientation": "PORTRAIT_UP" }],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "PORTRAIT_UP"
+        }
+      ],
       "expo-video",
       "expo-font",
       [
@@ -62,7 +67,8 @@
         }
       ],
       "expo-asset",
-      "expo-status-bar"
+      "expo-status-bar",
+      "./plugins/withCaptureProtection"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

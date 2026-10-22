@@ -51,6 +51,7 @@ import { formatDuration } from '@ostadiplus/shared';
 import { AppText, IconButton } from './ui';
 import VideoWatermark from './VideoWatermark';
 import { usePlayerControls } from './usePlayerControls';
+import { useCaptureProtection } from './CaptureProtectionBoundary';
 import { useI18n } from '../i18n/useI18n';
 import { colors, overlays, spacing } from '../theme';
 
@@ -152,6 +153,7 @@ function PlayerSurface({
 }: PlayerSurfaceProps) {
   const { dir } = useI18n();
   const rtl = dir === 'rtl';
+  const { blocked: captureBlocked } = useCaptureProtection();
 
   const startAt = resumeStart(resumeAt, expectedDuration);
 
@@ -172,7 +174,7 @@ function PlayerSurface({
   const autoStarted = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      if (autoStarted.current) return;
+      if (autoStarted.current || captureBlocked) return;
       const timer = setTimeout(() => {
         if (autoStarted.current) return;
         autoStarted.current = true;
@@ -181,7 +183,7 @@ function PlayerSurface({
         player.play();
       }, 600);
       return () => clearTimeout(timer);
-    }, [player, startAt]),
+    }, [player, startAt, captureBlocked]),
   );
 
   /**
@@ -319,6 +321,13 @@ function PlayerSurface({
     return () => subscription.remove();
   }, [safePause, saveNow]);
 
+  useEffect(() => {
+    if (captureBlocked) {
+      safePause();
+      saveNow(true);
+    }
+  }, [captureBlocked, safePause, saveNow]);
+
   const loading = (!firstFrame || status === 'loading') && !error;
   const { controlsVisible, revealControls, toggleControls } = usePlayerControls({
     playing,
@@ -329,6 +338,7 @@ function PlayerSurface({
   });
 
   const togglePlay = useCallback(() => {
+    if (captureBlocked) return;
     revealControls();
     autoStarted.current = true;
     // The visible state can be one event tick ahead of the native player
@@ -348,7 +358,7 @@ function PlayerSurface({
       completedRef.current = false;
     }
     player.play();
-  }, [player, expectedDuration, revealControls]);
+  }, [player, expectedDuration, revealControls, captureBlocked]);
 
   const seekTo = useCallback(
     (seconds: number) => {
