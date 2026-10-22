@@ -7,13 +7,13 @@
  */
 
 import React, { useMemo, useRef, useState } from 'react';
+import { BrandTextInput as TextInput } from '../components/BrandTextInput';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +33,7 @@ import { AppText, Avatar, Card, EmptyState, Pill, TopBar } from '../components/u
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
-import { colors, familyFor, radius, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 type QnaFilter = 'all' | 'unanswered';
@@ -282,7 +282,6 @@ export default function QnaScreen() {
               style={[
                 styles.input,
                 {
-                  fontFamily: familyFor(lang, 'regular'),
                   textAlign: rtl ? 'right' : 'left',
                   writingDirection: rtl ? 'rtl' : 'ltr',
                 },

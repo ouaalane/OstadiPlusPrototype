@@ -64,30 +64,35 @@ export const spacing = {
   xxxl: 32,
 } as const;
 
-/** Font family names loaded in App.tsx. */
-export const fonts = {
-  regular: 'NotoSansArabic_Brand',
-  medium: 'NotoSansArabic_Brand',
-  semibold: 'NotoSansArabic_Brand',
-  bold: 'NotoSansArabic_Brand',
-} as const;
-
-/** Latin family used for the French (LTR) UI. */
-export const fontsLatin = {
-  regular: 'BricolageGrotesque_Bold',
-  medium: 'BricolageGrotesque_Bold',
-  semibold: 'BricolageGrotesque_Bold',
-  bold: 'BricolageGrotesque_Bold',
-} as const;
-
-/** The archive provides a single face per script, not four invented weights. */
+/** Exact supplied faces: logo's Latin family, with the supplied Arabic companion. */
 export const brandFonts = {
   arabic: 'NotoSansArabic_Brand',
   latin: 'BricolageGrotesque_Bold',
 } as const;
 
+export const brandFontWeight = '700' as const;
+
+/** Font family names loaded in App.tsx. */
+export const fonts = {
+  regular: brandFonts.arabic,
+  medium: brandFonts.arabic,
+  semibold: brandFonts.arabic,
+  bold: brandFonts.arabic,
+} as const;
+
+/** Latin family used for the French (LTR) UI. */
+export const fontsLatin = {
+  regular: brandFonts.latin,
+  medium: brandFonts.latin,
+  semibold: brandFonts.latin,
+  bold: brandFonts.latin,
+} as const;
+
 /** Original default line boxes; supplied font files themselves stay untouched. */
 export const originalTextLeading = { arabic: 1.5, latin: 2478 / 2048 } as const;
+
+/** Untouched archive hhea metrics; keep input boxes stable while changing scripts. */
+export const inputTextLeading = { arabic: 2112 / 1000, latin: 1200 / 1000 } as const;
 
 export type FontWeight = keyof typeof fonts;
 

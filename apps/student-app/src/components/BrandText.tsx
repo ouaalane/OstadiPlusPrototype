@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { StyleSheet, Text as NativeText, type TextProps } from 'react-native';
-import { brandFonts, originalTextLeading } from '../theme';
+import { brandFonts, brandFontWeight, originalTextLeading } from '../theme';
 import coverage from './brandGlyphCoverage.json';
 
 const arabicGlyphs = new Set(coverage.arabic);
@@ -40,7 +40,7 @@ export const BrandText = React.forwardRef<React.ComponentRef<typeof NativeText>,
     const textStyle = {
       fontFamily: requestedFamily,
       // Both archive faces are weight 700. Do not synthesize missing weights.
-      fontWeight: '700' as const,
+      fontWeight: brandFontWeight,
       // Preserve explicit line heights; restore original automatic line boxes.
       lineHeight: flat.lineHeight ?? (flat.fontSize ?? 14) * ratio,
     };
@@ -51,7 +51,7 @@ export const BrandText = React.forwardRef<React.ComponentRef<typeof NativeText>,
           const runs = fontRuns(String(child), requestedFamily);
           if (runs.length === 1 && runs[0].family === requestedFamily) return child;
           return runs.map((run, index) => (
-            <NativeText key={index} style={{ fontFamily: run.family, fontWeight: '700' }}>
+            <NativeText key={index} style={{ fontFamily: run.family, fontWeight: brandFontWeight }}>
               {run.text}
             </NativeText>
           ));

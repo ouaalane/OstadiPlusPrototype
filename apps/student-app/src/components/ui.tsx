@@ -7,6 +7,8 @@
  */
 
 import React, { useRef, useState } from 'react';
+import type { TextInput as NativeTextInput } from 'react-native';
+import { BrandTextInput as TextInput } from './BrandTextInput';
 import { BrandText as Text } from './BrandText';
 import {
   Image,
@@ -16,7 +18,6 @@ import {
   ScrollView,
   StyleProp,
   StyleSheet,
-  TextInput,
   TextStyle,
   View,
   ViewStyle,
@@ -26,7 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { coverGradients, type Lang, type LessonKind } from '@ostadiplus/shared';
 import { LESSON_ICONS, lessonTint } from '../lib/lesson';
 
-import { colors, overlays, brandFonts, familyFor, fonts, radius, shadow, spacing, tracking } from '../theme';
+import { colors, overlays, familyFor, fonts, radius, shadow, spacing, tracking } from '../theme';
 import { coverAssets } from '../assets/covers';
 import { useI18n } from '../i18n/useI18n';
 
@@ -304,9 +305,9 @@ export function PrimaryButton({
   accessibilityHint?: string;
   style?: ViewStyle | ViewStyle[];
 }) {
+  const { lang } = useI18n();
   const v = BUTTON_VARIANTS[variant];
   const off = !!disabled || !!busy;
-  const { lang } = useI18n();
   const rowDir = useRowDir();
   return (
     <Pressable
@@ -1136,7 +1137,7 @@ export function LabeledField({
   /** Renders the red asterisk the reference uses on required fields. */
   required?: boolean;
   style?: ViewStyle;
-  inputRef?: React.Ref<TextInput>;
+  inputRef?: React.Ref<NativeTextInput>;
 } & {
   value: string;
   onChangeText: (t: string) => void;
@@ -1155,7 +1156,6 @@ export function LabeledField({
   autoFocus?: boolean;
   accessibilityHint?: string;
 }) {
-  const { lang } = useI18n();
   const rowDir = useRowDir();
   return (
     <View style={[{ gap: spacing.sm }, style]}>
@@ -1182,19 +1182,7 @@ export function LabeledField({
           selectionColor={colors.brand}
           cursorColor={colors.brand}
           ref={inputRef}
-          style={[
-            styles.fieldInput,
-            {
-              fontFamily:
-                inputProps.keyboardType === 'email-address' ||
-                inputProps.keyboardType === 'phone-pad' ||
-                inputProps.keyboardType === 'number-pad' ||
-                inputProps.secureTextEntry
-                  ? brandFonts.latin
-                  : familyFor(lang, 'regular'),
-              fontWeight: '700',
-            },
-          ]}
+          style={styles.fieldInput}
           placeholderTextColor={colors.faint}
           accessibilityLabel={label}
           {...inputProps}
@@ -1287,7 +1275,6 @@ export function SelectField({
   required?: boolean;
   style?: ViewStyle;
 }) {
-  const { lang } = useI18n();
   const rowDir = useRowDir();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -1399,7 +1386,7 @@ export function SelectField({
                 autoCorrect={false}
                 autoFocus
                 accessibilityLabel={searchPlaceholder}
-                style={[styles.fieldInput, { fontFamily: familyFor(lang, 'regular') }]}
+                style={styles.fieldInput}
               />
               {query ? (
                 <Pressable
@@ -1504,7 +1491,7 @@ export function CodeInput({
   autoFocus?: boolean;
   accessibilityLabel?: string;
 }) {
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<NativeTextInput>(null);
   const [focused, setFocused] = useState(false);
   const rowDir = useRowDir();
   const digits = value.split('');

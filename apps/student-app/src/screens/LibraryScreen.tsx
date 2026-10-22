@@ -11,7 +11,8 @@
  */
 
 import React, { useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { BrandTextInput as TextInput } from '../components/BrandTextInput';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +25,7 @@ import { AppText, Card, EmptyState, NoticeCard } from '../components/ui';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
-import { colors, familyFor, radius, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { useScrollToTopOnTabPress } from '../navigation/useScrollToTopOnTabPress';
 
@@ -121,7 +122,7 @@ export default function LibraryScreen() {
           cursorColor={colors.brand}
               style={[
                 l.fieldInput,
-                { fontFamily: familyFor(lang, 'regular'), fontSize: 13.5, color: colors.ink },
+                { fontSize: 13.5, color: colors.ink },
                 styles.searchInput,
               ]}
               value={query}

@@ -38,7 +38,7 @@ import LessonAlerts from '../notifications/LessonAlertsBridge';
 import { navigationRef } from './ref';
 import { useStore } from '../store/StudentStore';
 import { useI18n } from '../i18n/useI18n';
-import { colors, familyFor, radius } from '../theme';
+import { brandFontWeight, colors, familyFor, radius } from '../theme';
 import type { AuthStackParamList, RootStackParamList, TabParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -210,10 +210,10 @@ export default function RootNavigator() {
       notification: colors.accent,
     },
     fonts: {
-      regular: { ...DefaultTheme.fonts.regular, fontWeight: '700' as const, fontFamily: familyFor(lang, 'regular') },
-      medium: { ...DefaultTheme.fonts.medium, fontWeight: '700' as const, fontFamily: familyFor(lang, 'medium') },
-      bold: { ...DefaultTheme.fonts.bold, fontWeight: '700' as const, fontFamily: familyFor(lang, 'bold') },
-      heavy: { ...DefaultTheme.fonts.heavy, fontWeight: '700' as const, fontFamily: familyFor(lang, 'bold') },
+      regular: { ...DefaultTheme.fonts.regular, fontWeight: brandFontWeight, fontFamily: familyFor(lang, 'regular') },
+      medium: { ...DefaultTheme.fonts.medium, fontWeight: brandFontWeight, fontFamily: familyFor(lang, 'medium') },
+      bold: { ...DefaultTheme.fonts.bold, fontWeight: brandFontWeight, fontFamily: familyFor(lang, 'bold') },
+      heavy: { ...DefaultTheme.fonts.heavy, fontWeight: brandFontWeight, fontFamily: familyFor(lang, 'bold') },
     },
   };
 

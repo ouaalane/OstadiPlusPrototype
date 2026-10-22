@@ -9,7 +9,8 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { BrandTextInput as TextInput } from '../components/BrandTextInput';
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Notifications } from '../notifications/client';
@@ -23,7 +24,7 @@ import { bundledAssetCount } from '../media/lookup';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
-import { colors, familyFor, radius, shadow, spacing } from '../theme';
+import { colors, radius, shadow, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { useScrollToTopOnTabPress } from '../navigation/useScrollToTopOnTabPress';
 
@@ -403,7 +404,6 @@ export default function ProfileScreen() {
           cursorColor={colors.brand}
                 style={[
                   styles.input,
-                  { fontFamily: familyFor(lang, 'regular') },
                   { writingDirection: lang === 'ar' ? 'rtl' : 'ltr' },
                 ]}
                 multiline

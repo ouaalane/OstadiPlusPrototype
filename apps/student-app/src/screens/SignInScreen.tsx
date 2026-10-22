@@ -12,7 +12,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { BrandTextInput as TextInput } from '../components/BrandTextInput';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,7 +22,7 @@ import BrandWordmark from '../components/BrandWordmark';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
-import { colors, familyFor, radius, shadow, spacing } from '../theme';
+import { colors, radius, shadow, spacing } from '../theme';
 
 export default function SignInScreen() {
   const { state, signIn, importPayload, resetDemo } = useStore();
@@ -145,7 +146,7 @@ export default function SignInScreen() {
               <TextInput
           selectionColor={colors.brand}
           cursorColor={colors.brand}
-                style={[styles.input, l.fieldInput, { fontFamily: familyFor(lang, 'regular') }]}
+                style={[styles.input, l.fieldInput]}
                 multiline
                 value={payload}
                 onChangeText={(text) => {

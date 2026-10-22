@@ -11,6 +11,6 @@ Both supplied faces have OS/2 weight 700. No 400/500/600 weights are synthesized
 
 No font names, outlines, advance widths or vertical metrics in these files are edited. Existing explicit component line heights are retained; original automatic line-box ratios are expressed as text style only, because editing the font binaries would violate the exact-file requirement. Different glyph widths can affect wrapping.
 
-Native editable TextInput does not support per-range font families. Identifier/password fields use the supplied Latin face; free Arabic/mixed input may use platform fallback for missing characters. No input values, keyboards, validation or behavior are rewritten to disguise this limitation.
+All mobile editable TextInputs now use BrandTextInput. Latin letters, ASCII numbers and Latin placeholders select the exact Bricolage face, including in the Arabic UI; Arabic content selects the exact Noto companion. Original input line boxes are retained using the archive metrics so changing scripts does not resize the field. Native TextInput does not support per-range font families: a mixed-script editable value can still use platform fallback for glyphs missing from its selected face. No values, callbacks, refs, keyboards or validation are rewritten. Dashboard CSS places Bricolage first, with Noto as the Arabic fallback.
 
 The OFL files are copied byte-for-byte, including their original line endings. Removed generated/static complete-family variants must not be reintroduced without a new user instruction.

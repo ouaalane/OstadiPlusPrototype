@@ -13,6 +13,7 @@
  */
 
 import React, { useMemo, useRef, useState } from 'react';
+import type { TextInput } from 'react-native';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -20,7 +21,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

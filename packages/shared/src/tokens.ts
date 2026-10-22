@@ -90,7 +90,7 @@ export const spacing = {
 
 export const typography = {
   /** Web family stack. */
-  web: `'Noto Sans Arabic', 'Bricolage Grotesque', sans-serif`,
+  web: `'Bricolage Grotesque', 'Noto Sans Arabic', sans-serif`,
   /** Latin/numerals family used alongside the Arabic face. */
   latin: `'Bricolage Grotesque', 'Noto Sans Arabic', sans-serif`,
   /** Android asset font file names (android/app/src/main/assets/fonts). */

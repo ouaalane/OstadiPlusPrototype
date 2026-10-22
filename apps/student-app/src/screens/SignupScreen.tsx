@@ -11,13 +11,13 @@
  */
 
 import React, { useMemo, useRef, useState } from 'react';
+import type { TextInput } from 'react-native';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
