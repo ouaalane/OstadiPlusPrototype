@@ -64,6 +64,19 @@ export function createWatermarkApi(options = {}) {
   async function handle(req, res) {
     const startedAt = Date.now();
     const url = new URL(req.url ?? '/', 'http://localhost');
+    // The linked browser demo needs the same CORS support for grant issuance
+    // as /api/demo/state. Keep admin trace endpoints and non-demo mode out.
+    const demoGrant = demoHub && ['/api/playback/start', '/api/documents/open'].includes(url.pathname);
+    if (demoGrant) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+    }
     if (demoHub && await demoHub.handle(req, res, url)) return;
     let status;
     let body;

@@ -5,7 +5,7 @@ import { overlays } from '../theme';
  * Renders ONE short 12-char code issued by the watermark API (plus an
  * optional smaller second copy of the same code at another random spot) as
  * dim white text with a soft shadow. While the video plays the overlay
- * fades between random positions every 8-15 s — never the dead centre and
+ * moves between random positions every 8-15 s, one copy at a time — never the dead centre and
  * never over the bottom controls/subtitles. It fades out and unmounts
  * entirely while the video is paused, and a watchdog re-asserts/re-places
  * it if the animation state is ever lost (app backgrounded mid-fade, timers
@@ -69,7 +69,12 @@ function clampIndex(value: number, count: number): number {
   return value >= 0 && value < count ? value : randomInt(0, count);
 }
 
-export default function VideoWatermark({ code, playing, nonce = 0, appearance = 'video' }: VideoWatermarkProps) {
+export default function VideoWatermark({
+  code,
+  playing,
+  nonce = 0,
+  appearance = 'video',
+}: VideoWatermarkProps) {
   const primaryOpacity = useRef(new Animated.Value(0)).current;
   const secondaryOpacity = useRef(new Animated.Value(0)).current;
   const primaryX = useRef(new Animated.Value(0)).current;
@@ -81,20 +86,29 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
   const secondarySlot = useRef(-1);
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Where the fade state machine currently is; the watchdog reads this. */
-  const phase = useRef<{ kind: 'idle' | 'fading'; at: number }>({ kind: 'idle', at: Date.now() });
+  const phase = useRef<{ kind: 'idle' | 'fading'; at: number }>({
+    kind: 'idle',
+    at: Date.now(),
+  });
   const engine = useRef<WatermarkEngine | null>(null);
 
   const [hidden, setHidden] = useState(false);
   const [container, setContainer] = useState<WatermarkSize | null>(null);
   const [primarySize, setPrimarySize] = useState<WatermarkSize | null>(null);
-  const [secondarySize, setSecondarySize] = useState<WatermarkSize | null>(null);
+  const [secondarySize, setSecondarySize] = useState<WatermarkSize | null>(
+    null,
+  );
 
   const primarySlots = useMemo(
-    () => (container && primarySize ? watermarkSlots(container, primarySize) : null),
+    () =>
+      container && primarySize ? watermarkSlots(container, primarySize) : null,
     [container, primarySize],
   );
   const secondarySlots = useMemo(
-    () => (container && secondarySize ? watermarkSlots(container, secondarySize) : null),
+    () =>
+      container && secondarySize
+        ? watermarkSlots(container, secondarySize)
+        : null,
     [container, secondarySize],
   );
 
@@ -102,15 +116,18 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
   /* Movement engine — alive only while playing + visible.               */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
-    if (!playing || hidden || !primarySlots || primarySlots.length === 0) return;
+    if (!playing || hidden || !primarySlots || primarySlots.length === 0)
+      return;
 
     let cancelled = false;
     const primaryList = primarySlots;
     const secondaryList = secondarySlots ?? primarySlots;
 
     const applyPositions = () => {
-      const p = primaryList[clampIndex(primarySlot.current, primaryList.length)];
-      const s = secondaryList[clampIndex(secondarySlot.current, secondaryList.length)];
+      const p =
+        primaryList[clampIndex(primarySlot.current, primaryList.length)];
+      const s =
+        secondaryList[clampIndex(secondarySlot.current, secondaryList.length)];
       primaryX.setValue(p.x);
       primaryY.setValue(p.y);
       secondaryX.setValue(s.x);
@@ -126,58 +143,70 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
       }, randomMoveDelay());
     };
 
-    const fadeIn = () => {
-      phase.current = { kind: 'fading', at: Date.now() };
-      Animated.parallel([
-        Animated.timing(primaryOpacity, {
-          toValue: WATERMARK_OPACITY,
-          duration: WATERMARK_FADE_IN_MS,
-          useNativeDriver: true,
-        }),
-        Animated.timing(secondaryOpacity, {
-          toValue: WATERMARK_SECONDARY_OPACITY,
-          duration: WATERMARK_FADE_IN_MS,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        if (cancelled) return;
-        phase.current = { kind: 'idle', at: Date.now() };
-        schedule();
-      });
+    let transition = 0;
+    const restoreOpacity = () => {
+      primaryOpacity.stopAnimation();
+      secondaryOpacity.stopAnimation();
+      primaryOpacity.setValue(WATERMARK_OPACITY);
+      secondaryOpacity.setValue(WATERMARK_SECONDARY_OPACITY);
     };
 
     const move = () => {
       if (cancelled) return;
-      // A move can be requested at any time (normal schedule or a detected
-      // capture): drop the pending timer so there is exactly one move in
-      // flight, then fade to a fresh position.
+      const token = ++transition;
       if (moveTimer.current) {
         clearTimeout(moveTimer.current);
         moveTimer.current = null;
       }
+      // Repeated capture events can interrupt a move. Restore both copies
+      // before starting again so neither interrupted fade can leave a gap.
+      restoreOpacity();
       phase.current = { kind: 'fading', at: Date.now() };
-      Animated.parallel([
-        Animated.timing(primaryOpacity, {
-          toValue: 0,
-          duration: WATERMARK_FADE_OUT_MS,
+      const fade = (
+        opacity: Animated.Value,
+        toValue: number,
+        duration: number,
+        next: () => void,
+      ) => {
+        Animated.timing(opacity, {
+          toValue,
+          duration,
           useNativeDriver: true,
-        }),
-        Animated.timing(secondaryOpacity, {
-          toValue: 0,
-          duration: WATERMARK_FADE_OUT_MS,
-          useNativeDriver: true,
-        }),
-      ]).start(({ finished }) => {
-        if (cancelled || !finished) return;
-        // Land on a fresh spot (never the same one twice in a row) and put
-        // the second copy somewhere clearly different from the first.
-        primarySlot.current = nextWatermarkSlotIndex(primaryList.length, primarySlot.current);
-        secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
-          secondaryList.length,
+        }).start(({ finished }) => {
+          if (cancelled || token !== transition || !finished) return;
+          next();
+        });
+      };
+      // Keep the secondary fully visible until the primary has landed and
+      // faded back in, then move the secondary with the primary held steady.
+      fade(primaryOpacity, 0, WATERMARK_FADE_OUT_MS, () => {
+        primarySlot.current = nextWatermarkSlotIndex(
+          primaryList.length,
           primarySlot.current,
         );
-        applyPositions();
-        fadeIn();
+        const p = primaryList[primarySlot.current];
+        primaryX.setValue(p.x);
+        primaryY.setValue(p.y);
+        fade(primaryOpacity, WATERMARK_OPACITY, WATERMARK_FADE_IN_MS, () => {
+          fade(secondaryOpacity, 0, WATERMARK_FADE_OUT_MS, () => {
+            secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
+              secondaryList.length,
+              primarySlot.current,
+            );
+            const s = secondaryList[secondarySlot.current];
+            secondaryX.setValue(s.x);
+            secondaryY.setValue(s.y);
+            fade(
+              secondaryOpacity,
+              WATERMARK_SECONDARY_OPACITY,
+              WATERMARK_FADE_IN_MS,
+              () => {
+                phase.current = { kind: 'idle', at: Date.now() };
+                schedule();
+              },
+            );
+          });
+        });
       });
     };
 
@@ -185,26 +214,31 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
       if (cancelled) return;
       const now = Date.now();
       const wedged =
-        (phase.current.kind === 'fading' && now - phase.current.at > WATERMARK_WATCHDOG_MS) ||
+        (phase.current.kind === 'fading' &&
+          now - phase.current.at > WATERMARK_WATCHDOG_MS) ||
         (phase.current.kind === 'idle' && !moveTimer.current);
       if (!wedged) return;
       console.log('[watermark] watchdog re-asserted the overlay');
-      primaryOpacity.stopAnimation();
-      secondaryOpacity.stopAnimation();
+      ++transition;
+      restoreOpacity();
       if (moveTimer.current) {
         clearTimeout(moveTimer.current);
         moveTimer.current = null;
       }
-      primarySlot.current = nextWatermarkSlotIndex(primaryList.length, primarySlot.current);
+      primarySlot.current = nextWatermarkSlotIndex(
+        primaryList.length,
+        primarySlot.current,
+      );
       secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
         secondaryList.length,
         primarySlot.current,
       );
       applyPositions();
-      fadeIn();
+      phase.current = { kind: 'idle', at: Date.now() };
+      schedule();
     };
 
-    // Initial placement: a random slot per copy, then fade in once measured.
+    // Initial placement is visible as soon as the surface has been measured.
     if (primarySlot.current < 0 || primarySlot.current >= primaryList.length) {
       primarySlot.current = randomInt(0, primaryList.length);
     }
@@ -212,8 +246,10 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
       secondarySlot.current < 0 ||
       secondarySlot.current >= secondaryList.length ||
       secondarySlot.current === primarySlot.current ||
-      watermarkSlotRow(secondarySlot.current) === watermarkSlotRow(primarySlot.current) ||
-      watermarkSlotColumn(secondarySlot.current) === watermarkSlotColumn(primarySlot.current)
+      watermarkSlotRow(secondarySlot.current) ===
+        watermarkSlotRow(primarySlot.current) ||
+      watermarkSlotColumn(secondarySlot.current) ===
+        watermarkSlotColumn(primarySlot.current)
     ) {
       secondarySlot.current = nextWatermarkSlotIndexInOtherRow(
         secondaryList.length,
@@ -221,12 +257,15 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
       );
     }
     applyPositions();
-    fadeIn();
+    restoreOpacity();
+    phase.current = { kind: 'idle', at: Date.now() };
+    schedule();
 
     engine.current = { move, watchdog };
 
     return () => {
       cancelled = true;
+      ++transition;
       engine.current = null;
       if (moveTimer.current) {
         clearTimeout(moveTimer.current);
@@ -276,7 +315,10 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     if (!playing || hidden) return;
-    const id = setInterval(() => engine.current?.watchdog(), WATERMARK_WATCHDOG_MS);
+    const id = setInterval(
+      () => engine.current?.watchdog(),
+      WATERMARK_WATCHDOG_MS,
+    );
     return () => clearInterval(id);
   }, [playing, hidden]);
 
@@ -315,7 +357,7 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
 
   return (
     <Animated.View
-      style={StyleSheet.absoluteFill}
+      style={[StyleSheet.absoluteFill, styles.layer]}
       pointerEvents="none"
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
@@ -327,7 +369,10 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
         testID="video-watermark-primary"
         style={[
           styles.copy,
-          { opacity: primaryOpacity, transform: [{ translateX: primaryX }, { translateY: primaryY }] },
+          {
+            opacity: primaryOpacity,
+            transform: [{ translateX: primaryX }, { translateY: primaryY }],
+          },
         ]}
       >
         <AppText
@@ -336,7 +381,10 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
           weight="semibold"
           tone={appearance === 'document' ? 'ink' : 'white'}
           numberOfLines={1}
-          style={[styles.text, appearance === 'document' && styles.documentText]}
+          style={[
+            styles.text,
+            appearance === 'document' && styles.documentText,
+          ]}
         >
           {code}
         </AppText>
@@ -359,7 +407,10 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
           weight="medium"
           tone={appearance === 'document' ? 'ink' : 'white'}
           numberOfLines={1}
-          style={[styles.text, appearance === 'document' && styles.documentText]}
+          style={[
+            styles.text,
+            appearance === 'document' && styles.documentText,
+          ]}
         >
           {code}
         </AppText>
@@ -369,6 +420,7 @@ export default function VideoWatermark({ code, playing, nonce = 0, appearance = 
 }
 
 const styles = StyleSheet.create({
+  layer: { zIndex: 10 },
   documentText: { textShadowColor: overlays.white92 },
   copy: {
     position: 'absolute',

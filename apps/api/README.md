@@ -98,3 +98,5 @@ database directly and prints the same report.
 - `READ_MEDIA_IMAGES` is **not** requested by the app: on Android ≤ 13 the
   screenshot-detection callback therefore stays silent (blocking works on
   every version).
+
+In linked demo mode (`npm run demo`), video/PDF grant issuance also accepts browser CORS preflights, matching the demo state endpoints. Admin lookup remains outside this allowance. See [watermark verification](../../docs/VIDEO-WATERMARK-VERIFICATION.md) for the full-catalog browser/API test and native-device verification boundary.

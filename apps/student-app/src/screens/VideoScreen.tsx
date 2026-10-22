@@ -75,7 +75,12 @@ import {
 } from '../components/Curriculum';
 import { lessonRoute } from '../lib/lesson';
 import LessonPlayer from '../components/LessonPlayer';
-import { requestPlaybackGrant, type PlaybackGrant } from '../lib/watermark-api';
+import {
+  requestPlaybackGrant,
+  WATERMARK_ALLOW_OFFLINE_FALLBACK,
+  type PlaybackGrant,
+} from '../lib/watermark-api';
+import { localFallbackCode } from '../lib/watermark';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
@@ -233,28 +238,48 @@ export default function VideoScreen() {
    * The code is the only thing the overlay renders; the server keeps the
    * code → student / course / video / session mapping for leak tracing.
    */
-  const [grant, setGrant] = useState<PlaybackGrant | null>(null);
+  const studentId = courseAuthorized ? (me?.id ?? '') : '';
+  const courseId = courseAuthorized ? (found?.course.id ?? '') : '';
+  const videoId = courseAuthorized ? (found?.lesson.id ?? '') : '';
+  const sessionKey =
+    studentId && courseId && videoId
+      ? JSON.stringify([studentId, courseId, videoId])
+      : '';
+  // Match the PDF demo: show a stable unregistered code immediately while
+  // the registry request is pending. Never reuse another student's code.
+  const provisionalCode = useMemo(
+    () =>
+      sessionKey && WATERMARK_ALLOW_OFFLINE_FALLBACK ? localFallbackCode() : '',
+    [sessionKey],
+  );
+  const [issued, setIssued] = useState<{
+    key: string;
+    grant: PlaybackGrant;
+  } | null>(null);
   useEffect(() => {
-    setGrant(null);
-    if (!found || !courseAuthorized || !me) return;
-    const target = found;
+    if (!sessionKey) return;
     let cancelled = false;
-    void (async () => {
-      try {
-        const issued = await requestPlaybackGrant({
-          studentId: me.id,
-          courseId: target.course.id,
-          videoId: target.lesson.id,
-        });
-        if (!cancelled) setGrant(issued);
-      } catch (error) {
-        console.log(`[watermark] no playback grant issued: ${String(error)}`);
-      }
-    })();
+    void requestPlaybackGrant({ studentId, courseId, videoId })
+      .then((grant) => {
+        if (!cancelled)
+          setIssued({
+            key: sessionKey,
+            grant:
+              grant.source === 'offline' && provisionalCode
+                ? { ...grant, code: provisionalCode }
+                : grant,
+          });
+      })
+      .catch((error) =>
+        console.log(`[watermark] no playback grant issued: ${String(error)}`),
+      );
     return () => {
       cancelled = true;
     };
-  }, [found, courseAuthorized, me]);
+    // Enrollment/progress object updates must not restart this session.
+  }, [sessionKey, studentId, courseId, videoId, provisionalCode]);
+  const watermarkCode =
+    issued?.key === sessionKey ? issued.grant.code : provisionalCode;
 
   if (!found || media.kind !== 'video' || !courseAuthorized) {
     const unauthorized = !!found && media.kind === 'video' && !courseAuthorized;
@@ -471,7 +496,7 @@ export default function VideoScreen() {
           // or the next open resumes in the middle of a lesson already marked
           // as finished.
           resumeAt={completed ? 0 : progressOf(lesson.id)?.positionSec ?? 0}
-          code={grant?.code ?? null}
+          code={watermarkCode || null}
           captureNonce={captureNonce}
           fullscreen={fullscreen}
           hasPrev={!!prev}

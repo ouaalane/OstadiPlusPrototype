@@ -93,3 +93,5 @@ Research sources and access limits are recorded in [the redesign research report
 انشر التعديلات من صفحة «المزامنة»، ثم حدّث بيانات تطبيق التلميذ. يطبق التطبيق نطاق الدورة على الدروس والتقدم والتحميلات، ويعيد تقييم العرض كل 30 ثانية. يتحقق خادم النموذج من الصلاحية فور كل طلب فتح فيديو/PDF ومن تقدم التلميذ ومحاولاته وأسئلته عند المزامنة. هذا امتداد للنموذج التجريبي المحلي؛ رابط ملفات الوسائط التجريبي ليس تخزيناً خاصاً للإنتاج.
 
 التحقق: `npm run access:test` لقواعد المدة والدورات وحدود التواريخ، و`node scripts/check-demo-sync.mjs` للمزامنة ورفض محتوى دورة أخرى، و`npm run dashboard:test` لتسجيل الاشتراكات عبر المتصفح.
+
+Video watermark reliability and the full-catalog playback check are documented in [VIDEO-WATERMARK-VERIFICATION.md](VIDEO-WATERMARK-VERIFICATION.md).
