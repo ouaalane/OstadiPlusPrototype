@@ -5,13 +5,13 @@ import {
   BookOpen,
   Check,
   ChevronLeft,
-  CircleHelp,
   Clock3,
   FileText,
   Film,
   ListChecks,
   MessageCircle,
   Plus,
+  RefreshCw,
   Upload,
   Users,
 } from 'lucide-react';
@@ -22,7 +22,7 @@ import {
   isQuestionAnswered,
   relativeTime,
 } from '@ostadiplus/shared';
-import { CourseCover } from '@/components/ui';
+import { CourseCover, EmptyState } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 
 export default function Overview() {
@@ -44,24 +44,48 @@ export default function Overview() {
       value: published.length,
       detail: `${state.courses.length} دورات في مساحتك`,
       icon: BookOpen,
+      to: '/courses',
     },
     {
       label: 'التلاميذ النشطون',
       value: activeStudentCount(state),
       detail: 'باشتراك مفعّل',
       icon: Users,
+      to: '/students',
     },
     {
       label: 'الدروس المنشورة',
       value: lessons.filter((l) => l.published).length,
       detail: `من أصل ${lessons.length} درس`,
       icon: Film,
+      to: '/library',
     },
     {
       label: 'محاولات الاختبار',
       value: (state.quizAttempts ?? []).length,
       detail: 'نتائج مزامنة من التطبيق',
       icon: ListChecks,
+      to: '/analytics',
+    },
+  ];
+  const actions = [
+    {
+      title: 'رفع محتوى',
+      description: 'أضف فيديو، ملخّص PDF أو درساً مكتوباً.',
+      icon: Upload,
+      to: '/library?action=upload',
+    },
+    {
+      title: 'إنشاء اختبار',
+      description: 'جهّز الأسئلة والمدة، وتابع نتائج التلاميذ.',
+      icon: ListChecks,
+      to: '/quizzes?action=new',
+    },
+    {
+      title: 'إدارة الاشتراكات',
+      description: 'فعّل الوصول وحدّد مدة الاشتراك لكل تلميذ.',
+      icon: Users,
+      to: '/students',
     },
   ];
   const kinds = [
@@ -71,8 +95,8 @@ export default function Overview() {
     { kind: 'text', label: 'دروس مكتوبة', icon: BookOpen },
   ];
   return (
-    <>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
+    <div className="overview-page">
+      <header className="dashboard-heading">
         <div>
           <p className="section-kicker">فضاء الأستاذ</p>
           <h1 className="workspace-title">
@@ -80,256 +104,276 @@ export default function Overview() {
             <span className="text-brand">.</span>
           </h1>
           <p className="workspace-subtitle">
-            هذه مساحتك لصناعة الدروس، ومتابعة التلاميذ، وتطوير تجربة تعلّمهم.
+            كل ما تحتاجه للتدريس، في مساحة واحدة.
           </p>
         </div>
         <Link to="/courses?action=new" className="btn btn-primary">
-          <Plus size={16} />
+          <Plus size={18} aria-hidden="true" />
           إنشاء دورة
         </Link>
-      </div>
-      <section
-        className="workspace-panel mb-7 grid grid-cols-2 lg:grid-cols-4"
-        aria-label="إحصائيات مساحة العمل"
-      >
+      </header>
+
+      <section className="overview-metrics" aria-label="إحصائيات مساحة العمل">
         {metrics.map((m) => (
-          <div key={m.label} className="workspace-metric">
-            <div className="mb-4 flex items-center justify-between gap-2 text-muted">
-              <span className="text-[11px]">{m.label}</span>
-              <m.icon size={16} strokeWidth={1.5} />
+          <Link key={m.label} to={m.to} className="overview-metric">
+            <div className="metric-topline">
+              <span className="metric-icon">
+                <m.icon size={20} strokeWidth={1.7} aria-hidden="true" />
+              </span>
+              <ArrowUpLeft
+                size={16}
+                className="text-muted"
+                aria-hidden="true"
+              />
             </div>
-            <p className="metric-number num">{m.value}</p>
-            <p className="mt-2 text-[10px] text-muted">{m.detail}</p>
-          </div>
+            <p className="metric-number">
+              <span className="num">{m.value}</span>
+            </p>
+            <h2>{m.label}</h2>
+            <p className="metric-detail">{m.detail}</p>
+          </Link>
         ))}
       </section>
-      <section className="creation-strip mb-8" aria-label="إضافة محتوى تعليمي">
-        <div className="flex-1">
-          <span className="mb-2 inline-flex rounded-md bg-white/70 px-2 py-1 text-[9px] font-bold text-brand">
-            ابدأ من فكرة
-          </span>
-          <h2 className="text-xl font-bold">درس جديد. فرصة جديدة للتعلّم.</h2>
-          <p className="mt-2 text-[11px] leading-6 text-muted">
-            ارفع شرحك، أرفق ملخّصاً، أو حضّر اختباراً. كل المحتوى في مكان واحد.
-          </p>
+
+      <section
+        aria-labelledby="quick-actions-title"
+        className="overview-actions-section"
+      >
+        <div className="overview-section-heading">
+          <h2 id="quick-actions-title">ماذا تريد أن تنجز؟</h2>
+          <span>من الفكرة إلى التعلّم</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/library?action=upload" className="btn btn-outline">
-            <Upload size={16} />
-            رفع محتوى
-          </Link>
-          <Link to="/quizzes?action=new" className="btn btn-outline">
-            <ListChecks size={16} />
-            إنشاء اختبار
-          </Link>
-        </div>
-        <div className="creation-decoration" aria-hidden="true">
-          <BookOpen size={100} strokeWidth={0.65} />
-          <span>+</span>
+        <div className="overview-actions">
+          {actions.map((a) => (
+            <Link key={a.to} to={a.to} className="overview-action">
+              <span className="action-icon">
+                <a.icon size={21} strokeWidth={1.7} aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="action-title">{a.title}</span>
+                <span className="action-description">{a.description}</span>
+              </span>
+              <ChevronLeft
+                size={18}
+                className="text-brand"
+                aria-hidden="true"
+              />
+            </Link>
+          ))}
         </div>
       </section>
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="workspace-panel min-w-0">
-          <header className="panel-heading">
-            <div>
-              <h2>دوراتك، قيد التطوير</h2>
-              <p className="mt-1 text-[10px] text-muted">
-                واصل من آخر تحديث للمحتوى
-              </p>
-            </div>
-            <Link
-              className="flex items-center gap-2 text-[11px] font-bold text-brand"
-              to="/courses"
-            >
-              كل الدورات
-              <ArrowLeft size={14} />
-            </Link>
-          </header>
-          <div className="overflow-x-auto">
-            <table className="workspace-table min-w-[540px]">
-              <thead>
-                <tr>
-                  <th>الدورة</th>
-                  <th>المحتوى</th>
-                  <th>الحالة</th>
-                  <th>
-                    <span className="sr-only">فتح الدورة</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <Link
-                        to={`/courses/${c.id}`}
-                        className="flex items-center gap-3"
-                      >
-                        <CourseCover
-                          cover={c.cover}
-                          subject={c.subject}
-                          compact
-                          className="h-12 w-14 shrink-0 rounded-lg"
-                        />
-                        <span className="min-w-0">
-                          <span className="table-course-title block max-w-64 truncate font-bold">
-                            {c.title}
-                          </span>
-                          <span className="mt-1 block text-[10px] text-muted">
-                            {c.level}
-                          </span>
-                        </span>
-                      </Link>
-                    </td>
-                    <td>
-                      <span className="num">{countLessons(c)}</span> درس
-                      <p className="mt-1 text-[9px] text-muted">
-                        {relativeTime(c.updatedAt)}
-                      </p>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-label ${c.status === 'draft' ? 'is-draft' : ''}`}
-                      >
-                        {c.status === 'published' ? 'منشورة' : 'مسودة'}
-                      </span>
-                    </td>
-                    <td>
-                      <Link
-                        to={`/courses/${c.id}`}
-                        className="flex size-8 items-center justify-center rounded-lg border border-line hover:bg-surface-alt"
-                        aria-label={`إدارة ${c.title}`}
-                      >
-                        <ArrowUpLeft size={15} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!recent.length ? (
-              <div className="p-10 text-center text-sm text-muted">
-                أنشئ أول دورة، وابدأ بإضافة دروسك.
+
+      <div className="overview-workspace">
+        <div className="overview-primary">
+          <section
+            className="workspace-panel recent-courses"
+            aria-labelledby="recent-courses-title"
+          >
+            <header className="panel-heading">
+              <div>
+                <h2 id="recent-courses-title">واصل العمل على دوراتك</h2>
+                <p className="panel-description">
+                  آخر الدورات التي حدّثتها في مساحتك
+                </p>
               </div>
-            ) : null}
-          </div>
-        </section>
-        <aside className="workspace-panel">
-          <header className="panel-heading">
-            <h2>بانتظارك اليوم</h2>
-            <span className="num rounded-md bg-brand-soft px-2 py-1 text-[10px] text-brand">
-              {questions.length + pending.length}
-            </span>
-          </header>
-          <div className="p-5">
-            <Link
-              to="/questions"
-              className="flex items-center gap-3 border-b border-line pb-5"
-            >
-              <span className="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                <MessageCircle size={19} />
+              <Link to="/courses" className="text-link">
+                كل الدورات <ArrowLeft size={15} aria-hidden="true" />
+              </Link>
+            </header>
+            {recent.length ? (
+              <div className="recent-course-grid">
+                {recent.map((c) => (
+                  <article key={c.id} className="recent-course-card">
+                    <Link
+                      to={`/courses/${c.id}`}
+                      className="recent-course-cover"
+                      aria-label={`فتح ${c.title}`}
+                    >
+                      <CourseCover
+                        cover={c.cover}
+                        subject={c.subject}
+                        compact
+                        className="h-full w-full"
+                      />
+                      <span className="recent-course-subject">{c.subject}</span>
+                    </Link>
+                    <div className="recent-course-body">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span
+                          className="status-label"
+                          data-draft={c.status === 'draft'}
+                        >
+                          {c.status === 'published' ? 'منشورة' : 'مسودة'}
+                        </span>
+                        <span className="course-updated">
+                          <Clock3 size={13} aria-hidden="true" />
+                          {relativeTime(c.updatedAt)}
+                        </span>
+                      </div>
+                      <h3>
+                        <Link to={`/courses/${c.id}`}>{c.title}</Link>
+                      </h3>
+                      <p className="course-level">{c.level}</p>
+                      <div className="recent-course-footer">
+                        <span>
+                          <BookOpen size={15} aria-hidden="true" />
+                          <span className="num">{countLessons(c)}</span> درس
+                        </span>
+                        <Link
+                          to={`/courses/${c.id}`}
+                          className="text-link"
+                          aria-label={`إدارة ${c.title}`}
+                        >
+                          إدارة الدورة{' '}
+                          <ArrowUpLeft size={15} aria-hidden="true" />
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6">
+                <EmptyState
+                  icon={<BookOpen size={26} />}
+                  title="ابدأ بأول دورة"
+                  description="أضف دورتك، ثم رتّب الفصول والدروس."
+                  action={
+                    <Link to="/courses?action=new" className="btn btn-primary">
+                      إنشاء دورة
+                    </Link>
+                  }
+                />
+              </div>
+            )}
+          </section>
+
+          <section
+            className="workspace-panel"
+            aria-labelledby="content-summary-title"
+          >
+            <header className="panel-heading">
+              <div>
+                <h2 id="content-summary-title">محتواك التعليمي</h2>
+                <p className="panel-description">
+                  توزيع المحتوى في جميع دوراتك
+                </p>
+              </div>
+              <Link to="/library" className="text-link">
+                إدارة المحتوى <ArrowLeft size={15} aria-hidden="true" />
+              </Link>
+            </header>
+            <div className="content-summary">
+              {kinds.map((k) => {
+                const count = lessons.filter((l) => l.kind === k.kind).length;
+                return (
+                  <Link
+                    key={k.kind}
+                    to={
+                      k.kind === 'quiz' ? '/quizzes' : `/library?kind=${k.kind}`
+                    }
+                    className="content-summary-row"
+                  >
+                    <span className="content-kind-icon">
+                      <k.icon size={18} strokeWidth={1.7} aria-hidden="true" />
+                    </span>
+                    <span className="content-kind-label">{k.label}</span>
+                    <span className="content-kind-track" aria-hidden="true">
+                      <span
+                        style={{
+                          width: `${lessons.length ? (count / lessons.length) * 100 : 0}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="num content-kind-count">{count}</span>
+                    <ArrowUpLeft
+                      size={14}
+                      className="text-muted"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        <aside className="overview-secondary">
+          <section
+            className="workspace-panel attention-panel"
+            aria-labelledby="attention-title"
+          >
+            <header className="panel-heading">
+              <h2 id="attention-title">يحتاج اهتمامك</h2>
+              <span className="attention-count num">
+                {questions.length + pending.length}
               </span>
-              <span className="flex-1">
-                <span className="block text-xs font-bold">
-                  أسئلة تحتاج جوابك
+            </header>
+            <div className="attention-list">
+              <Link to="/questions" className="attention-item">
+                <span className="action-icon">
+                  <MessageCircle size={20} aria-hidden="true" />
                 </span>
-                <span className="mt-1 block text-[10px] text-muted">
-                  {questions.length
-                    ? `${questions.length} أسئلة من تلاميذك`
-                    : 'أجبت على كل الأسئلة'}
+                <span className="min-w-0 flex-1">
+                  <span className="action-title">أسئلة التلاميذ</span>
+                  <span className="action-description">
+                    {questions.length
+                      ? `${questions.length} أسئلة تنتظر جوابك`
+                      : 'أجبت على كل الأسئلة'}
+                  </span>
                 </span>
-              </span>
-              <ChevronLeft size={15} />
-            </Link>
-            <Link to="/students" className="flex items-center gap-3 py-5">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-accent/40 text-brand">
-                <Users size={19} />
-              </span>
-              <span className="flex-1">
-                <span className="block text-xs font-bold">طلبات التفعيل</span>
-                <span className="mt-1 block text-[10px] text-muted">
-                  {pending.length
-                    ? `${pending.length} طلبات قيد المراجعة`
-                    : 'لا طلبات جديدة'}
+                <ChevronLeft size={16} aria-hidden="true" />
+              </Link>
+              <Link to="/students" className="attention-item">
+                <span className="action-icon">
+                  <Users size={20} aria-hidden="true" />
                 </span>
-              </span>
-              <ChevronLeft size={15} />
-            </Link>
-            <Link
-              to="/sync"
-              className="mt-1 flex items-start gap-2 rounded-lg border border-line bg-surface-alt/40 p-3 text-[10px] leading-6 text-muted"
-            >
-              <CircleHelp size={15} className="mt-1 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="action-title">طلبات التفعيل</span>
+                  <span className="action-description">
+                    {pending.length
+                      ? `${pending.length} طلبات قيد المراجعة`
+                      : 'لا طلبات جديدة'}
+                  </span>
+                </span>
+                <ChevronLeft size={16} aria-hidden="true" />
+              </Link>
+            </div>
+            <Link to="/sync" className="publish-reminder">
+              <RefreshCw size={19} aria-hidden="true" />
               <span>
-                بعد حفظ التعديلات، انشرها من صفحة المزامنة لتصل إلى تطبيق
-                التلميذ.
+                <strong>جاهز لتشارك جديدك؟</strong>
+                <span>انشر التحديثات لتصل إلى تطبيق التلميذ.</span>
               </span>
+              <ArrowUpLeft size={16} aria-hidden="true" />
             </Link>
-          </div>
+          </section>
+          <section className="workspace-panel" aria-labelledby="activity-title">
+            <header className="panel-heading">
+              <h2 id="activity-title">آخر النشاط</h2>
+              <Clock3 size={17} className="text-muted" aria-hidden="true" />
+            </header>
+            <ol className="activity-timeline">
+              {state.activity.slice(0, 4).map((e) => (
+                <li key={e.id}>
+                  <span className="activity-marker">
+                    <Check size={12} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p>{e.text}</p>
+                    <time>{relativeTime(e.at)}</time>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            {!state.activity.length ? (
+              <p className="p-6 text-sm text-muted">
+                سيظهر نشاطك هنا عند إضافة المحتوى أو تحديثه.
+              </p>
+            ) : null}
+          </section>
         </aside>
       </div>
-      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="workspace-panel">
-          <header className="panel-heading">
-            <h2>مكتبة متنوّعة، تعلّم متكامل</h2>
-            <Link to="/library" className="text-[11px] text-brand">
-              إدارة المحتوى
-              <ArrowUpLeft size={13} className="ms-1 inline" />
-            </Link>
-          </header>
-          <div className="grid grid-cols-2 gap-5 p-6 sm:grid-cols-4">
-            {kinds.map((k) => {
-              const count = lessons.filter((l) => l.kind === k.kind).length;
-              return (
-                <Link
-                  to={
-                    k.kind === 'quiz' ? '/quizzes' : `/library?kind=${k.kind}`
-                  }
-                  key={k.kind}
-                  className="rounded-lg p-2 hover:bg-surface-alt"
-                >
-                  <k.icon
-                    size={21}
-                    strokeWidth={1.4}
-                    className="mb-3 text-brand"
-                  />
-                  <span className="num text-2xl">{count}</span>
-                  <p className="mt-1 text-[10px] text-muted">{k.label}</p>
-                  <div className="mt-3 h-1 overflow-hidden rounded-full bg-brand-soft">
-                    <div
-                      className="h-full rounded-full bg-brand"
-                      style={{
-                        width: `${lessons.length ? (count / lessons.length) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-        <section className="workspace-panel">
-          <header className="panel-heading">
-            <h2>آخر النشاط</h2>
-            <Clock3 size={15} className="text-muted" />
-          </header>
-          <ol className="space-y-4 p-5">
-            {state.activity.slice(0, 3).map((e) => (
-              <li key={e.id} className="flex gap-3">
-                <span className="mt-1 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                  <Check size={10} />
-                </span>
-                <div>
-                  <p className="line-clamp-2 text-[10px] leading-6">{e.text}</p>
-                  <span className="text-[9px] text-muted">
-                    {relativeTime(e.at)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-      </div>
-    </>
+    </div>
   );
 }

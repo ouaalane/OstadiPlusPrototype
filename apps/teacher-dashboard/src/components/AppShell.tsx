@@ -60,10 +60,10 @@ function Sidebar({ close }: { close: () => void }) {
     (q) => !isQuestionAnswered(q),
   ).length;
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-6 pb-7 pt-7">
+    <div className="sidebar-content flex h-full flex-col">
+      <div className="sidebar-brand flex items-center justify-between">
         <Link to="/" onClick={close} aria-label="oustadi plus — نظرة عامة">
-          <Wordmark size={37} />
+          <Wordmark size={38} tone="light" />
         </Link>
         <button
           className="btn btn-icon btn-ghost lg:hidden"
@@ -73,12 +73,8 @@ function Sidebar({ close }: { close: () => void }) {
           <X size={19} />
         </button>
       </div>
-      <Link
-        to="/settings"
-        onClick={close}
-        className="mx-4 mb-5 flex items-center gap-3 rounded-xl border border-line px-3 py-3 hover:bg-surface-alt"
-      >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-white">
+      <Link to="/settings" onClick={close} className="sidebar-workspace">
+        <span className="sidebar-workspace-icon">
           <BookOpen size={18} />
         </span>
         <span className="min-w-0 flex-1">
@@ -90,14 +86,12 @@ function Sidebar({ close }: { close: () => void }) {
         <Settings size={14} className="text-muted" aria-hidden="true" />
       </Link>
       <nav
-        className="flex-1 space-y-6 overflow-y-auto px-4 pb-4"
+        className="sidebar-navigation flex-1 space-y-6 overflow-y-auto"
         aria-label="التنقل الرئيسي"
       >
         {groups.map((g) => (
           <div key={g.label}>
-            <p className="mb-2 px-3 text-[10px] font-bold text-muted">
-              {g.label}
-            </p>
+            <p className="sidebar-group-label">{g.label}</p>
             <div className="space-y-1">
               {g.items.map((item) => (
                 <NavLink
@@ -122,12 +116,8 @@ function Sidebar({ close }: { close: () => void }) {
           </div>
         ))}
       </nav>
-      <div className="border-t border-line p-4">
-        <Link
-          to="/settings"
-          onClick={close}
-          className="flex items-center gap-3 rounded-lg p-2 hover:bg-surface-alt"
-        >
+      <div className="sidebar-account">
+        <Link to="/settings" onClick={close} className="sidebar-account-link">
           <Avatar label={state.teacher.monogram} size={35} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-xs font-bold">
@@ -299,10 +289,11 @@ export function AppShell() {
           />
           <aside
             ref={contentRef}
+            id="workspace-drawer"
             role="dialog"
             aria-modal="true"
             aria-label="قائمة التنقل"
-            className="absolute inset-y-0 start-0 w-[280px] bg-white shadow-overlay"
+            className="sidebar-drawer absolute inset-y-0 start-0 w-[280px] shadow-overlay"
           >
             <Sidebar close={() => setDrawer(false)} />
           </aside>
@@ -314,13 +305,20 @@ export function AppShell() {
             className="btn btn-icon btn-ghost lg:hidden"
             onClick={() => setDrawer(true)}
             aria-label="فتح القائمة"
+            aria-expanded={drawer}
+            aria-controls={drawer ? 'workspace-drawer' : undefined}
           >
             <Menu size={20} />
           </button>
-          <div className="hidden shrink-0 items-center gap-2 text-xs text-muted xl:flex">
-            <span>مساحة العمل</span>
-            <ChevronLeft size={13} />
-            <span className="font-bold text-ink">{title}</span>
+          <div className="topbar-location hidden shrink-0 sm:flex">
+            <span className="topbar-eyebrow">مساحة الأستاذ</span>
+            <div className="flex items-center gap-2">
+              <Link to="/" className="text-muted">
+                مساحة العمل
+              </Link>
+              <ChevronLeft size={13} aria-hidden="true" />
+              <span className="font-bold text-ink">{title}</span>
+            </div>
           </div>
           <div className="flex-1" />
           <WorkspaceSearch />
@@ -331,10 +329,7 @@ export function AppShell() {
           >
             <MessageCircle size={17} />
           </Link>
-          <Link
-            to="/sync"
-            className="hidden items-center gap-2 border-s border-line ps-4 text-xs font-bold text-brand sm:flex"
-          >
+          <Link to="/sync" className="btn btn-soft hidden sm:inline-flex">
             نشر التحديثات
             <ArrowLeft size={15} />
           </Link>

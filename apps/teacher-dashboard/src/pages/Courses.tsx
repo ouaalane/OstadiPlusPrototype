@@ -59,7 +59,7 @@ export default function Courses() {
   );
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="dashboard-heading">
         <div>
           <p className="section-kicker">صناعة المحتوى</p>
           <h1 className="workspace-title">دوراتك التعليمية</h1>
@@ -72,7 +72,25 @@ export default function Courses() {
           إنشاء دورة
         </button>
       </div>
-      <section className="workspace-panel">
+      <div className="course-stat-strip" aria-label="ملخص الدورات">
+        <div>
+          <BookOpen size={18} aria-hidden="true" />
+          <strong className="num">{state.courses.length}</strong> دورة تعليمية
+        </div>
+        <div>
+          <span className="status-label">منشورة</span>
+          <strong className="num">
+            {state.courses.filter((c) => c.status === 'published').length}
+          </strong>
+        </div>
+        <div>
+          <span className="status-label is-draft">مسودة</span>
+          <strong className="num">
+            {state.courses.filter((c) => c.status === 'draft').length}
+          </strong>
+        </div>
+      </div>
+      <section className="workspace-panel course-catalog">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5">
           <div
             className="workspace-tabs border-0"
@@ -108,7 +126,7 @@ export default function Courses() {
             <div className="relative">
               <Search
                 size={15}
-                className="pointer-events-none absolute start-3 top-3 text-muted"
+                className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
               />
               <input
                 aria-label="بحث في الدورات"
@@ -224,12 +242,13 @@ export default function Courses() {
                 <Link
                   key={c.id}
                   to={`/courses/${c.id}`}
-                  className="overflow-hidden rounded-xl border border-line transition-shadow hover:shadow-raised"
+                  className="catalog-course-card overflow-hidden rounded-xl border border-line"
                 >
                   <CourseCover
                     cover={c.cover}
                     subject={c.subject}
-                    className="h-32"
+                    compact
+                    className="h-40"
                   >
                     <span className="mt-auto rounded bg-white px-2 py-1 text-[9px] text-ink">
                       {c.subject}
@@ -241,7 +260,9 @@ export default function Courses() {
                     >
                       {c.status === 'published' ? 'منشورة' : 'مسودة'}
                     </span>
-                    <h2 className="truncate text-sm font-bold">{c.title}</h2>
+                    <h2 className="line-clamp-2 text-base font-bold">
+                      {c.title}
+                    </h2>
                     <p className="text-[10px] text-muted">{c.level}</p>
                     <div className="flex items-center justify-between border-t border-line pt-3 text-[10px] text-muted">
                       <span>
@@ -263,14 +284,29 @@ export default function Courses() {
           <div className="p-6">
             <EmptyState
               icon={<BookOpen size={25} />}
-              title="لا توجد دورات مطابقة"
-              description="جرّب بحثاً آخر أو أنشئ دورة جديدة."
+              title={
+                state.courses.length
+                  ? 'لا توجد دورات مطابقة'
+                  : 'ابدأ بأول دورة تعليمية'
+              }
+              description={
+                state.courses.length
+                  ? 'لا توجد نتائج تطابق البحث والتصفية الحالية. يمكنك إعادة عرض كل دوراتك.'
+                  : 'أنشئ دورتك الأولى، ثم أضف الفصول والدروس عندما تكون جاهزاً.'
+              }
               action={
                 <button
                   className="btn btn-primary"
-                  onClick={() => setCreating(true)}
+                  onClick={() => {
+                    if (state.courses.length) {
+                      setQuery('');
+                      setFilter('all');
+                    } else {
+                      setCreating(true);
+                    }
+                  }}
                 >
-                  إنشاء دورة
+                  {state.courses.length ? 'مسح البحث والتصفية' : 'إنشاء دورة'}
                 </button>
               }
             />
