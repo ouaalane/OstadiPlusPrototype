@@ -103,7 +103,7 @@ export default function Overview() {
           </div>
         ))}
       </section>
-      <section className="creation-strip mb-8">
+      <section className="creation-strip mb-8" aria-label="إضافة محتوى تعليمي">
         <div className="flex-1">
           <span className="mb-2 inline-flex rounded-md bg-white/70 px-2 py-1 text-[9px] font-bold text-brand">
             ابدأ من فكرة
@@ -114,7 +114,7 @@ export default function Overview() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/library?action=upload" className="btn btn-primary">
+          <Link to="/library?action=upload" className="btn btn-outline">
             <Upload size={16} />
             رفع محتوى
           </Link>
@@ -172,7 +172,7 @@ export default function Overview() {
                           className="h-12 w-14 shrink-0 rounded-lg"
                         />
                         <span className="min-w-0">
-                          <span className="block max-w-64 truncate text-xs font-bold">
+                          <span className="table-course-title block max-w-64 truncate font-bold">
                             {c.title}
                           </span>
                           <span className="mt-1 block text-[10px] text-muted">

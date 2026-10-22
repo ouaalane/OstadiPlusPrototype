@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
 import { accessibleCourses, allLessons } from '@ostadiplus/shared';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, ProgressBar } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 export default function Analytics() {
   const { state } = useStore();
@@ -134,12 +134,11 @@ export default function Analytics() {
                         </span>
                         <span>{row.percent}%</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-brand-soft">
-                        <div
-                          className="h-full rounded-full bg-brand"
-                          style={{ width: row.percent + '%' }}
-                        />
-                      </div>
+                      <ProgressBar
+                        value={row.percent}
+                        height={6}
+                        label={`تقدّم ${row.student.fullName}`}
+                      />
                     </td>
                     <td className="px-4 py-4">{row.minutes} د</td>
                     <td className="px-4 py-4">{row.attempts}</td>

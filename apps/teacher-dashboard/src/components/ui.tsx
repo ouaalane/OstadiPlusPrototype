@@ -1,4 +1,7 @@
 import {
+  Children,
+  cloneElement,
+  isValidElement,
   useCallback,
   useEffect,
   useId,
@@ -6,6 +9,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type AriaAttributes,
 } from 'react';
 import {
   AlertCircle,
@@ -70,12 +74,7 @@ export function Avatar({
 /* ------------------------------------------------------------------ */
 
 export type PillTone =
-  | 'brand'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'neutral'
-  | 'info';
+  'brand' | 'success' | 'warning' | 'danger' | 'neutral' | 'info';
 
 const PILL_STYLES: Record<PillTone, { bg: string; fg: string }> = {
   brand: { bg: 'var(--color-brand-soft)', fg: 'var(--color-brand-dark)' },
@@ -117,8 +116,10 @@ export function ProgressBar({
   value,
   tone = 'brand',
   height = 8,
+  label = 'التقدّم',
 }: {
   value: number;
+  label?: string;
   tone?: 'brand' | 'success' | 'accent';
   height?: number;
 }) {
@@ -133,12 +134,13 @@ export function ProgressBar({
       className="w-full overflow-hidden rounded-full bg-surface-alt"
       style={{ height }}
       role="progressbar"
-      aria-valuenow={value}
+      aria-label={label}
+      aria-valuenow={Math.min(100, Math.max(0, value))}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className="h-full rounded-full transition-[width] duration-500"
+        className="h-full rounded-full"
         style={{
           width: `${Math.min(100, Math.max(0, value))}%`,
           background: color,
@@ -518,16 +520,43 @@ export function Field({
   error?: string;
   children: ReactNode;
 }) {
+  const fieldId = useId();
+  const labelId = `${fieldId}-label`;
+  const messageId = `${fieldId}-message`;
+  const controls = Children.map(children, (child) => {
+    if (
+      !isValidElement<AriaAttributes>(child) ||
+      typeof child.type !== 'string' ||
+      !['input', 'select', 'textarea'].includes(child.type)
+    )
+      return child;
+    const describedBy =
+      [child.props['aria-describedby'], hint || error ? messageId : undefined]
+        .filter(Boolean)
+        .join(' ') || undefined;
+    return cloneElement(child, {
+      'aria-labelledby':
+        child.props['aria-labelledby'] ||
+        (child.props['aria-label'] ? undefined : labelId),
+      'aria-describedby': describedBy,
+      'aria-invalid': error ? true : child.props['aria-invalid'],
+    });
+  });
   return (
-    <label className="block">
-      <span className="label">{labelText}</span>
-      {children}
+    <label className="field block" data-invalid={error ? true : undefined}>
+      <span id={labelId} className="label">
+        {labelText}
+      </span>
+      {controls}
       {error ? (
-        <span className="mt-1 block text-xs font-semibold text-danger">
+        <span id={messageId} role="alert" className="field-message field-error">
+          <AlertCircle size={14} aria-hidden="true" />
           {error}
         </span>
       ) : hint ? (
-        <span className="mt-1 block text-xs text-muted">{hint}</span>
+        <span id={messageId} className="field-message field-hint">
+          {hint}
+        </span>
       ) : null}
     </label>
   );
@@ -599,6 +628,7 @@ export function DataTable<T>({
   compact = false,
   highlightRow,
 }: DataTableProps<T>) {
+  const tableTitleId = useId();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(0);
@@ -685,11 +715,14 @@ export function DataTable<T>({
   const selectedCount = selectable ? selectedIds.size : 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0px_2px_8px_rgba(41,30,43,0.05),0px_12px_32px_rgba(41,30,43,0.06)]">
+    <div className="data-table-card">
       {/* ---- Card head: title + description ---- */}
       {title ? (
         <div className="px-6 pt-6">
-          <h2 className="text-[22px] font-bold leading-tight text-ink sm:text-2xl">
+          <h2
+            id={tableTitleId}
+            className="text-[22px] font-bold leading-tight text-ink sm:text-2xl"
+          >
             {title}
           </h2>
           {description ? (
@@ -701,7 +734,11 @@ export function DataTable<T>({
       {/* ---- Toolbar: counter | search + actions ---- */}
       {(searchPlaceholder || toolbar || selectable) && (
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 pb-4 pt-4">
-          <div className="text-[13px] text-muted">
+          <div
+            className="text-[13px] text-muted"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {selectable && selectedCount > 0 ? (
               <span className="font-semibold text-ink">
                 <span className="num">{selectedCount}</span> عنصر محدد
@@ -742,10 +779,17 @@ export function DataTable<T>({
       )}
 
       {/* ---- Table ---- */}
-      <div className="scrollbar-slim overflow-x-auto px-6 pb-2">
+      <div
+        className="data-table-scroll scrollbar-slim overflow-x-auto px-6 pb-2"
+        tabIndex={0}
+        role="region"
+        aria-label={title || 'جدول البيانات'}
+      >
         <table
           className="w-full border-collapse text-sm"
           style={{ minWidth: 640 }}
+          aria-labelledby={title ? tableTitleId : undefined}
+          aria-label={title ? undefined : 'جدول البيانات'}
         >
           <thead>
             <tr className="rounded-xl bg-surface-alt">
@@ -753,6 +797,12 @@ export function DataTable<T>({
                 <th scope="col" className="w-10 px-3 py-3 text-start">
                   <input
                     type="checkbox"
+                    ref={(node) => {
+                      if (node)
+                        node.indeterminate =
+                          pageIds.some((id) => selectedIds?.has(id)) &&
+                          !allPageSelected;
+                    }}
                     checked={allPageSelected}
                     onChange={toggleSelectAll}
                     aria-label="تحديد الكل"
@@ -779,35 +829,38 @@ export function DataTable<T>({
                       alignClass,
                       'text-[13px] font-semibold text-muted',
                       col.hideOnMobile ? 'hidden md:table-cell' : '',
-                      isSortable
-                        ? 'cursor-pointer select-none transition-colors hover:text-ink'
-                        : '',
                     ].join(' ')}
-                    onClick={isSortable ? () => toggleSort(col.key) : undefined}
                     aria-sort={
                       active
                         ? sortDir === 'asc'
                           ? 'ascending'
                           : 'descending'
-                        : undefined
+                        : isSortable
+                          ? 'none'
+                          : undefined
                     }
                   >
-                    <span
-                      className={`inline-flex items-center gap-1.5 ${col.align === 'end' ? 'flex-row-reverse' : ''}`}
-                    >
-                      {col.header}
-                      {isSortable ? (
-                        active ? (
+                    {isSortable ? (
+                      <button
+                        type="button"
+                        className="table-sort"
+                        data-active={active ? true : undefined}
+                        onClick={() => toggleSort(col.key)}
+                      >
+                        {col.header}
+                        {active ? (
                           sortDir === 'asc' ? (
-                            <ArrowUp size={13} className="text-ink" />
+                            <ArrowUp size={13} aria-hidden="true" />
                           ) : (
-                            <ArrowDown size={13} className="text-ink" />
+                            <ArrowDown size={13} aria-hidden="true" />
                           )
                         ) : (
-                          <ArrowUpDown size={13} className="text-faint/60" />
-                        )
-                      ) : null}
-                    </span>
+                          <ArrowUpDown size={13} aria-hidden="true" />
+                        )}
+                      </button>
+                    ) : (
+                      col.header
+                    )}
                   </th>
                 );
               })}
@@ -837,6 +890,7 @@ export function DataTable<T>({
                 return (
                   <tr
                     key={id}
+                    data-selected={isSelected ? true : undefined}
                     className={[
                       'group border-b border-line/60 transition-colors last:border-b-0',
                       isSelected ? 'bg-brand-softer' : '',

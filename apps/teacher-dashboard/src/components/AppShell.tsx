@@ -5,7 +5,6 @@ import {
   ArrowUpLeft,
   BookOpen,
   ChartNoAxesCombined,
-  ChevronDown,
   ChevronLeft,
   CircleHelp,
   Files,
@@ -88,7 +87,7 @@ function Sidebar({ close }: { close: () => void }) {
           </span>
           <span className="block text-[11px] text-muted">مساحة الأستاذ</span>
         </span>
-        <ChevronDown size={14} className="text-muted" />
+        <Settings size={14} className="text-muted" aria-hidden="true" />
       </Link>
       <nav
         className="flex-1 space-y-6 overflow-y-auto px-4 pb-4"
@@ -110,7 +109,7 @@ function Sidebar({ close }: { close: () => void }) {
                     `side-link ${isActive ? 'is-active' : ''}`
                   }
                 >
-                  <item.icon size={18} strokeWidth={1.7} />
+                  <item.icon size={18} strokeWidth={1.7} aria-hidden="true" />
                   <span className="flex-1">{item.label}</span>
                   {item.to === '/questions' && unanswered > 0 ? (
                     <span className="num flex size-5 items-center justify-center rounded-md bg-brand-soft text-[10px] text-brand">
@@ -278,7 +277,14 @@ export function AppShell() {
       )?.label ?? 'مساحة العمل';
   return (
     <div className="workspace-shell">
-      <a href="#workspace-content" className="skip-link">
+      <a
+        href="#workspace-content"
+        className="skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('workspace-content')?.focus();
+        }}
+      >
         الانتقال إلى المحتوى
       </a>
       <aside className="workspace-sidebar hidden lg:block">
@@ -335,6 +341,7 @@ export function AppShell() {
         </header>
         <main
           id="workspace-content"
+          tabIndex={-1}
           className={`workspace-content ${location.pathname.startsWith('/courses/') ? 'workspace-content-editor' : ''}`}
         >
           <Outlet />
