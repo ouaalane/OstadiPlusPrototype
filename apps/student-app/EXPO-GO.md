@@ -15,8 +15,11 @@ Use SDK 57-compatible Expo Go. Existing custom binaries need rebuilding to inclu
 `expo-image-picker` and `expo-image-manipulator`; older binaries skip their native
 imports safely and explain the required update when the photo button is tapped.
 
-Signup and “Continue as guest” create independent local prototype students.
-They open an empty welcome screen with their own code and centre instructions;
+“Continue as guest” opens a picker with two existing demo students with active
+courses, so presentations retain the populated dashboard, lessons and progress.
+It does not create an empty student or include newly registered accounts.
+Signup creates an independent local prototype student who opens an empty
+welcome screen with their own code and centre instructions;
 courses appear only after that student's access is activated in the demo data.
 Login resolves the entered email/phone and never falls back to another pupil.
 The QR illustration is a placeholder, not a scannable encoder; registration,

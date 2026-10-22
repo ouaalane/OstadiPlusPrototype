@@ -1,9 +1,8 @@
 /**
- * Sign-in — the prototype's "auth".
+ * Guest demo account picker for product presentations.
  *
- * There is no account system: the demo dataset already contains the students
- * the teacher manages, so the student simply picks their own name (exactly
- * what an invited pupil would see after opening their invite link).
+ * Offers two seeded students with active courses, keeping newly registered
+ * and empty accounts out of the guest choices. Signup remains independent.
  *
  * This screen is also where a fresh device pulls the teacher's latest data by
  * pasting the sync payload copied from the dashboard.
@@ -16,6 +15,7 @@ import { BrandTextInput as TextInput } from '../components/BrandTextInput';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { accessibleCourses, DEMO_STATE } from '@ostadiplus/shared';
 
 import { AppText, Card, Pill, PrimaryButton } from '../components/ui';
 import BrandWordmark from '../components/BrandWordmark';
@@ -36,13 +36,16 @@ export default function SignInScreen() {
   const [imported, setImported] = useState(false);
 
   const students = useMemo(() => {
-    return state.students.map((student) => {
+    const demoIds = new Set(DEMO_STATE.students.map(student => student.id));
+    return state.students.filter(student =>
+      demoIds.has(student.id) && accessibleCourses(state, student.id).length > 0,
+    ).slice(0, 2).map((student) => {
       const enrollments = state.enrollments.filter((e) => e.studentId === student.id);
       const active = enrollments.filter((e) => e.status === 'active').length;
       const pending = enrollments.filter((e) => e.status === 'pending').length;
       return { student, active, pending };
     });
-  }, [state.students, state.enrollments]);
+  }, [state]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -56,12 +59,12 @@ export default function SignInScreen() {
         </View>
 
         <AppText size={17} weight="bold" tone="ink" style={styles.sectionTitle}>
-          {dir === 'rtl' ? 'اختر حسابك للدخول' : 'Choisissez votre compte'}
+          {dir === 'rtl' ? 'اختر حساباً تجريبياً' : 'Choisissez un compte de démonstration'}
         </AppText>
         <AppText size={14.5} tone="body" style={styles.sectionSub}>
           {dir === 'rtl'
-            ? 'اختر اسمك لتظهر لك دوراتك وتقدّمك. تغيير الحساب متاح لاحقاً من «ملفي».'
-            : 'Choisissez votre nom pour voir vos cours et votre progression. Le compte peut être changé plus tard depuis « Mon profil ».'}
+            ? 'جرّب التطبيق بحساب عامر بالدروس والتقدّم. اختر زائراً للمتابعة.'
+            : 'Explorez l’application avec des cours et une progression déjà disponibles. Choisissez un invité pour continuer.'}
         </AppText>
 
         <View style={{ gap: spacing.sm }}>
@@ -100,7 +103,7 @@ export default function SignInScreen() {
                 </LinearGradient>
                 <View style={{ flex: 1, gap: 3 }}>
                   <AppText size={15} weight="semibold" tone="ink">
-                    {student.fullName}
+                    {rtl ? `زائر ${index + 1} · ${student.fullName}` : `Invité ${index + 1} · ${student.fullName}`}
                   </AppText>
                   <AppText size={12.5} tone="muted">
                     {student.level}

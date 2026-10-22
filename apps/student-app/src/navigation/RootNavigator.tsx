@@ -128,11 +128,10 @@ function Tabs() {
 
 /**
  * Pre-sign-in flow: onboarding → welcome → login (+ 6-digit code) / signup.
- * Signup and optional guest entry create independent local students. The
- * explicit demo picker route remains available for prototype testing.
+ * Signup creates an independent local student. Guest entry opens the demo
+ * account picker for presentations with populated courses and progress.
  */
 function AuthNavigator() {
-  const { registerStudent, lang } = useStore();
   return (
     <AuthStack.Navigator
       initialRouteName="Onboarding"
@@ -151,10 +150,7 @@ function AuthNavigator() {
           <WelcomeScreen
             onLogin={() => props.navigation.navigate('Login')}
             onSignup={() => props.navigation.navigate('Signup')}
-            onGuest={() => registerStudent({
-              fullName: lang === 'ar' ? 'زائر' : 'Visiteur',
-              phone: '', email: '', password: '', level: '', studentType: 'moutamadris',
-            })}
+            onGuest={() => props.navigation.navigate('PickAccount')}
           />
         )}
       </AuthStack.Screen>
