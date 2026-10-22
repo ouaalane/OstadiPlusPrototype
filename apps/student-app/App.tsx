@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
 import { colors } from './src/theme';
+import { initializeAppOrientation } from './src/lib/screen-orientation';
 
 import RootNavigator from './src/navigation/RootNavigator';
 import { StudentStoreProvider } from './src/store/StudentStore';
@@ -14,6 +15,7 @@ import { StudentStoreProvider } from './src/store/StudentStore';
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
+  useEffect(initializeAppOrientation, []);
   const [fontsLoaded, fontError] = useFonts({
     NotoSansArabic_Brand: require('./assets/fonts/NotoSansArabic-Brand.ttf'),
     BricolageGrotesque_Bold: require('./assets/fonts/BricolageGrotesque-Bold.ttf'),

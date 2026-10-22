@@ -3,7 +3,7 @@
     "name": "oustadi plus",
     "slug": "ostadiplus-student",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "ostadiplus",
     "userInterfaceStyle": "light",
@@ -27,6 +27,7 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
+      ["expo-screen-orientation", { "initialOrientation": "PORTRAIT_UP" }],
       "expo-video",
       "expo-font",
       [

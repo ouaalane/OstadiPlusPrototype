@@ -1,5 +1,13 @@
 # Preview in Expo Go
 
+Video screens now allow the phone's automatic rotation and expand the same
+player to fill a landscape window, keeping its controls and watermark. Leaving
+the video restores portrait. Enable system auto-rotate when testing on Android.
+Install updated dependencies with `npm ci --prefix apps/student-app` first.
+Older installed development/production apps need a new native build for
+`expo-screen-orientation` and the updated supported orientations. A missing
+orientation module is skipped safely; rotation is unavailable in that binary.
+
 Use an Expo Go version compatible with this project's Expo SDK 57. From the
 repository root:
 

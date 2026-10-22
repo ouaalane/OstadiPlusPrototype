@@ -38,7 +38,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { useVideoRotation } from '../hooks/useVideoRotation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { addScreenshotListener, usePreventScreenCapture } from 'expo-screen-capture';
@@ -194,7 +196,8 @@ export default function VideoScreen() {
       )
     : { kind: 'missing' as const };
 
-  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreen, setFullscreen] = useVideoRotation();
+  const focused = useIsFocused();
 
   /**
    * In-app fullscreen: the video, its custom controls and the ownership
@@ -211,7 +214,7 @@ export default function VideoScreen() {
       return true;
     });
     return () => sub.remove();
-  }, [fullscreen]);
+  }, [fullscreen, setFullscreen]);
 
   const [captureNonce, setCaptureNonce] = useState(0);
   useEffect(() => {
@@ -444,6 +447,7 @@ export default function VideoScreen() {
 
   return (
     <View style={styles.root}>
+      {focused ? <StatusBar hidden={fullscreen} style={fullscreen ? 'light' : 'dark'} /> : null}
       {CAPTURE_PROTECTION ? <ScreenCaptureGuard /> : null}
       {/*
        * Pinned player. In fullscreen only this wrapper's style changes: the

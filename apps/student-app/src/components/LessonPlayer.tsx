@@ -432,7 +432,7 @@ function PlayerSurface({
     <View style={styles.root}>
       <VideoView
         player={player}
-        style={StyleSheet.absoluteFill}
+        style={styles.videoSurface}
         contentFit="contain"
         nativeControls={false}
         fullscreenOptions={FULLSCREEN_OPTIONS}
@@ -750,6 +750,9 @@ function SeekButton({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.black },
+  // Explicit dimensions also size the HTML video in browser previews; native
+  // absolute positioning continues to fill the same inline/fullscreen slot.
+  videoSurface: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   row: { flexDirection: 'row', alignItems: 'center' },
   rowReverse: { flexDirection: 'row-reverse', alignItems: 'center' },
 
