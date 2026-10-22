@@ -59,7 +59,8 @@ import {
   lessonsDuration,
 } from '../components/Curriculum';
 import { DownloadButton } from '../components/DownloadButton';
-import { lessonRoute } from '../lib/lesson';
+import { LESSON_ICONS, lessonKindLabel, lessonRoute } from '../lib/lesson';
+import LessonKindBadge from '../components/LessonKindBadge';
 import { coverAssets } from '../assets/covers';
 import { teacherPhotosFor } from '../assets/teacher-photos';
 import { useStore, type DownloadStatus } from '../store/StudentStore';
@@ -380,15 +381,18 @@ export default function CourseDetailScreen() {
             <View style={{ flex: 1 }} />
 
             <View style={styles.heroBody}>
-              <View style={styles.sessionPill}>
-                <AppText
-                  size={10.5}
-                  weight="bold"
-                  tone="white"
-                  style={{ letterSpacing: 1.1, textTransform: 'uppercase' }}
-                >
-                  {rtl ? `الجلسة ${sessionNumber}` : `Session ${sessionNumber}`}
-                </AppText>
+              <View style={[l.row, { alignItems: 'center', gap: spacing.sm }]}>
+                <View style={styles.sessionPill}>
+                  <AppText
+                    size={10.5}
+                    weight="bold"
+                    tone="white"
+                    style={{ letterSpacing: 1.1, textTransform: 'uppercase' }}
+                  >
+                    {rtl ? `الجلسة ${sessionNumber}` : `Session ${sessionNumber}`}
+                  </AppText>
+                </View>
+                {resumeLesson ? <LessonKindBadge kind={resumeLesson.kind} /> : null}
               </View>
 
               <AppText size={24} weight="bold" tone="white" numberOfLines={3}>
@@ -403,11 +407,13 @@ export default function CourseDetailScreen() {
                   label={
                     started ? (rtl ? 'متابعة' : 'Continuer') : rtl ? 'الخطوات الأولى' : 'Premiers pas'
                   }
-                  leadingIcon="play"
+                  leadingIcon={LESSON_ICONS[resumeLesson.kind]}
                   variant="accent"
                   onPress={() => openLesson(resumeLesson)}
                   accessibilityLabel={
-                    rtl ? `متابعة الدرس ${resumeLesson.title}` : `Continuer la leçon ${resumeLesson.title}`
+                    rtl
+                      ? `متابعة ${lessonKindLabel(resumeLesson.kind, lang)}: ${resumeLesson.title}`
+                      : `Continuer ${lessonKindLabel(resumeLesson.kind, lang)} : ${resumeLesson.title}`
                   }
                   style={styles.heroCta}
                 />

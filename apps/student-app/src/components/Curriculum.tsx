@@ -18,7 +18,8 @@ import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { AppText } from './ui';
 import { DownloadButton } from './DownloadButton';
-import { lessonMetaText } from '../lib/lesson';
+import LessonKindBadge from './LessonKindBadge';
+import { lessonKindLabel, lessonMetaText } from '../lib/lesson';
 import type { DownloadStatus } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
 
@@ -112,7 +113,7 @@ export function CurriculumRow({
   const rtl = dir === 'rtl';
   const baseMeta = curriculumMetaText(lesson, lang);
 
-  const meta = baseMeta;
+  const meta = `${lessonKindLabel(lesson.kind, lang)}${baseMeta ? ` — ${baseMeta}` : ''}`;
 
   const showDownload = !!onDownload && (lesson.kind === 'video' || lesson.kind === 'pdf');
 
@@ -175,9 +176,14 @@ export function CurriculumRow({
             />
           ) : null}
         </View>
-        <AppText size={11.5} tone={accessible ? 'muted' : 'faint'} numberOfLines={2}>
-          {meta || (rtl ? 'درس' : 'Leçon')}
-        </AppText>
+        <View style={[l.row, styles.lessonMeta]}>
+          <LessonKindBadge kind={lesson.kind} disabled={!accessible} />
+          {baseMeta ? (
+            <AppText size={11.5} tone={accessible ? 'muted' : 'faint'} style={{ flexShrink: 1 }}>
+              {baseMeta}
+            </AppText>
+          ) : null}
+        </View>
       </View>
 
       {showDownload ? (
@@ -203,7 +209,7 @@ export function CurriculumRow({
 }
 
 /**
- * Udemy-style row meta: «Vidéo - 04:35 minutes», «PDF - 8 pages».
+ * Type is shown separately as a badge; retain duration/page/question details.
  * Durations always pad the minutes so the row lines up across a section.
  */
 function curriculumMetaText(lesson: Lesson, lang: 'ar' | 'fr'): string | null {
@@ -215,10 +221,10 @@ function curriculumMetaText(lesson: Lesson, lang: 'ar' | 'fr'): string | null {
     const s = total % 60;
     const pad = (value: number) => String(value).padStart(2, '0');
     const clock = h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-    return rtl ? `فيديو - ${clock} دقيقة` : `Vidéo - ${clock} minutes`;
+    return rtl ? `${clock} دقيقة` : `${clock} min`;
   }
   if (lesson.kind === 'pdf') {
-    return rtl ? `PDF - ${lesson.pages} صفحات` : `PDF - ${lesson.pages} pages`;
+    return rtl ? `${lesson.pages} صفحات` : `${lesson.pages} pages`;
   }
   return lessonMetaText(lesson, lang);
 }
@@ -249,6 +255,7 @@ export function lessonRuntimeLabel(lesson: Lesson): string | null {
 }
 
 const styles = StyleSheet.create({
+  lessonMeta: { alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   sectionHead: {
     gap: spacing.sm,
     paddingHorizontal: spacing.xs,

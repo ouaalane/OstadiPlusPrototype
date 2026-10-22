@@ -40,6 +40,20 @@ export const LESSON_ICONS: Record<LessonKind, keyof typeof Ionicons.glyphMap> = 
   exam: 'ribbon',
 };
 
+/** Visible type labels; pair them with icons rather than relying on colour. */
+export function lessonKindLabel(kind: LessonKind, lang: 'ar' | 'fr'): string {
+  const labels: Record<LessonKind, { ar: string; fr: string }> = {
+    video: { ar: 'فيديو', fr: 'Vidéo' },
+    pdf: { ar: 'PDF', fr: 'PDF' },
+    quiz: { ar: 'QCM', fr: 'QCM' },
+    text: { ar: 'نص', fr: 'Texte' },
+    image: { ar: 'صورة', fr: 'Image' },
+    exercise: { ar: 'تمرين', fr: 'Exercice' },
+    exam: { ar: 'امتحان', fr: 'Examen' },
+  };
+  return labels[kind][lang];
+}
+
 /** Soft/dark colour pair for the lesson-kind badge. */
 export function lessonTint(kind: LessonKind): { soft: string; dark: string } {
   switch (kind) {
