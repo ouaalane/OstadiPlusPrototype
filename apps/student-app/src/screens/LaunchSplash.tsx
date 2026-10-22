@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '../theme';
 
 /** Must match the splash `backgroundColor` in `app.json`. */
-const BACKDROP = colors.canvas;
+const BACKDROP = colors.launch;
 /** Must match the splash `imageWidth` in `app.json`, so the mark does not jump. */
 const MARK_SIZE = 180;
 const FADE_MS = 260;

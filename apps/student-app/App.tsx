@@ -3,19 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import {
-  useFonts,
-  IBMPlexSansArabic_400Regular,
-  IBMPlexSansArabic_500Medium,
-  IBMPlexSansArabic_600SemiBold,
-  IBMPlexSansArabic_700Bold,
-} from '@expo-google-fonts/ibm-plex-sans-arabic';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from '@expo-google-fonts/inter';
+import { useFonts } from 'expo-font';
 
 import { colors } from './src/theme';
 
@@ -27,16 +15,14 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
-    NotoSansArabic_Brand: require('./assets/fonts/NotoSansArabic-Brand.ttf'),
-    BricolageGrotesque_Bold: require('./assets/fonts/BricolageGrotesque-Bold.ttf'),
-    IBMPlexArabic_400Regular: IBMPlexSansArabic_400Regular,
-    IBMPlexArabic_500Medium: IBMPlexSansArabic_500Medium,
-    IBMPlexArabic_600SemiBold: IBMPlexSansArabic_600SemiBold,
-    IBMPlexArabic_700Bold: IBMPlexSansArabic_700Bold,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    NotoSansArabic_400Regular: require('./assets/fonts/NotoSansArabic-Regular.ttf'),
+    NotoSansArabic_500Medium: require('./assets/fonts/NotoSansArabic-Medium.ttf'),
+    NotoSansArabic_600SemiBold: require('./assets/fonts/NotoSansArabic-SemiBold.ttf'),
+    NotoSansArabic_700Bold: require('./assets/fonts/NotoSansArabic-Bold.ttf'),
+    BricolageGrotesque_400Regular: require('./assets/fonts/BricolageGrotesque-Regular.ttf'),
+    BricolageGrotesque_500Medium: require('./assets/fonts/BricolageGrotesque-Medium.ttf'),
+    BricolageGrotesque_600SemiBold: require('./assets/fonts/BricolageGrotesque-SemiBold.ttf'),
+    BricolageGrotesque_700Bold: require('./assets/fonts/BricolageGrotesque-Bold.ttf'),
   });
   /* A font asset can fail or stall (offline dev server, corrupted cache).
      Never let that trap the app on a blank launch screen: fall back to the
@@ -76,5 +62,5 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  launch: { flex: 1, backgroundColor: colors.canvas },
+  launch: { flex: 1, backgroundColor: colors.launch },
 });

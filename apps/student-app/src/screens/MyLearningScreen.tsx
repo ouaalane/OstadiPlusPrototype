@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.xxl * 2,
   },
-  storageCard: { gap: spacing.md, backgroundColor: colors.surfaceAlt, borderColor: 'transparent' },
+  storageCard: { gap: spacing.md, backgroundColor: colors.surfaceAlt, borderColor: colors.transparent },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   filterChip: {
     borderRadius: radius.pill,

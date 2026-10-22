@@ -144,6 +144,8 @@ export default function SignInScreen() {
                   : 'Copiez le « code de synchronisation » du tableau de bord (paramètres) et collez-le ici pour obtenir les mêmes cours, même après la publication d\'une nouvelle leçon par le professeur.'}
               </AppText>
               <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
                 style={[styles.input, l.fieldInput, { fontFamily: familyFor(lang, 'regular') }]}
                 multiline
                 value={payload}

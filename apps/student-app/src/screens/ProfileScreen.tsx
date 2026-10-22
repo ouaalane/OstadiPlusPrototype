@@ -387,6 +387,8 @@ export default function ProfileScreen() {
                 )}
               </AppText>
               <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
                 style={[
                   styles.input,
                   { fontFamily: familyFor(lang, 'regular') },

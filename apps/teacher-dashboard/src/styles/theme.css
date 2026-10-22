@@ -2,8 +2,44 @@
 
 @font-face {
   font-family: 'Noto Sans Arabic';
-  src: url('/fonts/NotoSansArabic-Brand.ttf') format('truetype');
+  src: url('/fonts/NotoSansArabic-Regular.ttf') format('truetype');
   font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('/fonts/NotoSansArabic-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('/fonts/NotoSansArabic-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('/fonts/NotoSansArabic-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/BricolageGrotesque-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/BricolageGrotesque-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/BricolageGrotesque-SemiBold.ttf') format('truetype');
+  font-weight: 600;
   font-display: swap;
 }
 @font-face {
@@ -20,7 +56,7 @@
 @theme {
   /* Brand */
   --color-brand: #68234F;
-  --color-brand-dark: #68234F;
+  --color-brand-dark: #291E2B;
   --color-brand-soft: #F1E9F4;
   --color-brand-softer: #F1E9F4;
   --color-brand-from: #68234F;
@@ -38,25 +74,24 @@
   --color-info-soft: #F1E9F4;
 
   /* Surfaces */
-  --color-canvas: #F1E9F4;
+  --color-canvas: #FFFFFF;
   --color-surface: #FFFFFF;
   --color-surface-alt: #F1E9F4;
 
   /* Text */
   --color-ink: #291E2B;
   --color-body: #291E2B;
-  --color-muted: #6F6072;
-  --color-faint: #6F6072;
+  --color-muted: rgba(41,30,43,0.72);
+  --color-faint: rgba(41,30,43,0.72);
 
   /* Lines */
-  --color-line: #D7C6DA;
-  --color-line-strong: #796B7C;
+  --color-line: rgba(41,30,43,0.12);
+  --color-line-strong: rgba(41,30,43,0.28);
 
   /* Type */
   --font-sans:
-    'Noto Sans Arabic', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui,
-    -apple-system, sans-serif;
-  --font-num: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    'Noto Sans Arabic', 'Bricolage Grotesque', sans-serif;
+  --font-num: 'Bricolage Grotesque', 'Noto Sans Arabic', sans-serif;
 
   /* Radii */
   --radius-sm: 8px;

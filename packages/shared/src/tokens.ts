@@ -2,46 +2,53 @@
  * OstadiPlus design tokens — single source of truth for both applications.
  *
  * Brand colors from oustadi-education-identity/colors.json. Status roles
- * use mulberry/lilac or mulberry/apricot; muted text and borders are ink/lilac blends.
+ * use mulberry/lilac or mulberry/apricot; text/borders use the supplied ink with opacity.
  * The web dashboard mirrors these values in
  * `apps/teacher-dashboard/src/styles/theme.css`; the Android app consumes
  * this module directly.
  */
 
-export const palette = {
-  /** Primary interactive mulberry — buttons, links, active states. */
-  brand: '#68234F',
-  brandDark: '#68234F',
-  brandSoft: '#F1E9F4',
-  brandSofter: '#F1E9F4',
-
-  /** Brand surface gradient (mulberry → ink). */
-  gradientFrom: '#68234F',
-  gradientVia: '#68234F',
-  gradientTo: '#291E2B',
-
+/** Exact five-color palette in oustadi-education-identity/colors.json. */
+export const identityColors = {
+  primary: '#68234F',
   accent: '#FFCCA9',
-  accentSoft: '#FFCCA9',
-  success: '#68234F',
-  successSoft: '#F1E9F4',
-  danger: '#68234F',
-  dangerSoft: '#FFCCA9',
-  info: '#68234F',
-  infoSoft: '#F1E9F4',
+  white: '#FFFFFF',
+  surface: '#F1E9F4',
+  text: '#291E2B',
+} as const;
 
-  canvas: '#F1E9F4',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F1E9F4',
+/** Opacity variants preserve the supplied hue rather than inventing new shades. */
+export function colorWithOpacity(hex: string, opacity: number): string {
+  const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+  return `rgba(${channels.join(',')},${opacity})`;
+}
 
-  ink: '#291E2B',
-  body: '#291E2B',
-  muted: '#6F6072',
-  faint: '#6F6072',
-
-  border: '#D7C6DA',
-  borderStrong: '#796B7C',
-
-  /** Cover / subject card gradients keyed by CoverKey. */
+export const palette = {
+  brand: identityColors.primary,
+  brandDark: identityColors.text,
+  brandSoft: identityColors.surface,
+  brandSofter: identityColors.surface,
+  gradientFrom: identityColors.primary,
+  gradientVia: identityColors.primary,
+  gradientTo: identityColors.text,
+  accent: identityColors.accent,
+  accentSoft: identityColors.accent,
+  success: identityColors.primary,
+  successSoft: identityColors.surface,
+  danger: identityColors.primary,
+  dangerSoft: identityColors.accent,
+  info: identityColors.primary,
+  infoSoft: identityColors.surface,
+  // Preserve the original app's white canvas and card hierarchy.
+  canvas: identityColors.white,
+  surface: identityColors.white,
+  surfaceAlt: identityColors.surface,
+  ink: identityColors.text,
+  body: identityColors.text,
+  muted: colorWithOpacity(identityColors.text, 0.72),
+  faint: colorWithOpacity(identityColors.text, 0.72),
+  border: colorWithOpacity(identityColors.text, 0.12),
+  borderStrong: colorWithOpacity(identityColors.text, 0.28),
 } as const;
 
 export const coverGradients: Record<string, [string, string]> = {
@@ -66,9 +73,9 @@ export const radius = {
 } as const;
 
 export const shadow = {
-  card: '0px 2px 8px rgba(41, 30, 43, 0.06)',
-  raised: '0px 8px 24px rgba(41, 30, 43, 0.10)',
-  overlay: '0px 24px 64px rgba(41, 30, 43, 0.22)',
+  card: `0px 2px 8px ${colorWithOpacity(identityColors.text, 0.06)}`,
+  raised: `0px 8px 24px ${colorWithOpacity(identityColors.text, 0.10)}`,
+  overlay: `0px 24px 64px ${colorWithOpacity(identityColors.text, 0.22)}`,
 } as const;
 
 export const spacing = {
@@ -83,15 +90,15 @@ export const spacing = {
 
 export const typography = {
   /** Web family stack. */
-  web: `'Noto Sans Arabic', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, -apple-system, sans-serif`,
+  web: `'Noto Sans Arabic', 'Bricolage Grotesque', sans-serif`,
   /** Latin/numerals family used alongside the Arabic face. */
-  latin: `'Bricolage Grotesque', 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif`,
+  latin: `'Bricolage Grotesque', 'Noto Sans Arabic', sans-serif`,
   /** Android asset font file names (android/app/src/main/assets/fonts). */
   native: {
-    Regular: 'NotoSansArabic-Brand',
-    Medium: 'IBMPlexSansArabic-Medium',
-    SemiBold: 'IBMPlexSansArabic-SemiBold',
-    Bold: 'IBMPlexSansArabic-Bold',
+    Regular: 'NotoSansArabic-Regular',
+    Medium: 'NotoSansArabic-Medium',
+    SemiBold: 'NotoSansArabic-Bold',
+    Bold: 'NotoSansArabic-Bold',
   },
   size: {
     xs: 12,

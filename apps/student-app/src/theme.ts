@@ -1,27 +1,48 @@
 /**
- * OstadiPlus — mobile design tokens.
- *
- * Rebuilt to match the reference design system (white surfaces + hairline
- * borders, the mulberry/apricot identity, uppercase letter-spaced eyebrows, generous
- * corner radii and very soft shadows). The brand palette is also mirrored into
- * `packages/shared/src/tokens.ts` and the teacher dashboard.
- *
- * Typography switches family by language: Arabic regular → Noto Sans Arabic,
- * French bold → Bricolage Grotesque; other weights retain their existing fonts. Both are loaded in `App.tsx`.
+ * Mobile presentation tokens. Layout, sizes, spacing and motion match bf823c7.
+ * Only the five supplied brand colors and their opacity variants are used.
+ * Complete Noto Sans Arabic / Bricolage Grotesque families are loaded in App.tsx.
  */
 
 import { StyleSheet } from 'react-native';
-import { palette, type Lang } from '@ostadiplus/shared';
+import { colorWithOpacity, identityColors, palette, type Lang } from '@ostadiplus/shared';
+
+export const overlays = {
+  ink00: colorWithOpacity(identityColors.text, 0),
+  ink05: colorWithOpacity(identityColors.text, 0.05),
+  ink18: colorWithOpacity(identityColors.text, 0.18),
+  ink34: colorWithOpacity(identityColors.text, 0.34),
+  ink38: colorWithOpacity(identityColors.text, 0.38),
+  ink42: colorWithOpacity(identityColors.text, 0.42),
+  ink50: colorWithOpacity(identityColors.text, 0.5),
+  ink55: colorWithOpacity(identityColors.text, 0.55),
+  ink60: colorWithOpacity(identityColors.text, 0.6),
+  ink62: colorWithOpacity(identityColors.text, 0.62),
+  ink65: colorWithOpacity(identityColors.text, 0.65),
+  ink68: colorWithOpacity(identityColors.text, 0.68),
+  ink82: colorWithOpacity(identityColors.text, 0.82),
+  ink86: colorWithOpacity(identityColors.text, 0.86),
+  white09: colorWithOpacity(identityColors.white, 0.09),
+  white10: colorWithOpacity(identityColors.white, 0.1),
+  white16: colorWithOpacity(identityColors.white, 0.16),
+  white18: colorWithOpacity(identityColors.white, 0.18),
+  white22: colorWithOpacity(identityColors.white, 0.22),
+  white24: colorWithOpacity(identityColors.white, 0.24),
+  white32: colorWithOpacity(identityColors.white, 0.32),
+  white92: colorWithOpacity(identityColors.white, 0.92),
+} as const;
 
 export const colors = {
   ...palette,
   line: palette.border,
   lineStrong: palette.borderStrong,
-  scrim: 'rgba(41,30,43,0.38)',
-  glass: 'rgba(255,255,255,0.92)',
-  glassSoft: 'rgba(255,255,255,0.22)',
-  black: '#000000',
-  white: palette.surface,
+  launch: identityColors.surface,
+  scrim: overlays.ink38,
+  glass: overlays.white92,
+  glassSoft: overlays.white22,
+  black: identityColors.text,
+  white: identityColors.white,
+  transparent: overlays.ink00,
 } as const;
 
 export const radius = {
@@ -45,18 +66,18 @@ export const spacing = {
 
 /** Font family names loaded in App.tsx. */
 export const fonts = {
-  regular: 'NotoSansArabic_Brand',
-  medium: 'IBMPlexArabic_500Medium',
-  semibold: 'IBMPlexArabic_600SemiBold',
-  bold: 'IBMPlexArabic_700Bold',
+  regular: 'NotoSansArabic_400Regular',
+  medium: 'NotoSansArabic_500Medium',
+  semibold: 'NotoSansArabic_600SemiBold',
+  bold: 'NotoSansArabic_700Bold',
 } as const;
 
 /** Latin family used for the French (LTR) UI. */
 export const fontsLatin = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'BricolageGrotesque_Bold',
+  regular: 'BricolageGrotesque_400Regular',
+  medium: 'BricolageGrotesque_500Medium',
+  semibold: 'BricolageGrotesque_600SemiBold',
+  bold: 'BricolageGrotesque_700Bold',
 } as const;
 
 export type FontWeight = keyof typeof fonts;

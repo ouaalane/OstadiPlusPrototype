@@ -226,7 +226,7 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
                         key={c}
                         style={[
                           styles.qrCell,
-                          { backgroundColor: cell ? colors.ink : 'transparent' },
+                          { backgroundColor: cell ? colors.ink : colors.transparent },
                         ]}
                       />
                     ))}

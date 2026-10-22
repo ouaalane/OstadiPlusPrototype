@@ -117,6 +117,8 @@ export default function LibraryScreen() {
           <View style={[l.row, styles.searchBox]}>
             <Ionicons name="search" size={18} color={colors.muted} importantForAccessibility="no" />
             <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
               style={[
                 l.fieldInput,
                 { fontFamily: familyFor(lang, 'regular'), fontSize: 13.5, color: colors.ink },

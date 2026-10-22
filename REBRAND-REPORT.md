@@ -1,3 +1,5 @@
+> Historical first-pass report. Current corrections, font mapping and validation are in [REBRAND-REVIEW.md](./REBRAND-REVIEW.md).
+
 # Visual rebrand report
 
 Applied the supplied `oustadi-education-identity.zip` assets to the student app, teacher dashboard, and shared brand tokens. The package's documents were treated as reference material; the requested existing layouts and behavior were preserved.

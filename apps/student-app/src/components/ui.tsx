@@ -27,7 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { coverGradients, type Lang, type LessonKind } from '@ostadiplus/shared';
 import { LESSON_ICONS, lessonTint } from '../lib/lesson';
 
-import { colors, familyFor, fonts, radius, shadow, spacing, tracking } from '../theme';
+import { colors, overlays, familyFor, fonts, radius, shadow, spacing, tracking } from '../theme';
 import { coverAssets } from '../assets/covers';
 import { useI18n } from '../i18n/useI18n';
 
@@ -268,12 +268,12 @@ const BUTTON_VARIANTS: Record<
   ButtonVariant,
   { bg: string; fg: string; border: string; icon: string }
 > = {
-  primary: { bg: colors.brand, fg: colors.white, border: 'transparent', icon: colors.white },
-  accent: { bg: colors.accent, fg: colors.ink, border: 'transparent', icon: colors.ink },
-  soft: { bg: colors.brandSoft, fg: colors.brand, border: 'transparent', icon: colors.brand },
+  primary: { bg: colors.brand, fg: colors.white, border: colors.transparent, icon: colors.white },
+  accent: { bg: colors.accent, fg: colors.ink, border: colors.transparent, icon: colors.ink },
+  soft: { bg: colors.brandSoft, fg: colors.brand, border: colors.transparent, icon: colors.brand },
   outline: { bg: colors.surface, fg: colors.ink, border: colors.line, icon: colors.ink },
-  ghost: { bg: 'transparent', fg: colors.brand, border: 'transparent', icon: colors.brand },
-  danger: { bg: colors.dangerSoft, fg: colors.danger, border: 'transparent', icon: colors.danger },
+  ghost: { bg: colors.transparent, fg: colors.brand, border: colors.transparent, icon: colors.brand },
+  danger: { bg: colors.dangerSoft, fg: colors.danger, border: colors.transparent, icon: colors.danger },
 };
 
 export function PrimaryButton({
@@ -368,10 +368,10 @@ export function IconButton({
 }) {
   const variants = {
     surface: { bg: colors.surface, border: colors.line, fg: colors.ink },
-    glass: { bg: colors.glass, border: 'transparent', fg: colors.ink },
-    onPhoto: { bg: colors.glassSoft, border: 'transparent', fg: colors.white },
-    plain: { bg: 'transparent', border: 'transparent', fg: colors.ink },
-    brand: { bg: colors.brand, border: 'transparent', fg: colors.white },
+    glass: { bg: colors.glass, border: colors.transparent, fg: colors.ink },
+    onPhoto: { bg: colors.glassSoft, border: colors.transparent, fg: colors.white },
+    plain: { bg: colors.transparent, border: colors.transparent, fg: colors.ink },
+    brand: { bg: colors.brand, border: colors.transparent, fg: colors.white },
   } as const;
   const v = variants[variant];
   return (
@@ -388,7 +388,7 @@ export function IconButton({
           height: size,
           borderRadius: size / 2,
           backgroundColor: v.bg,
-          borderWidth: v.border === 'transparent' ? 0 : 1,
+          borderWidth: v.border === colors.transparent ? 0 : 1,
           borderColor: v.border,
           alignItems: 'center',
           justifyContent: 'center',
@@ -479,7 +479,7 @@ export function Pill({
       style={[
         styles.pill,
         {
-          backgroundColor: onBrand ? 'transparent' : t.bg,
+          backgroundColor: onBrand ? colors.transparent : t.bg,
           paddingHorizontal: onBrand ? 0 : 9,
           flexDirection: rowDir,
         },
@@ -496,7 +496,7 @@ export function Pill({
 /** Solid blue status pill — the player's «NOW» marker. */
 export function Badge({ label, tone = 'brand' }: { label: string; tone?: 'brand' | 'dark' | 'success' }) {
   const bg =
-    tone === 'dark' ? 'rgba(41,30,43,0.62)' : tone === 'success' ? colors.success : colors.brand;
+    tone === 'dark' ? overlays.ink62 : tone === 'success' ? colors.success : colors.brand;
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
       <AppText size={11} weight="bold" tone="white" style={{ letterSpacing: 0.3 }}>
@@ -589,8 +589,8 @@ export function NoticeCard({
   const tones = {
     neutral: { bg: colors.surfaceAlt, border: colors.line, fg: colors.ink },
     brand: { bg: colors.brandSofter, border: colors.brandSoft, fg: colors.brand },
-    warning: { bg: colors.accentSoft, border: 'transparent', fg: colors.brand },
-    danger: { bg: colors.dangerSoft, border: 'transparent', fg: colors.danger },
+    warning: { bg: colors.accentSoft, border: colors.transparent, fg: colors.brand },
+    danger: { bg: colors.dangerSoft, border: colors.transparent, fg: colors.danger },
   } as const;
   const t = tones[tone];
   const rowDir = useRowDir();
@@ -739,13 +739,13 @@ export function CourseCover({
       <View style={[styles.cover, { height, overflow: 'hidden' }]}>
         <Image source={source} style={styles.absoluteImage} resizeMode="cover" />
         <LinearGradient
-          colors={['rgba(41,30,43,0.05)', 'rgba(41,30,43,0.38)']}
+          colors={[overlays.ink05, overlays.ink38]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
         <View style={pillRow}>
-          <View style={[styles.pill, { backgroundColor: 'rgba(255,255,255,0.24)' }]}>
+          <View style={[styles.pill, { backgroundColor: overlays.white24 }]}>
             <AppText size={11.5} weight="medium" tone="white">
               {subject}
             </AppText>
@@ -767,7 +767,7 @@ export function CourseCover({
       <View style={styles.coverBubbleLarge} />
       <View style={styles.coverBubbleSmall} />
       <View style={pillRow}>
-        <View style={[styles.pill, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
+        <View style={[styles.pill, { backgroundColor: overlays.white22 }]}>
           <AppText size={11.5} weight="medium" tone="white">
             {subject}
           </AppText>
@@ -970,7 +970,7 @@ export function Thumb({
       )}
       {overlay ? (
         <LinearGradient
-          colors={['rgba(41,30,43,0.0)', 'rgba(41,30,43,0.34)']}
+          colors={[overlays.ink00, overlays.ink34]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -1180,6 +1180,8 @@ export function LabeledField({
           </AppText>
         ) : null}
         <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
           ref={inputRef}
           style={[
             styles.fieldInput,
@@ -1380,6 +1382,8 @@ export function SelectField({
             <View style={[styles.field, styles.selectSearch, { flexDirection: rowDir }]}>
               <Ionicons name="search-outline" size={18} color={colors.muted} importantForAccessibility="no" />
               <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
                 value={query}
                 onChangeText={setQuery}
                 placeholder={searchPlaceholder}
@@ -1522,6 +1526,8 @@ export function CodeInput({
         );
       })}
       <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
         ref={inputRef}
         value={value}
         onChangeText={(t) => onChange(t.replace(/[^0-9]/g, '').slice(0, length))}
@@ -1649,7 +1655,7 @@ export function OptionRow({
         ? colors.danger
         : state === 'picked'
           ? colors.brand
-          : 'transparent';
+          : colors.transparent;
   const rowDir = useRowDir();
   return (
     <Pressable
@@ -1916,7 +1922,7 @@ const styles = StyleSheet.create({
     width: 108,
     height: 108,
     borderRadius: 54,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: overlays.white18,
   },
   coverBubbleSmall: {
     position: 'absolute',
@@ -1925,14 +1931,14 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: overlays.white10,
   },
   thumbBubbleLarge: {
     position: 'absolute',
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: overlays.white16,
     top: -40,
     start: -30,
   },
@@ -1941,7 +1947,7 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: 'rgba(255,255,255,0.09)',
+    backgroundColor: overlays.white09,
     bottom: -30,
     end: -20,
   },
@@ -2071,7 +2077,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl,
     minHeight: 48,
     backgroundColor: colors.surfaceAlt,
-    borderColor: 'transparent',
+    borderColor: colors.transparent,
   },
   selectList: { maxHeight: 400 },
   selectGroup: {
@@ -2113,7 +2119,7 @@ const styles = StyleSheet.create({
     start: 0,
     end: 0,
     opacity: 0.02,
-    color: 'transparent',
+    color: colors.transparent,
   },
 
   stepperRow: { flexDirection: 'row', gap: 6 },

@@ -1,3 +1,4 @@
+import { overlays } from '../theme';
 /**
  * VideoWatermark — moving ownership overlay for protected lessons.
  *
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
       low overall opacity the component applies. */
   text: {
     letterSpacing: 1.2,
-    textShadowColor: 'rgba(0,0,0,0.65)',
+    textShadowColor: overlays.ink65,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },

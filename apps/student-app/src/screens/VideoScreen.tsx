@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line,
   },
   tabItem: { gap: 8, alignItems: 'center' },
-  tabUnderline: { height: 2.5, width: '100%', borderRadius: 2, backgroundColor: 'transparent' },
+  tabUnderline: { height: 2.5, width: '100%', borderRadius: 2, backgroundColor: colors.transparent },
 
   panel: { marginTop: spacing.md },
 

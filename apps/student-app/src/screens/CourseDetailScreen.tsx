@@ -62,7 +62,7 @@ import { lessonRoute } from '../lib/lesson';
 import { coverAssets } from '../assets/covers';
 import { teacherPhotosFor } from '../assets/teacher-photos';
 import { useStore, type DownloadStatus } from '../store/StudentStore';
-import { colors, radius, spacing } from '../theme';
+import { colors, overlays, radius, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 type PageTab = 'sessions' | 'plus';
@@ -343,7 +343,7 @@ export default function CourseDetailScreen() {
             />
           )}
           <LinearGradient
-            colors={['rgba(41,30,43,0.18)', 'rgba(41,30,43,0.82)']}
+            colors={[overlays.ink18, overlays.ink82]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.heroArt}
@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
     height: 2.5,
     width: '100%',
     borderRadius: 2,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.transparent,
   },
   actionRow: {
     gap: spacing.md,

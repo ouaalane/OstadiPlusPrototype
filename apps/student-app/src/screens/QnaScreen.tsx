@@ -258,6 +258,8 @@ export default function QnaScreen() {
 
           <View style={[styles.composer, l.row]}>
             <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
               value={draft}
               onChangeText={(value) => {
                 setDraft(value);

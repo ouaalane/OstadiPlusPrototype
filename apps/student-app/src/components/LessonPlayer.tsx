@@ -49,7 +49,7 @@ import { formatDuration } from '@ostadiplus/shared';
 import { AppText, IconButton } from './ui';
 import VideoWatermark from './VideoWatermark';
 import { useI18n } from '../i18n/useI18n';
-import { colors, spacing } from '../theme';
+import { colors, overlays, spacing } from '../theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -448,12 +448,12 @@ function PlayerSurface({
       {/* Legibility scrims for the controls; never touchable. */}
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(41,30,43,0.5)', 'rgba(41,30,43,0)']}
+        colors={[overlays.ink50, overlays.ink00]}
         style={styles.topScrim}
       />
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(41,30,43,0)', 'rgba(41,30,43,0.68)']}
+        colors={[overlays.ink00, overlays.ink68]}
         style={styles.bottomScrim}
       />
 
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowColor: overlays.ink60,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   controlButton: {
-    backgroundColor: 'rgba(41,30,43,0.42)',
+    backgroundColor: overlays.ink42,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(41,30,43,0.55)',
+    backgroundColor: overlays.ink55,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
   scrubBg: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.32)',
+    backgroundColor: overlays.white32,
   },
   scrubFill: {
     position: 'absolute',
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
 
   errorLayer: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(41,30,43,0.86)',
+    backgroundColor: overlays.ink86,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
@@ -841,7 +841,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: overlays.white18,
     borderRadius: 999,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

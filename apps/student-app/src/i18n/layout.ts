@@ -14,7 +14,7 @@
 import { useMemo } from 'react';
 import { ViewStyle, TextStyle } from 'react-native';
 
-import { colors, spacing, radius } from '../theme';
+import { colors, overlays, spacing, radius } from '../theme';
 
 /** Styles that flip between RTL and LTR. */
 export interface LayoutStyles {
@@ -105,7 +105,7 @@ export function buildLayout(lang: 'ar' | 'fr'): LayoutStyles {
       flexDirection: dir,
       alignItems: 'center',
       gap: spacing.sm,
-      backgroundColor: 'rgba(255,255,255,0.16)',
+      backgroundColor: overlays.white16,
       borderRadius: radius.md,
       paddingHorizontal: spacing.sm + 2,
       paddingVertical: 8,
@@ -114,7 +114,7 @@ export function buildLayout(lang: 'ar' | 'fr'): LayoutStyles {
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: 'rgba(255,255,255,0.24)',
+      backgroundColor: overlays.white24,
       alignItems: 'center',
       justifyContent: 'center',
     },

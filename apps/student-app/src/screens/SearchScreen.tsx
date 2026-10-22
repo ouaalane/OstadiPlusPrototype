@@ -144,6 +144,8 @@ export default function SearchScreen() {
         <View style={[styles.field, l.row]}>
           <Ionicons name="search" size={19} color={colors.muted} importantForAccessibility="no" />
           <TextInput
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
             value={query}
             onChangeText={setQuery}
             placeholder={rtl ? 'ابحث عن دورة، مادة، أو أستاذ…' : 'Rechercher un cours, une matière…'}

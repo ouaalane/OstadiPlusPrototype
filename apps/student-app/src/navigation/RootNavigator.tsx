@@ -82,7 +82,7 @@ function Tabs() {
       initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
+        tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: [
           styles.tabBar,
@@ -187,7 +187,7 @@ function AuthNavigator() {
 }
 
 export default function RootNavigator() {
-  const { hydrated, me } = useStore();
+  const { hydrated, me, lang } = useStore();
   /* The launch image runs once per app start, in front of the navigators.
      Hydration happens concurrently behind it, so the splash simply waits for
      the stored session and then stands down — by the time it finishes, the app
@@ -200,7 +200,20 @@ export default function RootNavigator() {
 
   const theme = {
     ...DefaultTheme,
-    colors: { ...DefaultTheme.colors, background: colors.canvas },
+    colors: {
+      primary: colors.brand,
+      background: colors.canvas,
+      card: colors.surface,
+      text: colors.ink,
+      border: colors.line,
+      notification: colors.accent,
+    },
+    fonts: {
+      regular: { ...DefaultTheme.fonts.regular, fontFamily: familyFor(lang, 'regular') },
+      medium: { ...DefaultTheme.fonts.medium, fontFamily: familyFor(lang, 'medium') },
+      bold: { ...DefaultTheme.fonts.bold, fontFamily: familyFor(lang, 'bold') },
+      heavy: { ...DefaultTheme.fonts.heavy, fontFamily: familyFor(lang, 'bold') },
+    },
   };
 
   return (
