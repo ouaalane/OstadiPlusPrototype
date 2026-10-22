@@ -36,10 +36,8 @@ import {
   AppText,
   Card,
   CourseCover,
-  Eyebrow,
   IconButton,
   LessonGlyph,
-  MetricChip,
   PlayGlyph,
   ProgressBar,
   SearchBar,
@@ -51,6 +49,7 @@ import { resolvePoster } from '../media/lookup';
 import { lessonKindOf, lessonMetaText, lessonRoute } from '../lib/lesson';
 import { useStore } from '../store/StudentStore';
 import PendingEnrollment from '../components/PendingEnrollment';
+import BrandWordmark from '../components/BrandWordmark';
 import { colors, radius, shadow, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { useScrollToTopOnTabPress } from '../navigation/useScrollToTopOnTabPress';
@@ -108,6 +107,25 @@ const MONTHS = {
 function formatToday(lang: 'ar' | 'fr'): string {
   const now = new Date();
   return `${WEEKDAYS[lang][now.getDay()]} ${now.getDate()} ${MONTHS[lang][now.getMonth()]}`;
+}
+
+/** Header-only compact metrics keep labels readable on narrow phones. */
+function HeaderMetric({ icon, value, label }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: string;
+  label: string;
+}) {
+  const { lang } = useI18n();
+  const l = useLayout(lang);
+  return (
+    <View style={styles.headerMetric}>
+      <View style={[l.row, styles.metricValueRow]}>
+        <Ionicons name={icon} size={15} color={colors.brand} importantForAccessibility="no" />
+        <AppText size={14} weight="bold" tone="brand" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{value}</AppText>
+      </View>
+      <AppText size={10.5} tone="muted" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{label}</AppText>
+    </View>
+  );
 }
 
 /**
@@ -316,25 +334,13 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      {/* ---- white header ---- */}
+      {/* Brand masthead, then a personal welcome in the supplied lilac. */}
       <SafeAreaView edges={['top']} style={styles.headerSafe}>
-        <View style={[styles.headerTop, l.rowTop]}>
-          <View style={{ flexShrink: 1, gap: 1 }}>
-            <Eyebrow>{formatToday(lang)}</Eyebrow>
-            <View style={l.row}>
-              <AppText size={13} tone="muted">
-                {t('welcome_user')} 👋
-              </AppText>
-            </View>
-            <AppText size={21} weight="bold" tone="ink" numberOfLines={1}>
-              {me?.fullName ?? ''}
-            </AppText>
-            <AppText size={12.5} tone="muted" numberOfLines={1}>
-              {[me?.level, state.teacher?.centerName].filter(Boolean).join(' · ')}
-            </AppText>
+        <View style={[styles.headerTop, l.rowBetween]}>
+          <View style={styles.wordmark}>
+            <BrandWordmark size={24} lang={lang} />
           </View>
-
-          <View style={l.row}>
+          <View style={[styles.headerActions, l.row]}>
             <View>
               <IconButton
                 icon="notifications-outline"
@@ -360,19 +366,38 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <View style={styles.welcomePanel}>
+          <View style={[l.rowBetween, styles.welcomeTop]}>
+            <View style={[l.row, styles.welcomeLabel]}>
+              <View style={styles.welcomeDot} />
+              <AppText size={12} weight="semibold" tone="brand">{t('welcome_user')}</AppText>
+            </View>
+            <AppText size={10.5} tone="muted" numberOfLines={1} style={styles.date}>{formatToday(lang)}</AppText>
+          </View>
+          <AppText size={24} weight="bold" tone="brand" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={l.text}>
+            {me?.fullName ?? ''}
+          </AppText>
+          <View style={[l.row, styles.welcomeMeta]}>
+            <Ionicons name="school-outline" size={14} color={colors.brand} importantForAccessibility="no" />
+            <AppText size={11.5} tone="muted" numberOfLines={1} style={[styles.metaText, l.text]}>
+              {[me?.level, state.teacher?.centerName].filter(Boolean).join(' · ')}
+            </AppText>
+          </View>
+        </View>
+
         {/* Quick metrics */}
         <View style={[l.row, styles.metricRow]}>
-          <MetricChip
+          <HeaderMetric
             icon="checkmark-done-outline"
             value={`${metrics.completed}`}
             label={rtl ? 'درس مكتمل' : 'Terminées'}
           />
-          <MetricChip
+          <HeaderMetric
             icon="play-circle-outline"
             value={`${metrics.minutes} ${rtl ? 'د' : 'min'}`}
             label={rtl ? 'مشاهدة' : 'Regardé'}
           />
-          <MetricChip
+          <HeaderMetric
             icon="library-outline"
             value={`${metrics.courses}`}
             label={rtl ? 'دورة' : 'Cours'}
@@ -609,13 +634,33 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
     backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
   },
   headerTop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
   },
+  wordmark: { width: 150, maxWidth: '54%' },
+  headerActions: { gap: spacing.sm, flexShrink: 0 },
+  welcomePanel: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.xl,
+    backgroundColor: colors.brandSofter,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+    gap: spacing.xs,
+  },
+  welcomeTop: { gap: spacing.sm },
+  welcomeLabel: { gap: 6, flexShrink: 1 },
+  welcomeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
+  date: { flexShrink: 1 },
+  welcomeMeta: { gap: 6 },
+  metaText: { flex: 1, minWidth: 0 },
   avatar: {
     width: 44,
     height: 44,
@@ -636,7 +681,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.surface,
   },
-  metricRow: { gap: spacing.sm, marginTop: spacing.lg },
+  metricRow: { gap: spacing.sm, marginTop: spacing.md },
+  headerMetric: {
+    flex: 1, minWidth: 0, alignItems: 'center', gap: 2,
+    paddingHorizontal: 6, paddingVertical: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line,
+    borderRadius: radius.md, backgroundColor: colors.surface,
+  },
+  metricValueRow: { alignItems: 'center', justifyContent: 'center', gap: 6 },
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
