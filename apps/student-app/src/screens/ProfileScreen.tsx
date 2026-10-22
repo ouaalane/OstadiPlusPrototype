@@ -12,7 +12,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
+import { Notifications } from '../notifications/client';
 
 import { allLessons, lessonProgress, relativeTime, shortDate } from '@ostadiplus/shared';
 import { useNavigation } from '@react-navigation/native';
@@ -123,8 +123,9 @@ export default function ProfileScreen() {
   // toggle rows (visual)
   /* Not a visual toggle any more: this is the real device permission, read from
      the OS. The app cannot flip it itself, so tapping opens system settings. */
-  const [notificationsOn, setNotificationsOn] = useState(true);
+  const [notificationsOn, setNotificationsOn] = useState(Boolean(Notifications));
   useEffect(() => {
+    if (!Notifications) return;
     let alive = true;
     Notifications.getPermissionsAsync()
       .then(({ granted }) => {
@@ -347,6 +348,17 @@ export default function ProfileScreen() {
               notificationsOn ? 'Activées' : 'Désactivées',
             )}
             onPress={async () => {
+              if (!Notifications) {
+                Alert.alert(
+                  pick(lang, 'الإشعارات غير متاحة', 'Notifications indisponibles'),
+                  pick(
+                    lang,
+                    'يمكنك تجربة التطبيق هنا. إشعارات الهاتف تحتاج نسخة تطوير أو النسخة المثبتة من التطبيق.',
+                    'Vous pouvez tester l’application ici. Les notifications nécessitent une version de développement ou l’application installée.',
+                  ),
+                );
+                return;
+              }
               if (notificationsOn) {
                 /* Android keeps the switch in system settings. */
                 await Linking.openSettings().catch(() => undefined);

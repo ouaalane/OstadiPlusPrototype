@@ -13,14 +13,14 @@ import { colors } from '../theme';
  */
 
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import { Notifications } from './client';
 import type { Lang, NewLessonNotificationPayload } from '@ostadiplus/shared';
 
 /** Android channel for lesson alerts (the student can tune it in system settings). */
 export const LESSON_CHANNEL = 'lessons';
 
 /** Shows an alert while the app is open, instead of swallowing it. */
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
     shouldSetBadge: false,
@@ -36,6 +36,7 @@ Notifications.setNotificationHandler({
  * Resolves to whether the student has allowed notifications.
  */
 export async function prepareLessonAlertsAsync(): Promise<boolean> {
+  if (!Notifications) return false;
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(LESSON_CHANNEL, {
       name: 'الدروس الجديدة · Nouveaux cours',
@@ -61,6 +62,7 @@ export async function presentLessonAlertAsync(
   alert: NewLessonNotificationPayload & { notificationId?: string },
   lang: Lang,
 ): Promise<void> {
+  if (!Notifications) return;
   const rtl = lang === 'ar';
 
   /* Flat string data — the same keys a push payload would carry, and what the

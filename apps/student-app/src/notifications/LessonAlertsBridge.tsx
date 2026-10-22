@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
+import { Notifications } from './client';
 import {
   allLessons,
   courseTeacher,
@@ -133,6 +133,7 @@ export default function LessonAlerts() {
 
   /* Taps, including the one that launched the app. */
   useEffect(() => {
+    if (!Notifications) return;
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const target = alertFromNotificationData(response.notification.request.content.data);
       if (target) open(target);
