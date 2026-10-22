@@ -10,7 +10,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
-  Image,
+  Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -23,14 +23,16 @@ import { allLessons } from '@ostadiplus/shared';
 
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
-import { AppText, Pill, PrimaryButton, TopBar } from '../components/ui';
+import { AppText, IconButton, Pill, PrimaryButton, TopBar } from '../components/ui';
+import ZoomablePdfPage from '../components/ZoomablePdfPage';
+import { clampPdfTransform, scalePdfTransform, PDF_INITIAL_TRANSFORM, PDF_MIN_ZOOM, PDF_MAX_ZOOM, PDF_ZOOM_STEP } from '../lib/pdf-zoom';
 import VideoWatermark from '../components/VideoWatermark';
 import { localFallbackCode } from '../lib/watermark';
 import { requestDocumentGrant, WATERMARK_ALLOW_OFFLINE_FALLBACK, type PlaybackGrant } from '../lib/watermark-api';
 import { lessonRoute } from '../lib/lesson';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
-import { colors, radius, spacing } from '../theme';
+import { colors, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 export default function PdfScreen() {
@@ -45,6 +47,7 @@ export default function PdfScreen() {
   const listRef = useRef<FlatList<number>>(null);
   const [page, setPage] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [zoom, setZoom] = useState(PDF_INITIAL_TRANSFORM);
 
   const found = React.useMemo(() => {
     for (const course of state.courses) {
@@ -113,6 +116,12 @@ export default function PdfScreen() {
   const next = lessons[lessons.findIndex((l) => l.id === lesson.id) + 1];
 
   const pageWidth = width - spacing.lg * 2;
+  const zoomFrame = { width: pageWidth, height: Math.max(0, viewportHeight - spacing.md * 2) };
+  const transform = clampPdfTransform(zoom, zoomFrame);
+  const changeZoom = (step: number) => setZoom((value) => {
+    const start = clampPdfTransform(value, zoomFrame);
+    return scalePdfTransform(start, start.scale + step, zoomFrame);
+  });
 
   const openNext = () => {
     if (!next) return navigation.goBack();
@@ -128,9 +137,24 @@ export default function PdfScreen() {
           title={lesson.title}
           bordered={false}
         />
-        <AppText size={11.5} tone="muted" style={styles.pageCaption}>
-          {rtl ? `صفحة ${page + 1} من ${pages.length}` : `Page ${page + 1} sur ${pages.length}`}
-        </AppText>
+        <View style={[l.rowBetween, styles.readerTools]}>
+          <AppText size={11.5} tone="muted" style={{ flex: 1 }}>
+            {rtl ? `صفحة ${page + 1} من ${pages.length}` : `Page ${page + 1} sur ${pages.length}`}
+          </AppText>
+          <View style={[l.row, { alignItems: 'center', gap: spacing.xs }]}>
+            <IconButton icon="remove" size={32} label={rtl ? 'تصغير PDF' : 'Réduire le PDF'} disabled={transform.scale <= PDF_MIN_ZOOM} onPress={() => changeZoom(-PDF_ZOOM_STEP)} />
+            <Pressable
+              onPress={() => setZoom(PDF_INITIAL_TRANSFORM)}
+              accessibilityRole="button"
+              accessibilityLabel={rtl ? 'إرجاع الزوم إلى 100%' : 'Rétablir le zoom à 100%'}
+              hitSlop={6}
+              style={styles.zoomReset}
+            >
+              <AppText lang="fr" size={12} weight="bold" tone="brand">{Math.round(transform.scale * 100)}%</AppText>
+            </Pressable>
+            <IconButton icon="add" size={32} label={rtl ? 'تكبير PDF' : 'Agrandir le PDF'} disabled={transform.scale >= PDF_MAX_ZOOM} onPress={() => changeZoom(PDF_ZOOM_STEP)} />
+          </View>
+        </View>
       </View>
 
       <View
@@ -143,11 +167,15 @@ export default function PdfScreen() {
           keyExtractor={(item, index) => `${lesson.id}-${index}`}
           horizontal
           pagingEnabled
+          scrollEnabled={transform.scale === PDF_MIN_ZOOM}
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={0}
           onMomentumScrollEnd={(event) => {
             const nextIndex = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
-            if (nextIndex >= 0 && nextIndex < pages.length) setPage(nextIndex);
+            if (nextIndex >= 0 && nextIndex < pages.length && nextIndex !== page) {
+              setPage(nextIndex);
+              setZoom(PDF_INITIAL_TRANSFORM);
+            }
           }}
           getItemLayout={(_, index) => ({
             length: pageWidth,
@@ -155,13 +183,7 @@ export default function PdfScreen() {
             index,
           })}
           renderItem={({ item }) => (
-            <View style={{ width: pageWidth, height: viewportHeight, paddingHorizontal: spacing.lg }}>
-              <Image
-                source={item}
-                style={[styles.page, { width: pageWidth, height: Math.max(0, viewportHeight - spacing.md * 2) }]}
-                resizeMode="contain"
-              />
-            </View>
+            <ZoomablePdfPage source={item} width={pageWidth} height={viewportHeight} transform={transform} onTransform={setZoom} />
           )}
           style={{ flex: 1, backgroundColor: colors.surfaceAlt }}
         />
@@ -204,13 +226,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line,
     paddingBottom: spacing.sm,
   },
-  pageCaption: { textAlign: 'center', paddingHorizontal: spacing.lg },
-  page: {
-    height: '100%',
-    borderRadius: radius.sm,
-    backgroundColor: colors.white,
-    marginVertical: spacing.md,
-  },
+  readerTools: { alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.sm },
+  zoomReset: { minWidth: 48, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
   footer: {
     gap: spacing.md,
     padding: spacing.lg,

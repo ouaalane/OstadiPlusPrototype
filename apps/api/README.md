@@ -64,7 +64,10 @@ PDF in the requested course. The existing ledger is reused: its legacy
 
 The app overlays this code across the PDF viewport, so it stays visible while
 paging and moves using the video watermark engine. Dark ink is used over the
-white document. It does not rewrite/export a permanently stamped PDF file.
+white document. The reader supports 100–400% pinch zoom, one-finger pan while
+zoomed, plus/minus controls, and tapping the percentage to reset. Return to 100%
+to swipe between pages. Zooming the page does not scale or hide the watermark.
+It does not rewrite/export a permanently stamped PDF file.
 The overlay does not receive touches or expose student names/phone numbers.
 
 Like the existing video demo, disconnected operation permits unregistered local
