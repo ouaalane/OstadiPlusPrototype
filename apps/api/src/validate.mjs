@@ -22,24 +22,24 @@ import {
  * @returns `{ ok: true, student, course, lesson }` or
  *          `{ ok: false, status, error }` ready to send as the response.
  */
-export function validatePlayback({ studentId, courseId, videoId }) {
-  return validateLessonAccess({ studentId, courseId, lessonId: videoId }, 'video');
+export function validatePlayback({ studentId, courseId, videoId }, state = DEMO_STATE) {
+  return validateLessonAccess({ studentId, courseId, lessonId: videoId }, 'video', state);
 }
 
-export function validateDocument({ studentId, courseId, documentId }) {
-  return validateLessonAccess({ studentId, courseId, lessonId: documentId }, 'pdf');
+export function validateDocument({ studentId, courseId, documentId }, state = DEMO_STATE) {
+  return validateLessonAccess({ studentId, courseId, lessonId: documentId }, 'pdf', state);
 }
 
-function validateLessonAccess({ studentId, courseId, lessonId }, kind) {
-  const student = DEMO_STATE.students.find((s) => s.id === studentId);
+function validateLessonAccess({ studentId, courseId, lessonId }, kind, state) {
+  const student = state.students.find((s) => s.id === studentId);
   if (!student) return { ok: false, status: 403, error: 'unknown-student' };
 
-  const course = findCourse(DEMO_STATE, courseId);
+  const course = findCourse(state, courseId);
   if (!course || course.status !== 'published') {
     return { ok: false, status: 404, error: 'unknown-course' };
   }
 
-  const enrolled = DEMO_STATE.enrollments.some(
+  const enrolled = state.enrollments.some(
     (e) =>
       e.studentId === studentId &&
       e.courseId === courseId &&
@@ -61,10 +61,10 @@ function validateLessonAccess({ studentId, courseId, lessonId }, kind) {
  * (student identity), what (course + lesson), when (createdAt) and from
  * which session/device the leaked code was issued.
  */
-export function resolveWatermarkRecord(record) {
+export function resolveWatermarkRecord(record, state = DEMO_STATE) {
   if (!record) return null;
-  const student = DEMO_STATE.students.find((s) => s.id === record.studentId) ?? null;
-  const course = findCourse(DEMO_STATE, record.courseId) ?? null;
+  const student = state.students.find((s) => s.id === record.studentId) ?? null;
+  const course = findCourse(state, record.courseId) ?? null;
   const lesson = course
     ? (allLessons(course).find((l) => l.id === record.videoId) ?? null)
     : null;

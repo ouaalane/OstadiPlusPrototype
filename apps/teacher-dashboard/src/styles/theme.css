@@ -39,7 +39,7 @@
   --color-info-soft: #F1E9F4;
 
   /* Surfaces */
-  --color-canvas: #FFFFFF;
+  --color-canvas: #F1E9F4;
   --color-surface: #FFFFFF;
   --color-surface-alt: #F1E9F4;
 
@@ -388,3 +388,7 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Keep dense tables usable on phones without widening the page. */
+main { min-width: 0; }
+.input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }

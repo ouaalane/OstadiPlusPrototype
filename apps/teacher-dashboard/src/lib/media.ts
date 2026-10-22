@@ -1,10 +1,8 @@
+import { demoMediaUrl, uploadDemo } from './demo-sync';
 /**
- * Local media store for files the teacher uploads while using the dashboard.
- *
- * Bundled demo assets live under `/media/...`. Anything the teacher uploads in
- * the browser is kept in IndexedDB so it survives a page reload, and is played
- * back through an object URL. Uploaded files intentionally stay on the
- * teacher's device — see README → "Demo limitations".
+ * Demo uploads are persisted by the opt-in demo server and shared with mobile.
+ * IndexedDB retains a browser copy for the teacher's existing local library.
+ * Bundled sample media continues to live under `/media/...`.
  */
 
 const DB_NAME = 'ostadiplus-media';
@@ -85,15 +83,6 @@ export async function uploadObjectUrl(name: string): Promise<string | null> {
 /* Upload helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-function sanitizeFileName(raw: string): string {
-  return raw
-    .normalize('NFKD')
-    .replace(/[^\w.\-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase();
-}
-
 export function readVideoDuration(objectUrl: string): Promise<number> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
@@ -129,7 +118,6 @@ export interface PreparedUpload {
 export async function prepareUpload(file: File): Promise<PreparedUpload> {
   const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
   const kind: 'video' | 'pdf' = isPdf ? 'pdf' : 'video';
-  const name = sanitizeFileName(file.name) || `asset-${Date.now()}`;
   const url = URL.createObjectURL(file);
   let durationSec = 0;
   let pages = 0;
@@ -137,8 +125,10 @@ export async function prepareUpload(file: File): Promise<PreparedUpload> {
   else pages = await readPdfPages(file);
   URL.revokeObjectURL(url);
 
+  const shared = await uploadDemo(file);
+  const sharedName = shared.file;
   const asset: StoredAsset = {
-    name,
+    name: sharedName,
     blob: file,
     kind,
     sizeMb: Number((file.size / (1024 * 1024)).toFixed(1)),
@@ -147,9 +137,9 @@ export async function prepareUpload(file: File): Promise<PreparedUpload> {
     addedAt: new Date().toISOString(),
   };
   await putUpload(asset);
-  objectUrls.set(name, URL.createObjectURL(file));
+  objectUrls.set(sharedName, URL.createObjectURL(file));
   return {
-    name,
+    name: sharedName,
     kind,
     sizeMb: asset.sizeMb,
     durationSec,
@@ -164,6 +154,7 @@ export async function prepareUpload(file: File): Promise<PreparedUpload> {
 export type MediaKind = 'video' | 'poster' | 'doc';
 
 export function bundledMediaUrl(kind: MediaKind, file: string): string {
+  if (file.startsWith('/api/demo/') || /^https?:\/\//.test(file)) return demoMediaUrl(file);
   const folder = kind === 'video' ? 'videos' : kind === 'poster' ? 'posters' : 'docs';
   return `/media/${folder}/${file}`;
 }

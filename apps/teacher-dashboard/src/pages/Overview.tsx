@@ -7,6 +7,7 @@ import {
   courseDurationSec,
   countLessons,
   relativeTime,
+  isQuestionAnswered,
 } from '@ostadiplus/shared';
 import { CourseCover, EmptyState, Pill, StatCard } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
@@ -54,33 +55,9 @@ export default function Overview() {
 
   return (
     <>
-      {/* Stitch gradient hero */}
-      <section className="hero-gradient relative overflow-hidden rounded-2xl px-6 py-6 text-white sm:px-7 sm:py-7">
-        <span className="pointer-events-none absolute -start-10 -top-16 h-44 w-44 rounded-full bg-white/10" />
-        <span className="pointer-events-none absolute -end-14 -bottom-20 h-44 w-44 rounded-full bg-white/5" />
-
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm text-white/85">{today}</p>
-            <h1 className="mt-1 text-2xl font-bold text-white sm:text-[26px]">
-              {greeting}، {state.teacher.name}
-            </h1>
-            <p className="mt-1 text-sm text-white/85">
-              {state.teacher.centerName}، {state.teacher.centerCity}
-            </p>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className="btn bg-white text-brand-dark hover:bg-white/90"
-                onClick={() => navigate('/courses?action=new')}
-              >
-                <Plus size={17} />
-                إنشاء دورة
-              </button>
-            </div>
-          </div>
-        </div>
+      <section className="mb-6 grid gap-5 rounded-3xl border border-line bg-white p-6 sm:p-8 lg:grid-cols-[1fr_auto]">
+        <div><p className="text-xs font-semibold text-muted">{today}</p><p className="mt-3 text-xs font-bold text-brand">إدارة التعلّم · oustadi plus</p><h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">{greeting}، {state.teacher.name}</h1><p className="mt-3 max-w-xl text-sm text-muted">محتوى منظّم، تواصل أقرب، وتقدّم واضح. كل ما يحتاجه تلاميذك من مكان واحد.</p><p className="mt-2 text-xs text-muted">{state.teacher.centerName} · {state.teacher.centerCity}</p></div>
+        <div className="flex flex-col justify-center gap-3"><button className="btn btn-primary" onClick={()=>navigate('/courses?action=new')}><Plus size={17}/>إنشاء دورة جديدة</button><Link className="btn btn-outline" to="/sync">مزامنة مع تطبيق التلميذ</Link></div>
       </section>
 
       {/* Metrics */}
@@ -106,6 +83,9 @@ export default function Overview() {
         />
       </section>
 
+      <section className="mt-5 grid gap-3 sm:grid-cols-3" aria-label="مهام اليوم">
+        {[{to:'/questions',label:'أسئلة بانتظار جواب',count:(state.questions??[]).filter(q=>!isQuestionAnswered(q)).length},{to:'/students',label:'طلبات وصول بانتظار التفعيل',count:pending},{to:'/courses',label:'دورات قيد التحضير',count:state.courses.filter(c=>c.status==='draft').length}].map(item=><Link key={item.to} to={item.to} className="card flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-raised"><span className="text-sm font-semibold">{item.label}</span><span className="num flex h-9 min-w-9 items-center justify-center rounded-xl bg-accent-soft px-2 font-bold text-brand">{item.count}</span></Link>)}
+      </section>
       <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-5">
         {/* Courses */}
         <section className="lg:col-span-3">

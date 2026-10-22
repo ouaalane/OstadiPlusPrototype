@@ -50,6 +50,7 @@ import {
 import { videoAssets } from '../assets/registry';
 
 import { applyProfileDetails, profileErrors, type ProfileDetails } from '../lib/profile-details';
+import { loadDemoEndpoint, demoAssetUrl } from '../lib/demo-sync';
 import { setLocalPassword } from '../lib/local-password';
 
 const STORAGE_KEY = 'ostadiplus.student.v3';
@@ -125,6 +126,7 @@ interface StoreValue {
   downloadStatusFor: (lessonId: string) => DownloadStatus | undefined;
   /** Replace only the signed-in student's local profile thumbnail. */
   setProfilePhoto: (photo: string) => void;
+  recordQuizResult: (lessonId: string, correct: number, total: number, elapsedSec: number) => void;
   updateProfile: (details: ProfileDetails) => boolean;
   /** Register a new student account (creates the student in the store). */
   registerStudent: (args: {
@@ -171,7 +173,8 @@ type Action =
   | { type: 'membership/respond'; membershipId: string; accept: boolean; studentId: string }
   | { type: 'student/register'; student: Student }
   | { type: 'student/photo'; studentId: string; photo: string }
-  | { type: 'student/profile'; studentId: string; details: ProfileDetails };
+  | { type: 'student/profile'; studentId: string; details: ProfileDetails }
+  | { type: 'quiz/result'; attempt: NonNullable<DemoState['quizAttempts']>[number] };
 
 const nowIso = () => new Date().toISOString();
 
@@ -326,6 +329,8 @@ function reducer(state: DemoState, action: Action): DemoState {
       });
       return { ...state, memberships, notifications };
     }
+
+    case 'quiz/result': return { ...state, quizAttempts: [...(state.quizAttempts ?? []), action.attempt] };
 
     case 'student/profile': {
       return { ...state, students: state.students.map(student => student.id === action.studentId
@@ -679,7 +684,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       if (existing?.status === 'downloading') return 'already_downloaded';
 
       // Find the lesson and its course.
-      let lesson: { file: string; kind: string; durationSec: number; sizeMb: number } | undefined;
+      let lesson: { file: string; kind: string; durationSec: number; sizeMb: number; allowDownload?: boolean } | undefined;
       let courseId: string | undefined;
       for (const course of state.courses) {
         const found = allLessons(course).find((l) => l.id === lessonId);
@@ -692,7 +697,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       if (!lesson) return 'error';
       // Only video lessons have a bundled file that can be saved for offline use
       // (text/quiz lessons carry no media; PDFs are bundled as page images).
-      if (lesson.kind !== 'video' || !lesson.file || !videoAssets[lesson.file]) {
+      if (lesson.allowDownload === false || lesson.kind !== 'video' || !lesson.file || (!videoAssets[lesson.file] && !lesson.file.startsWith('/api/demo/'))) {
         return 'error';
       }
 
@@ -748,8 +753,9 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         // Resolve the bundled asset to a file:// URI, then copy to downloads dir.
         // Static lookup from the generated registry — Metro cannot bundle
         // dynamic require() calls.
-        const asset = Asset.fromModule(videoAssets[lesson.file]);
-        await asset.downloadAsync();
+        const remote = lesson.file.startsWith('/api/demo/');
+        const asset = remote ? null : Asset.fromModule(videoAssets[lesson.file]);
+        if (asset) await asset.downloadAsync();
 
         // Ensure downloads directory exists.
         const dir = new Directory(Paths.cache, 'ostadiplus', 'downloads');
@@ -759,9 +765,9 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         }
 
         // Copy the downloaded asset to our downloads directory.
-        const srcFile = new File(asset.localUri ?? asset.uri);
         const destFile = new File(Paths.cache, 'ostadiplus', 'downloads', `${lessonId}.${ext}`);
-        await srcFile.copy(destFile);
+        if (remote) await File.downloadFileAsync(demoAssetUrl(lesson.file), destFile);
+        else if (asset) await new File(asset.localUri ?? asset.uri).copy(destFile);
 
         activeDownloads.current.delete(lessonId);
         stopTicker();
@@ -895,6 +901,12 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
     return true;
   }, [me, state.students]);
 
+  const recordQuizResult = useCallback((lessonId: string, correct: number, total: number, elapsedSec: number) => {
+    if (!me) return;
+    dispatch({ type: 'quiz/result', attempt: { id: newId('attempt'), studentId: me.id, lessonId, correct, total, elapsedSec, submittedAt: nowIso() } });
+  }, [me]);
+  useEffect(() => { void loadDemoEndpoint().catch(() => undefined); }, []);
+
   const value = useMemo<StoreValue>(
     () => ({
       hydrated,
@@ -939,6 +951,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       registerStudent,
       setProfilePhoto,
       updateProfile,
+      recordQuizResult,
     }),
     [
       hydrated,
@@ -983,6 +996,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       registerStudent,
       setProfilePhoto,
       updateProfile,
+      recordQuizResult,
     ],
   );
 

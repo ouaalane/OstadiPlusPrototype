@@ -1,3 +1,5 @@
+import type { ImageSourcePropType } from 'react-native';
+import { demoAssetUrl } from '../lib/demo-sync';
 /**
  * Resolve a lesson's `file` (e.g. `limits-intro.mp4`) to a bundled asset.
  *
@@ -8,7 +10,8 @@
 import { docPageAssets, posterAssets, videoAssets } from '../assets/registry';
 
 export type MediaResolution =
-  | { kind: 'video'; source: number; poster?: number; durationSec: number }
+  | { kind: 'video'; source: number | { uri: string }; poster?: ImageSourcePropType; durationSec: number }
+  | { kind: 'remote-pdf'; uri: string }
   | { kind: 'pages'; pages: number[] }
   | { kind: 'missing' };
 
@@ -16,14 +19,19 @@ export function resolveLessonMedia(
   file: string,
   kind: 'video' | 'pdf',
   durationSec: number,
+  thumbnailUrl?: string,
 ): MediaResolution {
+  if (file.startsWith('/api/demo/media/')) {
+    return kind === 'video' ? { kind: 'video', source: { uri: demoAssetUrl(file) }, poster: thumbnailUrl ? { uri: thumbnailUrl } : undefined, durationSec }
+      : { kind: 'remote-pdf', uri: demoAssetUrl('/api/demo/pdf-viewer?file=' + encodeURIComponent(file)) };
+  }
   if (kind === 'video') {
     const source = videoAssets[file];
     if (!source) return { kind: 'missing' };
     return {
       kind: 'video',
       source,
-      poster: posterAssets[file.replace(/\.mp4$/, '.jpg')],
+      poster: thumbnailUrl ? { uri: thumbnailUrl } : posterAssets[file.replace(/\.mp4$/, '.jpg')],
       durationSec,
     };
   }
@@ -37,7 +45,8 @@ export function resolveLessonMedia(
  * (Home «أحدث الدروس» and «الدروس» rows) so they show the real video cover
  * instead of the generic course gradient.
  */
-export function resolvePoster(file: string): number | undefined {
+export function resolvePoster(file: string, thumbnailUrl?: string): ImageSourcePropType | undefined {
+  if (thumbnailUrl) return { uri: thumbnailUrl };
   return posterAssets[file.replace(/\.(mp4|pdf)$/, '.jpg')];
 }
 

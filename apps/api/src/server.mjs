@@ -19,6 +19,7 @@
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { openDatabase } from './db.mjs';
+import { createDemoHub } from './demo-hub.mjs';
 import { CODE_LENGTH, isWatermarkCode } from './codes.mjs';
 import { findWatermarkByCode, issueWatermark } from './watermarks.mjs';
 import { resolveWatermarkRecord, validateDocument, validatePlayback } from './validate.mjs';
@@ -37,8 +38,10 @@ export function createWatermarkApi(options = {}) {
     hmacSecret = '',
     adminToken = 'dev-admin-token',
     logger = console,
+    demoDirectory = null,
   } = options;
 
+  const demoHub = demoDirectory ? createDemoHub(demoDirectory) : null;
   const db = openDatabase(dbPath, { logger });
 
   const server = createServer((req, res) => {
@@ -61,6 +64,7 @@ export function createWatermarkApi(options = {}) {
   async function handle(req, res) {
     const startedAt = Date.now();
     const url = new URL(req.url ?? '/', 'http://localhost');
+    if (demoHub && await demoHub.handle(req, res, url)) return;
     let status;
     let body;
 
@@ -118,8 +122,8 @@ export function createWatermarkApi(options = {}) {
     }
 
     const check = kind === 'pdf'
-      ? validateDocument({ studentId, courseId, documentId: lessonId })
-      : validatePlayback({ studentId, courseId, videoId: lessonId });
+      ? validateDocument({ studentId, courseId, documentId: lessonId }, demoHub?.state)
+      : validatePlayback({ studentId, courseId, videoId: lessonId }, demoHub?.state);
     if (!check.ok) return { status: check.status, body: { error: check.error } };
 
     const record = issueWatermark(db, {
@@ -161,7 +165,7 @@ export function createWatermarkApi(options = {}) {
     const record = findWatermarkByCode(db, code);
     if (!record) return { status: 404, body: { error: 'not-found' } };
 
-    return { status: 200, body: resolveWatermarkRecord(record) };
+    return { status: 200, body: resolveWatermarkRecord(record, demoHub?.state) };
   }
 
   return {

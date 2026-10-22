@@ -50,11 +50,12 @@ if (adminToken === 'dev-admin-token') {
   );
 }
 
-const api = createWatermarkApi({ dbPath, mode, hmacSecret, adminToken });
+const api = createWatermarkApi({ dbPath, mode, hmacSecret, adminToken, demoDirectory: args.demo ? join(dirname(dbPath), 'demo') : null });
 
 api.server.listen(port, host, () => {
   console.log(`[api] watermark API listening on http://${host}:${port} (mode=${mode})`);
   console.log(`[api] database: ${dbPath}`);
+  if (args.demo) console.log('[demo] shared local state and uploads enabled at /api/demo — trusted demo only');
   if (host === '0.0.0.0') {
     console.log(`[api] Android emulator reaches this server as http://10.0.2.2:${port}`);
   }
@@ -95,7 +96,7 @@ function printHelp() {
   console.log(`OstadiPlus watermark API
 
   node src/main.mjs [--port 8787] [--host 0.0.0.0] [--db <path>]
-                    [--mode random|hmac] [--admin-token <token>]
+                    [--mode random|hmac] [--admin-token <token>] [--demo]
 
 Endpoints:
   GET  /health

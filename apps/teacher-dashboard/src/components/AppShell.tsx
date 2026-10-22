@@ -8,6 +8,8 @@ import {
   MessageCircleQuestion,
   Plus,
   Settings,
+  RefreshCw,
+  ChartNoAxesCombined,
   Users,
   Video,
   X,
@@ -32,6 +34,8 @@ const NAV: NavItem[] = [
   { to: '/students', label: 'التلاميذ والاشتراكات', short: 'التلاميذ', icon: Users },
   { to: '/questions', label: 'الأسئلة والأجوبة', short: 'الأسئلة', icon: MessageCircleQuestion },
   { to: '/reception', label: 'استقبال التلاميذ', short: 'الاستقبال', icon: Layout },
+  { to: '/analytics', label: 'التقدّم والنتائج', short: 'النتائج', icon: ChartNoAxesCombined },
+  { to: '/sync', label: 'مزامنة التطبيق', short: 'المزامنة', icon: RefreshCw },
   { to: '/settings', label: 'الإعدادات', short: 'الإعدادات', icon: Settings },
 ];
 
@@ -39,8 +43,8 @@ function navClass(isActive: boolean) {
   return [
     'group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[15px] font-semibold transition-colors',
     isActive
-      ? 'bg-brand-soft text-brand-dark'
-      : 'text-muted hover:bg-surface-alt hover:text-ink',
+      ? 'bg-white text-brand shadow-card'
+      : 'text-white/75 hover:bg-white/10 hover:text-white',
   ].join(' ');
 }
 
@@ -49,10 +53,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="px-5 py-5">
-        <Wordmark size={34} subtitle="فضاء الأستاذ" />
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1.5">
-          <BadgeCheck size={14} className="text-success" />
-          <span className="text-[11px] font-bold text-success">منهاج وزارة التربية 2025</span>
+        <Wordmark size={38} tone="light" subtitle="فضاء الأستاذ · إدارة التعلّم" />
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5">
+          <BadgeCheck size={14} className="text-white/85" />
+          <span className="text-[11px] font-bold text-white/85">مركزك، دروسك، تلاميذك</span>
         </div>
       </div>
 
@@ -71,14 +75,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-line p-3">
-        <div className="flex items-center gap-3 rounded-xl bg-surface-alt px-3 py-3">
+      <div className="border-t border-white/15 p-3">
+        <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-3">
           <Avatar label={state.teacher.monogram} size={38} seed={2} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-bold text-ink">
+            <div className="truncate text-sm font-bold text-white">
               {state.teacher.name}
             </div>
-            <div className="truncate text-xs text-muted">
+            <div className="truncate text-xs text-white/70">
               {state.teacher.centerName}
             </div>
           </div>
@@ -109,7 +113,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 start-0 z-30 hidden w-[268px] border-e border-line bg-surface lg:block">
+      <aside className="fixed inset-y-0 start-0 z-30 hidden w-[268px] border-e border-white/15 bg-brand lg:block">
         <SidebarContent />
       </aside>
 
@@ -122,7 +126,7 @@ export function AppShell() {
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 animate-fade bg-[rgba(41,30,43,0.5)]"
           />
-          <div className="animate-rise absolute inset-y-0 start-0 w-[280px] border-e border-line bg-surface">
+          <div className="animate-rise absolute inset-y-0 start-0 w-[280px] border-e border-white/15 bg-brand">
             <button
               type="button"
               aria-label="إغلاق القائمة"
@@ -152,7 +156,7 @@ export function AppShell() {
       <main className="lg:ps-[268px]">
         {/* Desktop top bar */}
         <header className="sticky top-0 z-20 hidden items-center gap-3 border-b border-line bg-surface/95 px-6 py-3 backdrop-blur lg:flex">
-          <div className="flex-1" />
+          <div className="flex-1"><p className="text-sm font-bold text-brand">فضاء الأستاذ</p><p className="text-xs text-muted">{state.teacher.centerName}</p></div>
 
           <NavLink to="/courses?action=new" className="btn btn-primary btn-sm">
             <Plus size={16} />
@@ -183,8 +187,8 @@ export function AppShell() {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <ul className="mx-auto flex max-w-lg">
-          {NAV.map((item) => (
+        <ul className="mx-auto flex max-w-2xl">
+          {NAV.filter(item => ['/', '/courses', '/students', '/questions'].includes(item.to)).map((item) => (
             <li key={item.to} className="flex-1">
               <NavLink
                 to={item.to}

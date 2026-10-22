@@ -146,7 +146,7 @@ function LessonCard({
   const { lang, dir } = useI18n();
   const rtl = dir === 'rtl';
   const teacher = courseTeacher(state, course);
-  const poster = lesson.kind === 'video' ? resolvePoster(lesson.file) : undefined;
+  const poster = lesson.kind === 'video' ? resolvePoster(lesson.file, lesson.thumbnailUrl) : undefined;
   const meta = lessonMetaText(lesson, lang);
 
   return (

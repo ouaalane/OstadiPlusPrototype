@@ -8,7 +8,7 @@
  * Bilingual: strings are authored inline per language, layout flips RTL↔LTR.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -49,7 +49,7 @@ function formatClock(totalSec: number): string {
 export default function QuizScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Quiz'>>();
-  const { state, markCompleted, progressOf } = useStore();
+  const { state, markCompleted, progressOf, recordQuizResult } = useStore();
   const { lang, t, dir } = useI18n();
   const l = useLayout(lang);
   const rtl = dir === 'rtl';
@@ -69,6 +69,23 @@ export default function QuizScreen() {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [showBreakdown, setShowBreakdown] = useState(false);
+
+  const [remaining, setRemaining] = useState(0);
+  useEffect(() => {
+    const limit = found?.lesson.timeLimitSec ?? 0;
+    if (phase !== 'running' || !startedAt || !limit || !found) return;
+    const lesson = found.lesson;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((startedAt + limit * 1000 - Date.now()) / 1000));
+      setRemaining(left);
+      if (left === 0) {
+        const qs = lesson.questions ?? [];
+        const correct = qs.filter(q => (answers[q.id] ?? []).length === q.correctIds.length && q.correctIds.every(id => (answers[q.id] ?? []).includes(id))).length;
+        setElapsedSec(limit); setPhase('result'); markCompleted(lesson.id); recordQuizResult(lesson.id, correct, qs.length, limit);
+      }
+    };
+    tick(); const interval = setInterval(tick, 500); return () => clearInterval(interval);
+  }, [phase, startedAt, found, answers, markCompleted, recordQuizResult]);
 
   if (!found) return null;
   const { course, lesson } = found;
@@ -110,6 +127,7 @@ export default function QuizScreen() {
   };
 
   const start = () => {
+    setRemaining(lesson.timeLimitSec ?? 0);
     setStartedAt(Date.now());
     setElapsedSec(0);
     setIndex(0);
@@ -121,12 +139,14 @@ export default function QuizScreen() {
     setShowBreakdown(false);
     setPhase('result');
     markCompleted(lesson.id);
+    recordQuizResult(lesson.id, correctCount, questions.length, startedAt ? Math.round((Date.now() - startedAt) / 1000) : 0);
   };
 
   const retry = () => {
     setAnswers({});
     setShowBreakdown(false);
     setIndex(0);
+    setRemaining(lesson.timeLimitSec ?? 0);
     setStartedAt(Date.now());
     setElapsedSec(0);
     setPhase('running');
@@ -165,10 +185,10 @@ export default function QuizScreen() {
             <View style={styles.introStat}>
               <Ionicons name="time-outline" size={17} color={colors.brand} />
               <AppText size={14} weight="bold" tone="ink">
-                ~{estimatedMin} {rtl ? 'د' : 'min'}
+                {lesson.timeLimitSec ? formatClock(lesson.timeLimitSec) : `~${estimatedMin} ${rtl ? 'د' : 'min'}`}
               </AppText>
               <AppText size={11.5} tone="muted">
-                {rtl ? 'الوقت المتوقع' : 'durée estimée'}
+                {lesson.timeLimitSec ? (rtl ? 'الوقت المحدد' : 'temps limité') : (rtl ? 'الوقت المتوقع' : 'durée estimée')}
               </AppText>
             </View>
           </View>
@@ -370,7 +390,7 @@ export default function QuizScreen() {
                 : `Question ${index + 1} sur ${questions.length}`}
             </AppText>
             <AppText size={12.5} tone="muted">
-              ~{estimatedMin} {rtl ? 'د' : 'min'}
+              {lesson.timeLimitSec ? formatClock(phase === 'running' ? remaining : lesson.timeLimitSec) : `~${estimatedMin} ${rtl ? 'د' : 'min'}`}
             </AppText>
           </View>
         </View>

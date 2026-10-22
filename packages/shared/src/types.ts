@@ -107,6 +107,9 @@ export interface Center {
 /* ------------------------------------------------------------------ */
 
 export interface Lesson {
+  thumbnailUrl?: string;
+  timeLimitSec?: number;
+  allowDownload?: boolean;
   id: string;
   title: string;
   kind: LessonKind;
@@ -350,7 +353,18 @@ export interface LessonProgress {
 /* Root state                                                          */
 /* ------------------------------------------------------------------ */
 
+export interface QuizAttempt {
+  id: string;
+  studentId: string;
+  lessonId: string;
+  correct: number;
+  total: number;
+  elapsedSec: number;
+  submittedAt: string;
+}
+
 export interface DemoState {
+  quizAttempts?: QuizAttempt[];
   /** Increment when the shape changes to invalidate old localStorage. */
   version: number;
   /** Signed-in student used by the Android app (empty = not signed in). */

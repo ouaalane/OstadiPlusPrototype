@@ -1,0 +1,14 @@
+{
+  "timeLimitSec": 120,
+  "questions": [
+    {
+      "id": "question-1",
+      "prompt": "ما نتيجة 2 + 2؟",
+      "options": [
+        {"id": "a", "text": "4"},
+        {"id": "b", "text": "5"}
+      ],
+      "correctIds": ["a"]
+    }
+  ]
+}

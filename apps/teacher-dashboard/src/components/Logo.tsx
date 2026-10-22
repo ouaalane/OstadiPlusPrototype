@@ -11,13 +11,11 @@ export function LogoMark({
       alt=""
       width={size}
       height={size}
-      decoding="async"
       className={`shrink-0 object-contain ${className}`}
-      style={{ width: size, height: size }}
     />
   );
 }
-
+/** Exact supplied Latin wordmark; preserve its raised plus and original spacing. */
 export function Wordmark({
   size = 34,
   tone = 'dark',
@@ -27,30 +25,23 @@ export function Wordmark({
   tone?: 'dark' | 'light';
   subtitle?: string;
 }) {
-  const color = tone === 'light' ? '#FFFFFF' : 'var(--color-ink)';
-  const subColor = tone === 'light' ? 'rgba(255,255,255,0.75)' : 'var(--color-muted)';
   return (
-    <span className="flex min-w-0 items-center gap-2.5">
-      <LogoMark size={size} />
-      <span className="flex min-w-0 flex-col leading-none">
+    <span className="flex min-w-0 flex-col gap-2">
+      <img
+        src={
+          tone === 'light' ? '/brand/wordmark-white.png' : '/brand/wordmark.png'
+        }
+        alt="oustadi plus"
+        className="max-w-full object-contain"
+        style={{ width: size * 4.7, height: size * 1.2 }}
+      />
+      {subtitle ? (
         <span
-          className="truncate font-bold"
-          style={{
-            color,
-            fontSize: size * 0.5,
-            letterSpacing: '-0.01em',
-            fontFamily: "'Bricolage Grotesque', var(--font-num)",
-          }}
-          dir="ltr"
+          className={`text-xs font-semibold ${tone === 'light' ? 'text-white/75' : 'text-muted'}`}
         >
-          oustadi plus
+          {subtitle}
         </span>
-        {subtitle ? (
-          <span className="mt-1 truncate text-[11px] font-semibold" style={{ color: subColor }}>
-            {subtitle}
-          </span>
-        ) : null}
-      </span>
+      ) : null}
     </span>
   );
 }

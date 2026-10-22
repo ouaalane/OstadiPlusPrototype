@@ -27,6 +27,7 @@ import { AppText, IconButton, Pill, PrimaryButton, TopBar } from '../components/
 import ZoomablePdfPage from '../components/ZoomablePdfPage';
 import { clampPdfTransform, scalePdfTransform, PDF_INITIAL_TRANSFORM, PDF_MIN_ZOOM, PDF_MAX_ZOOM, PDF_ZOOM_STEP } from '../lib/pdf-zoom';
 import VideoWatermark from '../components/VideoWatermark';
+import RemotePdf from '../components/RemotePdf';
 import { localFallbackCode } from '../lib/watermark';
 import { requestDocumentGrant, WATERMARK_ALLOW_OFFLINE_FALLBACK, type PlaybackGrant } from '../lib/watermark-api';
 import { lessonRoute } from '../lib/lesson';
@@ -92,6 +93,13 @@ export default function PdfScreen() {
   if (!found) return null;
 
   const media = resolveLessonMedia(found.lesson.file, 'pdf', 0);
+  if (media.kind === 'remote-pdf') {
+    return <SafeAreaView style={styles.safe} edges={['top','bottom']}>
+      <TopBar title={found.lesson.title} onBack={() => navigation.goBack()} />
+      <View style={{flex:1}}><RemotePdf uri={media.uri}/><VideoWatermark code={watermarkCode} playing={focused} appearance="document"/></View>
+      <View style={{padding:spacing.lg}}><PrimaryButton label={rtl ? 'تمت قراءة المستند' : 'Document lu'} onPress={() => { markCompleted(found.lesson.id); navigation.goBack(); }}/></View>
+    </SafeAreaView>;
+  }
   if (media.kind !== 'pages') {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>

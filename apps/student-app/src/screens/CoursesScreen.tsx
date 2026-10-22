@@ -296,7 +296,7 @@ function LessonRow({
   const l = useLayout(lang);
   const { state, me } = useStore();
   const posterSource =
-    lesson.kind === 'video' ? resolvePoster(lesson.file) : undefined;
+    lesson.kind === 'video' ? resolvePoster(lesson.file, lesson.thumbnailUrl) : undefined;
   const progress = me ? lessonProgress(state, me.id, lesson.id) : null;
   const teacher = courseTeacher(state, course);
   const meta = lessonMetaText(lesson, lang);

@@ -15,6 +15,7 @@
  */
 import { Platform } from 'react-native';
 
+import { demoApiOverride } from './demo-sync';
 import { isWatermarkCode, localFallbackCode } from './watermark';
 
 declare const process: { env: Record<string, string | undefined> };
@@ -84,7 +85,7 @@ async function requestWatermarkGrant(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(`${WATERMARK_API_URL}${path}`, {
+      const response = await fetch(`${demoApiOverride() ?? WATERMARK_API_URL}${path}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...input, deviceInfo: deviceInfoString() }),

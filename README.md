@@ -13,31 +13,24 @@ One demo dataset, two finished-looking apps:
 | `apps/student-app` | React Native (Expo SDK 57) + TypeScript | تطبيق التلاميذ — Android, offline: splash, sign-in, home, my courses, course detail, video player, document reader, announcements, profile |
 | `apps/api` | Node ≥ 23.6, zero dependencies (`node:http`, `node:sqlite`) | Watermark API — issues + traces the per-playback video codes (optional at runtime) |
 
-Everything is **Arabic / RTL**, the brand name stays **OstadiPlus** in Latin script, and both apps read the same
-seed from `packages/shared` (`seed.ts` + `media-manifest.json`). No remote backend, no payments, no real
-accounts — changes are stored locally on each device. The only server-side piece is the local **watermark API**
-(`apps/api`): it hands the player a traceability code on every playback start and keeps the leak-tracing
-ledger; the apps still run fully offline without it.
+The dashboard is **Arabic / RTL**; the student app supports Arabic and French. The brand stays **oustadi plus** in Latin script. Both apps start from `packages/shared`. Run `npm run demo` for a connected local prototype with shared uploads, questions/replies, access, progress and quiz results. The existing `npm run api` mode provides only watermark issuance/tracing. See **[the dashboard guide](docs/TEACHER-DASHBOARD.md)** for the complete demo workflow and limitations.
 
 ---
 
 ## The demo story (≈60 seconds)
 
-1. **Teacher** — `npm run dashboard` → open **الدورات** → «تحضير الامتحان الوطني» (مسودة) → add a chapter + a
-   lesson from the media library → **نشر الدورة**.
-2. **Teacher** — **الطلاب** → expand a student (e.g. كنزيا باحاج) → **تفعيل** on the exam course. (Or add a new
-   student with «تفعيل الوصول فوراً».)
-3. **Teacher** — **الإعدادات** → «نسخ رمز المزامنة».
-4. **Student app** — launch → pick that student on the sign-in screen → the newly published course is there →
-   open a video lesson → watch, close, reopen: it resumes where you left → mark it complete.
-5. Back on the dashboard the same actions are already reflected in the shared dataset (after step 3 sync), and
-   the student's progress is saved on the phone.
+1. Run `npm run demo`, `npm run dashboard`, and the student app in separate terminals.
+2. Teacher — edit a lesson: upload a video/PDF, set the description and thumbnail, or author a timed quiz. Publish the lesson/course and activate the student's access.
+3. Teacher — **مزامنة التطبيق → نشر التحديثات للتطبيق**.
+4. Student — **الملف الشخصي → مزامنة المركز**; enter the server's LAN address and sync. Open the course, watch/read, take the quiz and ask a question.
+5. Student — sync again. Teacher — **جلب تحديثات التلاميذ**, inspect results, reply, and publish. Student syncs to receive the reply.
+
 
 ---
 
 ## Requirements
 
-* **Node.js 20+** (developed on Node 24), npm 11
+* **Node.js 24**, npm 11
 * For the Android app: **JDK 17**, **Android SDK** (API 35) and either an emulator or a connected device
   (`adb devices` must list it). On this machine:
   * JDK: `C:\Program Files\Android\Android Studio\jbr`
@@ -65,7 +58,7 @@ npm run dashboard
 npm run app          # then press "a" for Android, or scan the QR with Expo Go
 
 # 6. (optional) watermark API — the player asks it for a traceability code per playback
-npm run api          # http://localhost:8787 (the emulator reaches it as 10.0.2.2:8787)
+npm run demo         # http://localhost:8787; emulator: 10.0.2.2:8787; phone: computer LAN IP
 ```
 
 ### Run the Android app on an emulator
@@ -160,16 +153,6 @@ shots/                  screenshots taken while verifying the dashboard
 
 ---
 
-## What is deliberately out of scope
+## Prototype scope
 
-* **No backend / cloud / accounts** — auth is «pick your name», persistence is `localStorage` (web) and
-  `AsyncStorage` (Android); the two apps exchange data through the copy-paste sync payload.
-* **No payments** — enrollments are granted by the teacher (PRD ENR-03: cash is recorded at the centre and
-  never gates access in the prototype).
-* **No quizzes engine, certificates, analytics, multi-teacher roles, licences or anti-sharing** — the PRD
-  mentions them; the prototype stops at the interaction that proves the product.
-* **The phone's document reader shows rasterised PDF pages** (bundled PNGs) instead of a native PDF engine —
-  deterministic, offline, and identical on every device.
-* **RTL is laid out explicitly** (`flex-direction: row-reverse`, right-aligned text) rather than depending on
-  an `I18nManager` restart, so the first launch is already correct.
-* Uploaded files in the dashboard live in IndexedDB per browser and reset with «إعادة ضبط البيانات».
+See [the dashboard guide](docs/TEACHER-DASHBOARD.md) for controls, media limits, synchronization, quiz JSON format and validation. The local demo hub is unauthenticated and intended for trusted demonstrations; production accounts, cloud infrastructure, payments, tenant isolation and transcoding remain out of scope. Bundled sample PDFs remain offline page images; newly uploaded PDFs use a server-backed PDF.js reader. Existing manual payload export remains available, but uploaded media requires its originating demo server.

@@ -17,10 +17,12 @@
     "media": "node scripts/generate-media.mjs",
     "media:fetch": "node scripts/fetch-videos.mjs",
     "media:pdfs": "node scripts/media/import-pdfs.mjs",
-    "media:sync": "node scripts/sync-media.mjs"
+    "media:sync": "node scripts/sync-media.mjs",
+    "demo": "node apps/api/src/main.mjs --demo"
   },
   "devDependencies": {
     "pdf-to-img": "^7.0.1",
+    "pdfjs-dist": "^6.4.299",
     "playwright": "^1.64.0",
     "typescript": "^5.9.3"
   }

@@ -21,7 +21,6 @@ import {
   ListOrdered,
   MoreVertical,
   PenLine,
-  Play,
   Plus,
   Quote,
   Trash2,
@@ -55,6 +54,7 @@ import {
   Pill,
   Toggle,
 } from '@/components/ui';
+import { LessonDetails } from '@/components/LessonDetails';
 import { CoursePreview } from '@/components/CoursePreview';
 import { library, type LibraryItem } from '@/lib/library';
 import {
@@ -709,7 +709,7 @@ function LessonStudio({
   onBack: () => void;
   onOpenLesson: (chapterId: string, lessonId: string) => void;
 }) {
-  const { dispatch } = useStore();
+  const { dispatch, notify } = useStore();
   const chapter = findChapter(course, chapterId)?.chapter;
   const lesson = chapter?.lessons.find((l) => l.id === lessonId);
 
@@ -931,6 +931,7 @@ function LessonStudio({
             </button>
           ) : null}
 
+          <LessonDetails key={lesson.id} lesson={lesson} onSave={patch => {dispatch({type:'lesson/update',payload:{courseId:course.id,chapterId:chapter.id,lessonId:lesson.id,patch}}); notify('تم حفظ تفاصيل الدرس');}} />
           {/* Lesson settings */}
           <div className="rounded-2xl border border-line bg-surface p-4">
             <h3 className="text-sm font-bold text-ink">إعدادات الدرس</h3>
@@ -1076,35 +1077,9 @@ function LessonStudio({
 /* ------------------------------------------------------------------ */
 
 function VideoBlockPreview({ lesson }: { lesson: Lesson }) {
-  const item = library.find((entry) => entry.file === lesson.file);
-  const [failed, setFailed] = useState(false);
-  const poster = item?.poster;
-  return (
-    <div>
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-ink">
-        {poster && !failed ? (
-          <img
-            src={bundledMediaUrl('poster', poster)}
-            alt=""
-            className="h-full w-full object-cover opacity-90"
-            onError={() => setFailed(true)}
-          />
-        ) : null}
-        <span className="absolute inset-0 flex items-center justify-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 backdrop-blur">
-            <Play size={22} className="ms-0.5 text-white" fill="white" />
-          </span>
-        </span>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-        <span className="num font-semibold text-ink" dir="ltr">
-          {lesson.file || '—'}
-        </span>
-        <span className="num">{formatDuration(lesson.durationSec)}</span>
-        <span className="num">{formatSize(lesson.sizeMb)}</span>
-      </div>
-    </div>
-  );
+  const item = library.find(entry => entry.file === lesson.file);
+  const poster = lesson.thumbnailUrl || (item?.poster ? bundledMediaUrl('poster',item.poster) : undefined);
+  return <div><video controls playsInline preload="metadata" poster={poster} src={bundledMediaUrl('video',lesson.file)} className="aspect-video w-full rounded-xl bg-ink"/><div className="mt-3 flex gap-4 text-xs text-muted"><span>{formatDuration(lesson.durationSec)}</span><span>{formatSize(lesson.sizeMb)}</span></div></div>;
 }
 
 function PdfBlockPreview({ lesson }: { lesson: Lesson }) {
@@ -1121,6 +1096,7 @@ function PdfBlockPreview({ lesson }: { lesson: Lesson }) {
           <span className="num">{lesson.pages}</span> صفحات ·{' '}
           <span className="num">{formatSize(lesson.sizeMb)}</span>
         </div>
+        {lesson.file ? <a className="mt-2 inline-block text-sm font-bold text-brand underline" href={bundledMediaUrl('doc', lesson.file)} target="_blank" rel="noreferrer">فتح المستند ومعاينته</a> : null}
       </div>
     </div>
   );
@@ -1424,7 +1400,7 @@ function MediaDialog({
       if (mode === 'create' && !title.trim()) setTitle(stripExtension(file.name));
       notify('تم رفع الملف وقراءة بياناته');
     } catch {
-      notify('تعذّر رفع الملف من هذا المتصفح', 'error');
+      notify('تعذّر الرفع. شغّل خادم العرض وتحقق من رابطه وحجم الملف (100 MB).', 'error');
     } finally {
       window.clearInterval(timer);
       window.setTimeout(() => {
@@ -1436,7 +1412,7 @@ function MediaDialog({
 
   function save() {
     setTouched(true);
-    if (invalid || !selection) return;
+    if (uploading || invalid || !selection) return;
     const base = {
       kind: mediaKind,
       file: selection.file,
@@ -1483,7 +1459,7 @@ function MediaDialog({
           <button type="button" className="btn btn-outline" onClick={onClose}>
             إلغاء
           </button>
-          <button type="button" className="btn btn-primary" onClick={save}>
+          <button type="button" className="btn btn-primary" disabled={uploading || invalid} onClick={save}>
             {mode === 'create' ? 'إضافة الدرس' : 'حفظ'}
           </button>
         </>
@@ -1542,7 +1518,7 @@ function MediaDialog({
             </p>
             <p className="text-xs text-muted">
               {mediaKind === 'video'
-                ? 'الصيغ المدعومة: .mp4, .mov و.avi'
+                ? 'MP4، WebM، MOV · الحد الأقصى 100 MB'
                 : 'الصيغ المدعومة: .pdf'}
             </p>
             {selection?.source === 'upload' ? (
@@ -1610,7 +1586,7 @@ function MediaDialog({
         <input
           ref={fileRef}
           type="file"
-          accept={mediaKind === 'video' ? 'video/*,.mp4,.mov,.avi' : 'application/pdf,.pdf'}
+          accept={mediaKind === 'video' ? 'video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov' : 'application/pdf,.pdf'}
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -1815,6 +1791,27 @@ function QuizDialog({
       : [newQuestion()],
   );
   const [touched, setTouched] = useState(false);
+  const [timeLimit, setTimeLimit] = useState(lesson.timeLimitSec ?? 0);
+
+  async function importQuiz(file: File) {
+    try {
+      if (file.size > 1024 * 1024) throw new Error('large');
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.questions) || !data.questions.length || data.questions.length > 100) throw new Error('questions');
+      const imported: QuizQuestion[] = data.questions.map((q: QuizQuestion) => {
+        if (typeof q.prompt !== 'string' || q.prompt.trim().length < 2 || !Array.isArray(q.options) || q.options.length < 2 || !Array.isArray(q.correctIds) || !q.correctIds.length) throw new Error('question');
+        if (q.options.some(o => typeof o.id !== 'string' || typeof o.text !== 'string' || !o.text.trim()) || new Set(q.options.map(o => o.id)).size !== q.options.length || q.correctIds.some(id => !q.options.some(o => o.id === id))) throw new Error('answers');
+        return {...q, id: crypto.randomUUID(), options: q.options.map(o => ({...o})), correctIds: [...q.correctIds]};
+      });
+      if (data.timeLimitSec !== undefined && (!Number.isInteger(data.timeLimitSec) || data.timeLimitSec < 0 || data.timeLimitSec > 86400)) throw new Error('time');
+      setQuestions(imported);
+      setTimeLimit(data.timeLimitSec ?? 0);
+      setTouched(false);
+      notify('تم استيراد الأسئلة — راجعها ثم احفظ الاختبار');
+    } catch {
+      notify('ملف غير صالح. استعمل نموذج JSON الموضّح في دليل الداشبورد (حتى 100 سؤال، 1 MB).', 'error');
+    }
+  }
 
   function cloneQuestions(source: QuizQuestion[]): QuizQuestion[] {
     return source.map((question) => ({
@@ -1848,7 +1845,7 @@ function QuizDialog({
     const filled = question.options.filter((option) => option.text.trim());
     return {
       prompt: question.prompt.trim().length < 2,
-      answers: filled.length < 2 || question.correctIds.length === 0,
+      answers: filled.length < 2 || !question.correctIds.some(id => filled.some(option => option.id === id)),
     };
   }
 
@@ -1868,6 +1865,7 @@ function QuizDialog({
         lessonId: lesson.id,
         patch: {
           kind: 'quiz',
+          timeLimitSec: timeLimit,
           file: '',
           durationSec: 0,
           pages: 0,
@@ -1876,6 +1874,7 @@ function QuizDialog({
           questions: questions.map((question) => ({
             ...question,
             prompt: question.prompt.trim(),
+            correctIds: question.correctIds.filter(id => question.options.some(option => option.id === id && option.text.trim())),
             options: question.options
               .filter((option) => option.text.trim())
               .map((option) => ({ ...option, text: option.text.trim() })),
@@ -1906,6 +1905,8 @@ function QuizDialog({
       }
     >
       <div className="space-y-4">
+        <label className="btn btn-outline cursor-pointer">استيراد أسئلة JSON<input aria-label="استيراد أسئلة JSON" type="file" accept=".json,application/json" className="sr-only" onChange={e => { const file = e.target.files?.[0]; if (file) void importQuiz(file); e.target.value = ''; }}/></label>
+        <label className="block rounded-xl bg-brand-softer p-4"><span className="mb-2 block text-sm font-bold">مدة الاختبار بالثواني (0 = دون توقيت)</span><input aria-label="مدة الاختبار بالثواني" type="number" min="0" max="86400" className="input" value={timeLimit} onChange={e=>setTimeLimit(Math.max(0,Math.min(86400,Number(e.target.value)||0)))}/></label>
         {questions.map((question, index) => {
           const errors = questionErrors(question);
           return (

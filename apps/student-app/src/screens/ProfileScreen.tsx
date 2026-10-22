@@ -246,6 +246,7 @@ export default function ProfileScreen() {
           </Card>
         </Pressable>
 
+        <PrimaryButton label={lang === 'ar' ? 'مزامنة المركز' : 'Synchroniser le centre'} variant="soft" onPress={() => navigation.navigate('Sync')} />
         {/* ---- menu list ---- */}
         <View style={styles.menu}>
           <MenuRow

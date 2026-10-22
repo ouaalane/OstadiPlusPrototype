@@ -934,7 +934,7 @@ export function Thumb({
   children,
 }: {
   cover: string;
-  poster?: number;
+  poster?: import('react-native').ImageSourcePropType;
   width?: number;
   height?: number;
   /** Fill the parent's width at this ratio (e.g. `16 / 9`) instead of a fixed box. */

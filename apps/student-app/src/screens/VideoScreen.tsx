@@ -159,6 +159,7 @@ export default function VideoScreen() {
     deleteDownload,
     deleteDownloads,
     downloadStatusFor,
+    downloadUriFor,
   } = useStore();
   const { lang, dir } = useI18n();
   const l = useLayout(lang);
@@ -193,6 +194,7 @@ export default function VideoScreen() {
         found.lesson.file,
         found.lesson.kind as 'video' | 'pdf',
         found.lesson.durationSec,
+        found.lesson.thumbnailUrl,
       )
     : { kind: 'missing' as const };
 
@@ -364,7 +366,7 @@ export default function VideoScreen() {
     complete: boolean;
     downloading: boolean;
   } => {
-    const videos = items.filter((item) => item.kind === 'video' && !!item.file);
+    const videos = items.filter((item) => item.kind === 'video' && !!item.file && item.allowDownload !== false);
     if (videos.length === 0) return { progress: 0, complete: false, downloading: false };
     const statuses = videos.map((item) => downloadStatusFor(item.id));
     const complete = statuses.every((value) => value === 'complete');
@@ -424,7 +426,7 @@ export default function VideoScreen() {
     const ids = items
       .filter(
         (item) =>
-          item.kind === 'video' &&
+          item.kind === 'video' && item.allowDownload !== false &&
           !!item.file &&
           downloadStatusFor(item.id) !== 'complete' &&
           downloadStatusFor(item.id) !== 'downloading',
@@ -460,7 +462,7 @@ export default function VideoScreen() {
         <LessonPlayer
           key={lesson.id}
           lessonId={lesson.id}
-          source={media.source}
+          source={downloadUriFor(lesson.id) ? {uri: downloadUriFor(lesson.id)!} : media.source}
           poster={media.poster}
           title={lesson.title}
           expectedDuration={lesson.durationSec}
@@ -620,7 +622,7 @@ export default function VideoScreen() {
                           durationSec={lessonsDuration(sectionLessons)}
                           onDownloadAll={
                             sectionLessons.some(
-                              (item) => item.kind === 'video' && !!item.file,
+                              (item) => item.kind === 'video' && !!item.file && item.allowDownload !== false,
                             )
                               ? () => sectionAction(sectionLessons, sectionSummary)
                               : undefined
@@ -651,7 +653,7 @@ export default function VideoScreen() {
                                 progress={record?.progress ?? 0}
                                 onPress={() => openLesson(item)}
                                 onDownload={
-                                  item.kind === 'video' || item.kind === 'pdf'
+                                  (item.kind === 'video' || item.kind === 'pdf') && item.allowDownload !== false
                                     ? () => onLessonDownload(item)
                                     : undefined
                                 }

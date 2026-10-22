@@ -138,7 +138,7 @@ export default function CourseDetailScreen() {
     complete: boolean;
     downloading: boolean;
   } => {
-    const videos = list.filter((lesson) => lesson.kind === 'video' && !!lesson.file);
+    const videos = list.filter((lesson) => lesson.kind === 'video' && !!lesson.file && lesson.allowDownload !== false);
     if (videos.length === 0) return { progress: 0, complete: false, downloading: false };
     const statuses = videos.map((lesson) => downloadStatusFor(lesson.id));
     const complete = statuses.every((value) => value === 'complete');
@@ -194,7 +194,7 @@ export default function CourseDetailScreen() {
   const started = !!progress && (progress.percent > 0 || progress.lastPositionSec > 0);
 
   const courseVideos = lessons.filter(
-    (lesson) => lesson.kind === 'video' && !!lesson.file,
+    (lesson) => lesson.kind === 'video' && !!lesson.file && lesson.allowDownload !== false,
   );
   const courseSummary = bulkSummary(courseVideos);
 
@@ -581,7 +581,7 @@ export default function CourseDetailScreen() {
 
                     {semester.chapters.map((chapter) => {
                       const sectionVideos = chapter.lessons.filter(
-                        (lesson) => lesson.kind === 'video' && !!lesson.file,
+                        (lesson) => lesson.kind === 'video' && !!lesson.file && lesson.allowDownload !== false,
                       );
                       const sectionSummary = bulkSummary(sectionVideos);
 
@@ -621,7 +621,7 @@ export default function CourseDetailScreen() {
                                   progress={record?.progress ?? 0}
                                   onPress={() => openLesson(lesson)}
                                   onDownload={
-                                    lesson.kind === 'video' || lesson.kind === 'pdf'
+                                    (lesson.kind === 'video' || lesson.kind === 'pdf') && lesson.allowDownload !== false
                                       ? () => performDownload(lesson)
                                       : undefined
                                   }

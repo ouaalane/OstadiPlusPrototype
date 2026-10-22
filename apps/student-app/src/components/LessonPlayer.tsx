@@ -72,8 +72,8 @@ const MemoWatermark = React.memo(VideoWatermark);
 export interface LessonPlayerProps {
   lessonId: string;
   /** Bundled video asset (the numeric `require()` result). */
-  source: number;
-  poster?: number;
+  source: number | { uri: string };
+  poster?: import('react-native').ImageSourcePropType;
   title: string;
   /** Manifest duration, used before the decoder reports the real one. */
   expectedDuration: number;
