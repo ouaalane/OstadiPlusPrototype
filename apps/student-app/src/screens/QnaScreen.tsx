@@ -34,6 +34,7 @@ import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
+import { commentPortraitFor } from '../lib/comment-portraits';
 import type { RootStackParamList } from '../navigation/types';
 
 type QnaFilter = 'all' | 'unanswered';
@@ -328,7 +329,7 @@ function QuestionCard({
   return (
     <Card style={styles.thread}>
       <View style={[styles.threadHead, l.row]}>
-        <Avatar monogram={initials(question.authorName)} size={34} seed={question.authorName.length} />
+        <Avatar monogram={initials(question.authorName)} size={34} photo={commentPortraitFor(question.studentId)} />
         <View style={{ flex: 1, gap: 1 }}>
           <AppText size={13.5} weight="bold" tone="ink" numberOfLines={1}>
             {question.authorName}
@@ -367,11 +368,11 @@ function QuestionCard({
                 style={[styles.reply, teacher ? styles.replyTeacher : styles.replyStudent]}
               >
                 <View style={[l.row, { gap: spacing.sm }]}>
-                  <Ionicons
-                    name={teacher ? 'shield-checkmark' : 'person-circle-outline'}
-                    size={15}
-                    color={teacher ? colors.brand : colors.muted}
-                  />
+                  {teacher ? (
+                    <Ionicons name="shield-checkmark" size={15} color={colors.brand} />
+                  ) : (
+                    <Avatar monogram={initials(reply.authorName)} size={15} photo={commentPortraitFor(reply.authorId)} />
+                  )}
                   <AppText size={12.5} weight="bold" tone={teacher ? 'brand' : 'ink'} style={{ flex: 1 }}>
                     {reply.authorName}
                   </AppText>
