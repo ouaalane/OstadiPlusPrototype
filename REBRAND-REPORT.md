@@ -1,3 +1,5 @@
+> Historical report. The exact uploaded assets and current verification are documented in [IDENTITY-SOURCE-REPORT.md](./IDENTITY-SOURCE-REPORT.md). Previous complete-family font substitutions are superseded.
+
 > Historical first-pass report. Current corrections, font mapping and validation are in [REBRAND-REVIEW.md](./REBRAND-REVIEW.md).
 
 # Visual rebrand report

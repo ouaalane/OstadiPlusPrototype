@@ -1,13 +1,13 @@
 /**
  * Shared building blocks — reference design system.
  *
- * White surfaces with hairline borders, a single vivid blue, uppercase
- * letter-spaced eyebrows, generous radii and very soft shadows. Everything
- * reads its values from `src/theme.ts`, and text picks its font family from
- * the active language (Arabic → IBM Plex Sans Arabic, French → Inter).
+ * Original component geometry with the supplied five-color identity.
+ * Colors and exact archive font faces come from `src/theme.ts`.
+ * BrandText attributes Arabic, Latin and digits with the two supplied files.
  */
 
 import React, { useRef, useState } from 'react';
+import { BrandText as Text } from './BrandText';
 import {
   Image,
   KeyboardTypeOptions,
@@ -16,7 +16,6 @@ import {
   ScrollView,
   StyleProp,
   StyleSheet,
-  Text,
   TextInput,
   TextStyle,
   View,
@@ -27,7 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { coverGradients, type Lang, type LessonKind } from '@ostadiplus/shared';
 import { LESSON_ICONS, lessonTint } from '../lib/lesson';
 
-import { colors, overlays, familyFor, fonts, radius, shadow, spacing, tracking } from '../theme';
+import { colors, overlays, brandFonts, familyFor, fonts, radius, shadow, spacing, tracking } from '../theme';
 import { coverAssets } from '../assets/covers';
 import { useI18n } from '../i18n/useI18n';
 
@@ -1185,7 +1184,16 @@ export function LabeledField({
           ref={inputRef}
           style={[
             styles.fieldInput,
-            { fontFamily: familyFor(lang, 'regular') },
+            {
+              fontFamily:
+                inputProps.keyboardType === 'email-address' ||
+                inputProps.keyboardType === 'phone-pad' ||
+                inputProps.keyboardType === 'number-pad' ||
+                inputProps.secureTextEntry
+                  ? brandFonts.latin
+                  : familyFor(lang, 'regular'),
+              fontWeight: '700',
+            },
           ]}
           placeholderTextColor={colors.faint}
           accessibilityLabel={label}

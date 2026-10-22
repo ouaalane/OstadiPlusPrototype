@@ -15,14 +15,8 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
-    NotoSansArabic_400Regular: require('./assets/fonts/NotoSansArabic-Regular.ttf'),
-    NotoSansArabic_500Medium: require('./assets/fonts/NotoSansArabic-Medium.ttf'),
-    NotoSansArabic_600SemiBold: require('./assets/fonts/NotoSansArabic-SemiBold.ttf'),
-    NotoSansArabic_700Bold: require('./assets/fonts/NotoSansArabic-Bold.ttf'),
-    BricolageGrotesque_400Regular: require('./assets/fonts/BricolageGrotesque-Regular.ttf'),
-    BricolageGrotesque_500Medium: require('./assets/fonts/BricolageGrotesque-Medium.ttf'),
-    BricolageGrotesque_600SemiBold: require('./assets/fonts/BricolageGrotesque-SemiBold.ttf'),
-    BricolageGrotesque_700Bold: require('./assets/fonts/BricolageGrotesque-Bold.ttf'),
+    NotoSansArabic_Brand: require('./assets/fonts/NotoSansArabic-Brand.ttf'),
+    BricolageGrotesque_Bold: require('./assets/fonts/BricolageGrotesque-Bold.ttf'),
   });
   /* A font asset can fail or stall (offline dev server, corrupted cache).
      Never let that trap the app on a blank launch screen: fall back to the

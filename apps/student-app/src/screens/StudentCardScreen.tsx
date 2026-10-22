@@ -321,8 +321,8 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
             onPress={() =>
               Share.share({
                 message: rtl
-                  ? `بطاقة الطالب — أوستادي بلس\nالمعرف الفريد: ${studentCode}\nأظهر هذا الرمز للأستاذ لتفعيل الوصول إلى الدروس.`
-                  : `Carte étudiant — Ostadi Plus\nIdentifiant unique : ${studentCode}\nPrésentez ce code à votre enseignant pour activer l’accès aux leçons.`,
+                  ? `بطاقة الطالب — أستاذي بلوس\nالمعرف الفريد: ${studentCode}\nأظهر هذا الرمز للأستاذ لتفعيل الوصول إلى الدروس.`
+                  : `Carte étudiant — Oustadi Plus\nIdentifiant unique : ${studentCode}\nPrésentez ce code à votre enseignant pour activer l’accès aux leçons.`,
               }).catch(() => {})
             }
             accessibilityRole="button"

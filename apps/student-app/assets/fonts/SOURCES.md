@@ -1,27 +1,16 @@
-# Brand font provenance
+# Exact uploaded font files — current source of truth
 
-The supplied identity names Noto Sans Arabic and Bricolage Grotesque. The original Arabic brand file was a subset without Latin letters/ASCII digits and was internally weight 700 despite its Regular style name. The previous rebrand mixed this subset with IBM Plex Arabic and Inter.
+This supersedes the previous complete-family/metric-adaptation approach. The user explicitly requested the actual uploaded files, not other versions of the same families.
 
-The user authorized choosing suitable typography in this review. Complete versions of the **same two families** were fetched from the official Google Fonts repository. No third typeface was introduced. Real weight-axis instances 400, 500, 600 and 700 are bundled, width 100; Bricolage optical size 14 is used consistently for UI text. Expo aliases are unique per face to avoid OS weight substitution.
+Only these untouched binaries are loaded:
 
-Only vertical line-box metadata (hhea and OS/2 ascent/descent/lineGap) is matched to the corresponding pre-rebrand font, scaled by units/em. This prevents the much taller Noto defaults from changing default text row heights. Glyph outlines, shaping tables and horizontal advances remain from the chosen brand family. Component font sizes, line heights, widths, spacing and geometry are unchanged. Different typeface glyph widths can still affect wrapping; native typography needs device QA.
+- `BricolageGrotesque-Bold.ttf` — SHA-256 `a737b146fe0d77ffe8a86e3cd16700dd431d3b1e420d4fd80e142cd68a1cb50d`
+- `NotoSansArabic-Brand.ttf` — SHA-256 `ad97e64c928d63aaf35a4cc94fcad3a30853cd8f1c3d7a349ac5e62bb78434fe`
 
-Static generation used fontTools.varLib.instancer; no font verification was bypassed. Both upstream OFL licenses are included. The original NotoSansArabic-Brand.ttf remains as source reference and is not loaded at runtime.
+Both supplied faces have OS/2 weight 700. No 400/500/600 weights are synthesized or downloaded. Existing semantic weight requests map to the single available face. The Arabic subset lacks ASCII digits and Latin letters; read-only mixed-script text is attributed with the supplied Bricolage font for those glyphs, inside the existing text container. Functional Ionicons and unsupported emoji remain platform/icon content.
 
-## Upstream sources
+No font names, outlines, advance widths or vertical metrics in these files are edited. Existing explicit component line heights are retained; original automatic line-box ratios are expressed as text style only, because editing the font binaries would violate the exact-file requirement. Different glyph widths can affect wrapping.
 
-- https://raw.githubusercontent.com/google/fonts/main/ofl/notosansarabic/NotoSansArabic%5Bwdth,wght%5D.ttf
-  SHA-256: `63111b5b2e074dd48cc67692e0a2726d86ee94c1c37fe8598257b7b4e87e869e`
-- https://raw.githubusercontent.com/google/fonts/main/ofl/bricolagegrotesque/BricolageGrotesque%5Bopsz,wdth,wght%5D.ttf
-  SHA-256: `413e7357809ddd12fd80a96a8a396de0e401638d4acd3cb3e37532f0472ac682`
+Native editable TextInput does not support per-range font families. Identifier/password fields use the supplied Latin face; free Arabic/mixed input may use platform fallback for missing characters. No input values, keyboards, validation or behavior are rewritten to disguise this limitation.
 
-## Shipped static instances
-
-- `BricolageGrotesque-Bold.ttf` — SHA-256 `bf821d661ab69ca34051691cade0a6fdabfc60ab296868f2c84824121ebb15c5`
-- `BricolageGrotesque-Medium.ttf` — SHA-256 `0540c2a66c702ad5bbf2b981ceb4c16b328a9d571e993dd90055e06cac1e1dff`
-- `BricolageGrotesque-Regular.ttf` — SHA-256 `cacf67c07bacd82eefb9db355cbf69b09c3a201c311170947d812491962a170c`
-- `BricolageGrotesque-SemiBold.ttf` — SHA-256 `4457976a552fc4a327b8bd2f247eb2d389aeb32b51b84df43b7ae321bbf90979`
-- `NotoSansArabic-Bold.ttf` — SHA-256 `de7cb7bca3235b1be6aa5e076521200310e96490b7bdcb437c51de1b2d4464ed`
-- `NotoSansArabic-Medium.ttf` — SHA-256 `50b3bb117335c3214073fbcdec07a90fa2b613bdbd2e1f9d601ad0543b9fbcb2`
-- `NotoSansArabic-Regular.ttf` — SHA-256 `abc2482bfbd04f54d1abe621c60e3d0f6f8cf69a01288cb65c42e54418fe4c92`
-- `NotoSansArabic-SemiBold.ttf` — SHA-256 `06c9a843720b33c6915512badc6d33ee0e2a33882e6b31522f959f545e33a14c`
+The OFL files are copied byte-for-byte, including their original line endings. Removed generated/static complete-family variants must not be reintroduced without a new user instruction.

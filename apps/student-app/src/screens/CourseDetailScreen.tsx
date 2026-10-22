@@ -320,7 +320,7 @@ export default function CourseDetailScreen() {
     try {
       await Share.share({
         title: course.title,
-        message: `${course.title} — ${instructor.name}\nOstadiPlus`,
+        message: `${course.title} — ${instructor.name}\nOustadi Plus`,
       });
     } catch {
       /* user dismissed the share sheet */

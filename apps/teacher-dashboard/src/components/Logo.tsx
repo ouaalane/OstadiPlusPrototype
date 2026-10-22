@@ -43,7 +43,7 @@ export function Wordmark({
           }}
           dir="ltr"
         >
-          OstadiPlus
+          oustadi plus
         </span>
         {subtitle ? (
           <span className="mt-1 truncate text-[11px] font-semibold" style={{ color: subColor }}>

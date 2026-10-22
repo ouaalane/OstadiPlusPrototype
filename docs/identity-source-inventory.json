@@ -1,0 +1,347 @@
+[
+  {
+    "file": "PHILOSOPHY.md",
+    "bytes": 602,
+    "sha256": "4b8f9d3e09c9bc491202f0de646ffc5c20be12bb7fdaaa332abb8db7fd55f2dd"
+  },
+  {
+    "file": "QA.json",
+    "bytes": 474,
+    "sha256": "378d79e82ff72117b62f0d99b5658730f5aed3ae2f4c3d73f3139a6e4dfde1e8"
+  },
+  {
+    "file": "START-HERE.md",
+    "bytes": 732,
+    "sha256": "e17f796d1b663070433c1cc53f8c7580f08c8754d49e5dd89ee341420198a925"
+  },
+  {
+    "file": "android/res/drawable/oustadi_background.xml",
+    "bytes": 248,
+    "sha256": "9092e3d1ab2a2fe85ac55119fb770ade6516b2cf351c875ea9e41d8cc97afbe9",
+    "xml": "valid"
+  },
+  {
+    "file": "android/res/drawable/oustadi_foreground.xml",
+    "bytes": 1530,
+    "sha256": "fa9b1352ba509916b844629be7efd0bb2a41b027df98c8220eb937e9f8c5c88f",
+    "xml": "valid"
+  },
+  {
+    "file": "android/res/drawable/oustadi_monochrome.xml",
+    "bytes": 1530,
+    "sha256": "d1ce506b9156e4867c26b87f0f6518322882ffabc774b6cb5d9128f8bc065d10",
+    "xml": "valid"
+  },
+  {
+    "file": "android/res/mipmap-anydpi-v26/ic_launcher.xml",
+    "bytes": 212,
+    "sha256": "9a3387884053001e1b8338655f0eb2e10b52a137af3443d14776a5e828cac368",
+    "xml": "valid"
+  },
+  {
+    "file": "android/res/mipmap-anydpi-v33/ic_launcher.xml",
+    "bytes": 273,
+    "sha256": "c313f2b4a95c3650e94b4b8ecb69ee3da72aec1aecf1416e0a3b92d377a1c3bd",
+    "xml": "valid"
+  },
+  {
+    "file": "colors.css",
+    "bytes": 161,
+    "sha256": "847742cca927fd349ef136af8440612fe29d980ca38a371ccb277c18dd4734fa"
+  },
+  {
+    "file": "colors.json",
+    "bytes": 122,
+    "sha256": "ea80c5dd2f17b56bcd0ade87c64a444856a61534408b2963bd0bbb4821cf2f8a"
+  },
+  {
+    "file": "fonts/BricolageGrotesque-Bold.ttf",
+    "bytes": 90952,
+    "sha256": "a737b146fe0d77ffe8a86e3cd16700dd431d3b1e420d4fd80e142cd68a1cb50d",
+    "weight": 700,
+    "codepoints": 527
+  },
+  {
+    "file": "fonts/BricolageGrotesque-OFL.txt",
+    "bytes": 4496,
+    "sha256": "a093964b3ca71526ae129d0d5f39bc9dba905ae5ebeb72d741bb0d4ed2d5d5b0"
+  },
+  {
+    "file": "fonts/NotoSansArabic-Brand.ttf",
+    "bytes": 150800,
+    "sha256": "ad97e64c928d63aaf35a4cc94fcad3a30853cd8f1c3d7a349ac5e62bb78434fe",
+    "weight": 700,
+    "codepoints": 1226
+  },
+  {
+    "file": "fonts/NotoSansArabic-OFL.txt",
+    "bytes": 4382,
+    "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96"
+  },
+  {
+    "file": "png/android-background.png",
+    "bytes": 4739,
+    "sha256": "ad384e9153a84fd2c7e58e9fa2ded60ef3bb8253a8bbc6131d438cda45847f44",
+    "width": 432,
+    "height": 432,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/android-foreground.png",
+    "bytes": 7959,
+    "sha256": "135405fcc7a12fdab06e49527c22a739d6dc66a11b5d37c883201065ac1bba57",
+    "width": 432,
+    "height": 432,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/android-monochrome.png",
+    "bytes": 6486,
+    "sha256": "ac67fa7406adea34b44c41860fce78de7a6fd86bb9a4827ccce2e3dda8af6187",
+    "width": 432,
+    "height": 432,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-1024.png",
+    "bytes": 48555,
+    "sha256": "57e2c819ff48c599dde1778adb1245a38da94213621baf81a8b168ee19a24bc6",
+    "width": 1024,
+    "height": 1024,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-128.png",
+    "bytes": 3038,
+    "sha256": "0a1e3cec8378354792aa7a737042c7ca9686ca5c7dff0c05652d0685ef110873",
+    "width": 128,
+    "height": 128,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-24.png",
+    "bytes": 587,
+    "sha256": "ae0a48134944c1686dd83c266698f27ff594ce665dfb339e3d8f71083d3fe2a2",
+    "width": 24,
+    "height": 24,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-256.png",
+    "bytes": 7026,
+    "sha256": "8ddd37e4f2de209b93c25823775b1f4f03b2762de379553ffac77df217dce03d",
+    "width": 256,
+    "height": 256,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-32.png",
+    "bytes": 751,
+    "sha256": "e4eb064f7accd9f5986c5b151d8936907fb25ce770110d10be3ce110020d91c1",
+    "width": 32,
+    "height": 32,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-48.png",
+    "bytes": 1178,
+    "sha256": "5b82b75850f73f78247bb0131b15ec9f62f64e86247625f755b87b9ddee707f6",
+    "width": 48,
+    "height": 48,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-512.png",
+    "bytes": 18087,
+    "sha256": "93eb530b7c022b19fa9840b7d5d6b805ceea3d039aa231b772c8a44b8578caa1",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/app-icon-64.png",
+    "bytes": 1565,
+    "sha256": "2c90d7ddb1f4b764e4561089f0fc264905e27287a93c8f0206b1f737e094ae4a",
+    "width": 64,
+    "height": 64,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/logo-ar-black.png",
+    "bytes": 46158,
+    "sha256": "9861174d943eeed37522e74e1ab3f58ca5edc17b02fd9578ae5170f2dba6bb9e",
+    "width": 2400,
+    "height": 565,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/logo-ar-mulberry.png",
+    "bytes": 59094,
+    "sha256": "63222182e5514322a0d6b11b9b65d9247fc8dcef22180b43415527f6a7a4b090",
+    "width": 2400,
+    "height": 565,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/logo-ar-white.png",
+    "bytes": 43675,
+    "sha256": "db1579c134fc584635f432324d5d46ded63aee87cca691fef4e54978006e6abe",
+    "width": 2400,
+    "height": 565,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/logo-fr-black.png",
+    "bytes": 44025,
+    "sha256": "91b6e141ec1a6c7d2b93b672740a6b4858c385c89759b706a31e15a6d66e1ba4",
+    "width": 2400,
+    "height": 569,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/logo-fr-mulberry.png",
+    "bytes": 56122,
+    "sha256": "c75e98c5202cfd04ea87565308d7cd9739dc556b19d6b7baa3d8d8e3d110043f",
+    "width": 2400,
+    "height": 569,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/logo-fr-white.png",
+    "bytes": 42735,
+    "sha256": "7bfd8cc513a3e790d6f651028c82f75264994b0a9022db386feb325e0bec42e3",
+    "width": 2400,
+    "height": 569,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/mark-black.png",
+    "bytes": 31390,
+    "sha256": "56b6c3e323504a38f7ca5ce2033c475087138767a8deee32b5c0ba528b134b9e",
+    "width": 1024,
+    "height": 1024,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/mark-mulberry.png",
+    "bytes": 40692,
+    "sha256": "83f2094540cefcb6885a0b970db38cadd46eea7caf8c75b99407ac214d8841bf",
+    "width": 1024,
+    "height": 1024,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/mark-two-color.png",
+    "bytes": 38125,
+    "sha256": "2130afe4b4494b2d009f5ec7e6ebd91887ffab0aeb4127146633366196a6be3e",
+    "width": 1024,
+    "height": 1024,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/mark-white.png",
+    "bytes": 30687,
+    "sha256": "bf9a845cbe8f767afb55432551f15046cb5c55380c3c93a0c1b094e76e6c6658",
+    "width": 1024,
+    "height": 1024,
+    "mode": "RGBA"
+  },
+  {
+    "file": "png/mobile-brand-preview.png",
+    "bytes": 143806,
+    "sha256": "2b0d0fdf4950fcbb1abdf29a34262623f2d97c4e124f8e0710afcf905d60eb56",
+    "width": 1400,
+    "height": 1490,
+    "mode": "RGBA"
+  },
+  {
+    "file": "svg/android-background.svg",
+    "bytes": 237,
+    "sha256": "b73e040ed88e97c3b8b76a74bfe15776850d7414c5d9e42d194d861c870f7ca8",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/android-foreground.svg",
+    "bytes": 841,
+    "sha256": "32c6589e441865304040488724f0c1f7fc702c5ffcb6d70379e60d8efe223595",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/android-monochrome.svg",
+    "bytes": 839,
+    "sha256": "0cb8d9de385e8bf358e79d535855872c5db220e627fb57622f5291f5ba80a01d",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/app-icon-1024.svg",
+    "bytes": 886,
+    "sha256": "fcc8994706cb3c7b3d63e32d769983095bc84b08021b6b1882a556c608f1dde3",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/logo-ar-black.svg",
+    "bytes": 17703,
+    "sha256": "5ecdea23e6b2804902d243d097760d8f1cb5d431749ca8ad06bdab06f2e1a09c",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/logo-ar-mulberry.svg",
+    "bytes": 17703,
+    "sha256": "43cea18aa6fa0a46d3927cc4ce0bb984371d4d27014739889ac73e58f74da4e8",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/logo-ar-white.svg",
+    "bytes": 17703,
+    "sha256": "4037ef5d9afb9a544090e788a0f7b316d440585976a20743c0d4fe7df04425b5",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/logo-fr-black.svg",
+    "bytes": 11208,
+    "sha256": "906ca2769562f299bb0e7c0b75d4f8ecb87f1c0b7cdab5257b911df7416bd4dd",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/logo-fr-mulberry.svg",
+    "bytes": 11208,
+    "sha256": "7fd77e52437192ac55fd876f9a05b0a3eaf1f467de90fe981875905e0f68f3e4",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/logo-fr-white.svg",
+    "bytes": 11208,
+    "sha256": "24e2c73ce811feeef65b98163ee2e0c9025bb5ad92667b424fa5bfc6ae06fc28",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/mark-black.svg",
+    "bytes": 818,
+    "sha256": "6b971bfa5c72ea43d11c8de68b920510df88291692e42adaad569e8490ebaf9d",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/mark-mulberry.svg",
+    "bytes": 818,
+    "sha256": "79e2a5fce252bb3f9d4b2d198c65785e546bf470c3ba40f75b70e3ca8e267855",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/mark-two-color.svg",
+    "bytes": 828,
+    "sha256": "8105c028ae99edeba53878ad946080d168491249bdddc87613f26bb420ccad59",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/mark-white.svg",
+    "bytes": 818,
+    "sha256": "ecaa808ea0d71d036f02901a543846753f23c3ffc08d264ced7755873b416636",
+    "xml": "valid"
+  },
+  {
+    "file": "svg/mobile-brand-preview.svg",
+    "bytes": 368771,
+    "sha256": "5f9404dc0735341f2a0e65071b8275c50441781d46390d12b9c85328eb0e8870",
+    "xml": "valid"
+  }
+]

@@ -1,3 +1,5 @@
+> Historical report. The exact uploaded assets and current verification are documented in [IDENTITY-SOURCE-REPORT.md](./IDENTITY-SOURCE-REPORT.md). Previous complete-family font substitutions are superseded.
+
 # Rebrand correction review
 
 Baseline: **bf823c7**, immediately before the first rebrand. First rebrand: **b2fb4c0**. This document describes the corrective working-tree changes and supersedes the earlier rebrand report.

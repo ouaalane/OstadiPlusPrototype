@@ -1,7 +1,7 @@
 /**
  * Mobile presentation tokens. Layout, sizes, spacing and motion match bf823c7.
  * Only the five supplied brand colors and their opacity variants are used.
- * Complete Noto Sans Arabic / Bricolage Grotesque families are loaded in App.tsx.
+ * Only the two untouched font binaries supplied in the identity ZIP are loaded.
  */
 
 import { StyleSheet } from 'react-native';
@@ -66,19 +66,28 @@ export const spacing = {
 
 /** Font family names loaded in App.tsx. */
 export const fonts = {
-  regular: 'NotoSansArabic_400Regular',
-  medium: 'NotoSansArabic_500Medium',
-  semibold: 'NotoSansArabic_600SemiBold',
-  bold: 'NotoSansArabic_700Bold',
+  regular: 'NotoSansArabic_Brand',
+  medium: 'NotoSansArabic_Brand',
+  semibold: 'NotoSansArabic_Brand',
+  bold: 'NotoSansArabic_Brand',
 } as const;
 
 /** Latin family used for the French (LTR) UI. */
 export const fontsLatin = {
-  regular: 'BricolageGrotesque_400Regular',
-  medium: 'BricolageGrotesque_500Medium',
-  semibold: 'BricolageGrotesque_600SemiBold',
-  bold: 'BricolageGrotesque_700Bold',
+  regular: 'BricolageGrotesque_Bold',
+  medium: 'BricolageGrotesque_Bold',
+  semibold: 'BricolageGrotesque_Bold',
+  bold: 'BricolageGrotesque_Bold',
 } as const;
+
+/** The archive provides a single face per script, not four invented weights. */
+export const brandFonts = {
+  arabic: 'NotoSansArabic_Brand',
+  latin: 'BricolageGrotesque_Bold',
+} as const;
+
+/** Original default line boxes; supplied font files themselves stay untouched. */
+export const originalTextLeading = { arabic: 1.5, latin: 2478 / 2048 } as const;
 
 export type FontWeight = keyof typeof fonts;
 

@@ -95,10 +95,10 @@ export const typography = {
   latin: `'Bricolage Grotesque', 'Noto Sans Arabic', sans-serif`,
   /** Android asset font file names (android/app/src/main/assets/fonts). */
   native: {
-    Regular: 'NotoSansArabic-Regular',
-    Medium: 'NotoSansArabic-Medium',
-    SemiBold: 'NotoSansArabic-Bold',
-    Bold: 'NotoSansArabic-Bold',
+    Regular: 'NotoSansArabic-Brand',
+    Medium: 'NotoSansArabic-Brand',
+    SemiBold: 'NotoSansArabic-Brand',
+    Bold: 'NotoSansArabic-Brand',
   },
   size: {
     xs: 12,
@@ -123,9 +123,9 @@ export const touchTarget = 48;
 
 /** Static brand copy — kept in one place so both apps stay consistent. */
 export const brand = {
-  name: 'OstadiPlus',
+  name: 'oustadi plus',
   /** Hero line on the splash / sign-in screens. */
-  tagline: 'درسك يصل إلى كل تلاميذك، أينما كانوا.',
+  tagline: 'الدرس كيكمل',
   /** One-sentence explanation used in empty states and onboarding. */
   valueProp: 'امنح تلاميذك وصولاً رقمياً إلى دروسك من هواتفهم.',
 } as const;

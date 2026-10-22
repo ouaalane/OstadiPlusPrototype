@@ -152,7 +152,7 @@ export function CoursePreview({
       </div>
 
       <p className="mt-3 text-center text-xs text-faint">
-        هذه هي الصفحة التي يراها التلميذ في تطبيق OstadiPlus.
+        هذه هي الصفحة التي يراها التلميذ في تطبيق Oustadi Plus.
       </p>
     </div>
   );

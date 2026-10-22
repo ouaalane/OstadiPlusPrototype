@@ -509,8 +509,8 @@ export default function ProfileScreen() {
           <AppText size={11} tone="faint" style={{ textAlign: 'center' }}>
             {pick(
               lang,
-              `Ostadi Plus v2.4.0 • المغرب 🇲🇦 · ${bundledAssetCount()} وسائط مدمجة`,
-              `Ostadi Plus v2.4.0 • Maroc 🇲🇦 · ${bundledAssetCount()} médias intégrés`,
+              `Oustadi Plus v2.4.0 • المغرب 🇲🇦 · ${bundledAssetCount()} وسائط مدمجة`,
+              `Oustadi Plus v2.4.0 • Maroc 🇲🇦 · ${bundledAssetCount()} médias intégrés`,
             )}
           </AppText>
         </Card>

@@ -1,51 +1,16 @@
 @import 'tailwindcss';
 
+/* Exact font files from the uploaded identity; no generated instances. */
 @font-face {
   font-family: 'Noto Sans Arabic';
-  src: url('/fonts/NotoSansArabic-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Noto Sans Arabic';
-  src: url('/fonts/NotoSansArabic-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Noto Sans Arabic';
-  src: url('/fonts/NotoSansArabic-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Noto Sans Arabic';
-  src: url('/fonts/NotoSansArabic-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-SemiBold.ttf') format('truetype');
-  font-weight: 600;
+  src: url('/fonts/NotoSansArabic-Brand.ttf') format('truetype');
+  font-weight: 100 900;
   font-display: swap;
 }
 @font-face {
   font-family: 'Bricolage Grotesque';
   src: url('/fonts/BricolageGrotesque-Bold.ttf') format('truetype');
-  font-weight: 700;
+  font-weight: 100 900;
   font-display: swap;
 }
 
@@ -118,6 +83,7 @@
   }
 
   body {
+    font-synthesis: none;
     background-color: var(--color-canvas);
     color: var(--color-body);
     font-family: var(--font-sans);

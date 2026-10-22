@@ -48,7 +48,7 @@ export default function SignInScreen() {
         <View style={styles.header}>
           <Image source={require('../../assets/logo.png')} style={styles.logo} />
           <AppText size={24} weight="bold" tone="ink">
-            OstadiPlus
+            {dir === 'rtl' ? 'أستاذي بلوس' : 'oustadi plus'}
           </AppText>
           <AppText size={13} tone="muted" style={styles.subtitle}>
             {dir === 'rtl' ? 'تطبيق التلاميذ · مركز الأطلس للدروس' : 'Application élèves · Centre Atlas'}

@@ -7,7 +7,8 @@
  */
 
 import React, { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { BrandText as Text } from '../components/BrandText';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -209,10 +210,10 @@ export default function RootNavigator() {
       notification: colors.accent,
     },
     fonts: {
-      regular: { ...DefaultTheme.fonts.regular, fontFamily: familyFor(lang, 'regular') },
-      medium: { ...DefaultTheme.fonts.medium, fontFamily: familyFor(lang, 'medium') },
-      bold: { ...DefaultTheme.fonts.bold, fontFamily: familyFor(lang, 'bold') },
-      heavy: { ...DefaultTheme.fonts.heavy, fontFamily: familyFor(lang, 'bold') },
+      regular: { ...DefaultTheme.fonts.regular, fontWeight: '700' as const, fontFamily: familyFor(lang, 'regular') },
+      medium: { ...DefaultTheme.fonts.medium, fontWeight: '700' as const, fontFamily: familyFor(lang, 'medium') },
+      bold: { ...DefaultTheme.fonts.bold, fontWeight: '700' as const, fontFamily: familyFor(lang, 'bold') },
+      heavy: { ...DefaultTheme.fonts.heavy, fontWeight: '700' as const, fontFamily: familyFor(lang, 'bold') },
     },
   };
 

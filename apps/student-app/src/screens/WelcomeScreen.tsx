@@ -75,15 +75,15 @@ export default function WelcomeScreen({
           </LinearGradient>
 
           <AppText size={27} weight="bold" tone="ink" style={{ textAlign: 'center' }}>
-            {rtl ? 'أستاذي بلس' : 'Ostadi Plus'}
+            {rtl ? 'أستاذي بلوس' : 'oustadi plus'}
           </AppText>
           <AppText
             size={11}
             weight="bold"
             tone="faint"
-            style={{ textAlign: 'center', letterSpacing: 1.2, textTransform: 'uppercase' }}
+            style={{ textAlign: 'center' }}
           >
-            OSTADI PLUS
+            {rtl ? 'الدرس كيكمل' : 'Le cours continue.'}
           </AppText>
 
           <View style={[l.row, styles.streamRow]}>
@@ -100,7 +100,7 @@ export default function WelcomeScreen({
         {/* ---- copy + actions ---- */}
         <View style={styles.sheet}>
           <AppText size={24} weight="bold" tone="ink" style={{ textAlign: 'center' }}>
-            {rtl ? 'مرحباً بك في أوستادي بلس' : 'Bienvenue sur Ostadi Plus'}
+            {rtl ? 'مرحباً بك في أستاذي بلوس' : 'Bienvenue sur oustadi plus'}
           </AppText>
           <AppText size={14.5} tone="muted" style={styles.subtitle}>
             {rtl
