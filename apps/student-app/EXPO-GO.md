@@ -1,5 +1,22 @@
 # Preview in Expo Go
 
+“My profile” now opens the profile editor: name, email, phone, optional age,
+education level/status, and optional password change. Cancel leaves those fields
+unchanged. Saving preserves the student ID, QR, photo, courses and progress.
+Education choices are shared with signup; an existing detailed level stays available.
+
+Passwords remain local prototype credentials, not server authentication. New
+signups store a salted PBKDF2-SHA256 verifier (600,000 rounds) in a separate local
+storage key, outside shareable demo data. Login checks it; replacing it requires
+the current password. Legacy/demo accounts can set their first password without
+inventing a current one. Guest demos and the simulated verification-code flow
+remain available. Existing custom binaries need rebuilding for `expo-crypto`;
+SDK 57 Expo Go includes it. Run `npm ci --prefix apps/student-app` after updating.
+
+```sh
+node --test apps/student-app/scripts/test-profile-details.cjs apps/student-app/scripts/test-local-password.cjs
+```
+
 Profile photos are optional during signup and can be replaced by tapping the
 profile avatar/camera badge. The system image picker selects one photo; a square
 JPEG thumbnail of at most 512 × 512 is stored locally with that student, so it

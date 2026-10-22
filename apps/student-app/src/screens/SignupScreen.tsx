@@ -36,62 +36,8 @@ import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import ProfilePhotoButton from '../components/ProfilePhotoButton';
 import { useStore } from '../store/StudentStore';
+import { LEVELS } from '../lib/education-levels';
 import { colors, radius, spacing } from '../theme';
-
-/** Bilingual label — Arabic stays byte-for-byte, French is the LTR variant. */
-interface Bi {
-  ar: string;
-  fr: string;
-}
-
-interface LevelOption {
-  id: string;
-  title: Bi;
-  sub: Bi;
-  /** MaterialCommunityIcons glyph — its education set reads as the level itself. */
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-}
-
-/**
- * Every educational level the platform supports (Stitch level-select).
- *
- * Icons spell out the cycle rather than the generic book/school the reference
- * uses: counting beads for primary, an open book for collège, the school for
- * the BAC years, a certificate for free candidates and a student cap for
- * university and vocational training.
- */
-const LEVELS: LevelOption[] = [
-  {
-    id: 'primary',
-    title: { ar: 'ابتدائي', fr: 'Primaire' },
-    sub: { ar: 'Primaire · من الأول إلى السادس ابتدائي', fr: 'Primaire · de la 1re à la 6e année' },
-    icon: 'abacus',
-  },
-  {
-    id: 'college',
-    title: { ar: 'ثانوي إعدادي', fr: 'Collège' },
-    sub: { ar: 'Collège · السنة 1، 2 و 3 إعدادي', fr: 'Collège · 1re, 2e et 3e année' },
-    icon: 'book-education-outline',
-  },
-  {
-    id: 'bac',
-    title: { ar: 'ثانوي تأهيلي (BAC)', fr: 'Lycée (BAC)' },
-    sub: { ar: 'Lycée · جذع مشترك، 1ère BAC، 2ème BAC', fr: 'Lycée · tronc commun, 1re BAC, 2e BAC' },
-    icon: 'school-outline',
-  },
-  {
-    id: 'free',
-    title: { ar: 'باك حر (Candidats Libres)', fr: 'Bac libre (Candidats Libres)' },
-    sub: { ar: 'مترشحون أحرار · جميع الشعب والمسالك', fr: 'Candidats libres · toutes les filières' },
-    icon: 'certificate-outline',
-  },
-  {
-    id: 'uni',
-    title: { ar: 'جامعي وتكوين مهني', fr: 'Universitaire et formation professionnelle' },
-    sub: { ar: 'EST, FST, BTS, CPGE, Facultés & OFPPT', fr: 'EST, FST, BTS, CPGE, Facultés & OFPPT' },
-    icon: 'account-school-outline',
-  },
-];
 
 interface City {
   /** Canonical value kept in the form — the Arabic name. */
@@ -220,6 +166,7 @@ export default function SignupScreen({
   const l = useLayout(lang);
   const rtl = lang === 'ar';
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
 
   // step 1
   const [profilePhoto, setProfilePhoto] = useState<string>();
@@ -287,7 +234,8 @@ export default function SignupScreen({
     setStep((s) => Math.min(3, s + 1));
   };
 
-  const finish = () => {
+  const finish = async () => {
+    if (saving) return;
     if (!agreed) {
       setErrors({
         agreed: rtl
@@ -296,24 +244,29 @@ export default function SignupScreen({
       });
       return;
     }
-    registerStudent({
-      profilePhoto, fullName: name, email, phone: phone ? `+212 ${phone}` : '', password,
-      level: level.title[lang],
-      studentType: levelId === 'free' ? 'bac-libre' : 'moutamadris',
-    });
+    setSaving(true);
+    try {
+      await registerStudent({
+        profilePhoto, fullName: name, email, phone: phone ? `+212 ${phone}` : '', password,
+        level: level.title[lang],
+        studentType: levelId === 'free' ? 'bac-libre' : 'moutamadris',
+      });
+    } catch {
+      setErrors({ agreed: rtl ? 'تعذّر حفظ الحساب. حدّث التطبيق وجرّب مرة أخرى.' : 'Impossible de sauvegarder le compte. Mettez à jour l’application et réessayez.' });
+    } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <AuthAppBar
         title={rtl ? 'إنشاء حساب' : 'Créer un compte'}
-        onBack={() => (step > 1 ? setStep(step - 1) : onBack())}
+        onBack={() => { if (!saving) { if (step > 1) setStep(step - 1); else onBack(); } }}
       />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView pointerEvents={saving ? 'none' : 'auto'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Stepper step={step} total={3} />
 
           {/* ---------------- STEP 1: about you ---------------- */}
@@ -627,6 +580,7 @@ export default function SignupScreen({
               <PrimaryButton
                 label={rtl ? 'إنشاء الحساب' : 'Créer le compte'}
                 onPress={finish}
+                busy={saving}
                 style={{ flex: 1 }}
               />
             )}

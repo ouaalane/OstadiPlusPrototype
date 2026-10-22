@@ -119,7 +119,6 @@ export default function ProfileScreen() {
   useScrollToTopOnTabPress(scrollRef);
 
   // collapsible sections
-  const [aboutOpen, setAboutOpen] = useState(false);
   const [subsOpen, setSubsOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
 
@@ -252,19 +251,8 @@ export default function ProfileScreen() {
           <MenuRow
             icon="id-card-outline"
             label={t('my_profile')}
-            expanded={aboutOpen}
-            onPress={() => setAboutOpen((v) => !v)}
+            onPress={() => navigation.navigate('EditProfile')}
           />
-          {aboutOpen ? (
-            <View style={styles.menuPanel}>
-              <InfoLine label={t('school_level')} value={me.level} />
-              <InfoLine
-                label={t('center_label')}
-                value={myCourses.length ? `${state.teacher.centerName} · ${state.teacher.centerCity}` : pick(lang, 'لم يتم الربط بمركز بعد', 'Aucun centre pour le moment')}
-              />
-              <InfoLine label={t('phone')} value={me.phone} />
-            </View>
-          ) : null}
 
           <View style={styles.menuDivider} />
 
@@ -545,21 +533,6 @@ function StatCard({
       </AppText>
       <AppText size={11} tone="muted" style={{ textAlign: 'center' }}>
         {label}
-      </AppText>
-    </View>
-  );
-}
-
-function InfoLine({ label, value }: { label: string; value: string }) {
-  const { lang } = useI18n();
-  const l = useLayout(lang);
-  return (
-    <View style={[styles.infoLine, l.row]}>
-      <AppText size={12.5} tone="muted">
-        {label}
-      </AppText>
-      <AppText size={13} weight="semibold" tone="ink" style={[{ flex: 1 }, l.text]}>
-        {value}
       </AppText>
     </View>
   );

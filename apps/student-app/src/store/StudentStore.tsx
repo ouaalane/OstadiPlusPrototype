@@ -49,6 +49,9 @@ import {
 
 import { videoAssets } from '../assets/registry';
 
+import { applyProfileDetails, profileErrors, type ProfileDetails } from '../lib/profile-details';
+import { setLocalPassword } from '../lib/local-password';
+
 const STORAGE_KEY = 'ostadiplus.student.v3';
 const PREFS_KEY = 'ostadiplus.student.prefs.v1';
 
@@ -122,6 +125,7 @@ interface StoreValue {
   downloadStatusFor: (lessonId: string) => DownloadStatus | undefined;
   /** Replace only the signed-in student's local profile thumbnail. */
   setProfilePhoto: (photo: string) => void;
+  updateProfile: (details: ProfileDetails) => boolean;
   /** Register a new student account (creates the student in the store). */
   registerStudent: (args: {
     fullName: string;
@@ -131,7 +135,7 @@ interface StoreValue {
     studentType: 'bac-libre' | 'moutamadris';
     password: string;
     profilePhoto?: string;
-  }) => string; // returns new studentId
+  }) => Promise<string>; // returns new studentId
 }
 
 /** A downloaded lesson tracked by the app. */
@@ -166,7 +170,8 @@ type Action =
   | { type: 'membership/request'; centerId: string; studentId: string }
   | { type: 'membership/respond'; membershipId: string; accept: boolean; studentId: string }
   | { type: 'student/register'; student: Student }
-  | { type: 'student/photo'; studentId: string; photo: string };
+  | { type: 'student/photo'; studentId: string; photo: string }
+  | { type: 'student/profile'; studentId: string; details: ProfileDetails };
 
 const nowIso = () => new Date().toISOString();
 
@@ -320,6 +325,11 @@ function reducer(state: DemoState, action: Action): DemoState {
         return n;
       });
       return { ...state, memberships, notifications };
+    }
+
+    case 'student/profile': {
+      return { ...state, students: state.students.map(student => student.id === action.studentId
+        ? applyProfileDetails(student, action.details) : student) };
     }
 
     case 'student/photo': {
@@ -843,7 +853,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   );
 
   const registerStudent = useCallback(
-    (args: {
+    async (args: {
       fullName: string;
       phone: string;
       email: string;
@@ -851,7 +861,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       studentType: 'bac-libre' | 'moutamadris';
       password: string;
       profilePhoto?: string;
-    }): string => {
+    }): Promise<string> => {
       const id = newId('st');
       const parts = args.fullName.trim().split(/\s+/);
       const monogram = parts.slice(0, 2).map((p) => p[0]).join('');
@@ -868,6 +878,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         studentType: args.studentType,
         ...(args.profilePhoto ? { profilePhoto: args.profilePhoto } : {}),
       };
+      if (args.password) await setLocalPassword(id, args.password);
       dispatch({ type: 'student/register', student });
       return id;
     },
@@ -877,6 +888,12 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   const setProfilePhoto = useCallback((photo: string) => {
     if (state.activeStudentId) dispatch({ type: 'student/photo', studentId: state.activeStudentId, photo });
   }, [state.activeStudentId]);
+
+  const updateProfile = useCallback((details: ProfileDetails) => {
+    if (!me || Object.keys(profileErrors(details, state.students, me.id)).length) return false;
+    dispatch({ type: 'student/profile', studentId: me.id, details });
+    return true;
+  }, [me, state.students]);
 
   const value = useMemo<StoreValue>(
     () => ({
@@ -921,6 +938,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       downloadStatusFor,
       registerStudent,
       setProfilePhoto,
+      updateProfile,
     }),
     [
       hydrated,
@@ -964,6 +982,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       downloadStatusFor,
       registerStudent,
       setProfilePhoto,
+      updateProfile,
     ],
   );
 

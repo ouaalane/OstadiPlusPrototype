@@ -189,6 +189,8 @@ export interface Course {
 /* ------------------------------------------------------------------ */
 
 export interface Student {
+  /** Optional age supplied by the student. */
+  age?: number;
   /** Optional local profile thumbnail, persisted with this student. */
   profilePhoto?: string;
   id: string;

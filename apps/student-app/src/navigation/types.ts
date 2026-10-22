@@ -27,4 +27,5 @@ export type RootStackParamList = {
   Quiz: { lessonId: string };
   Library: undefined;
   StudentCard: undefined;
+  EditProfile: undefined;
 };

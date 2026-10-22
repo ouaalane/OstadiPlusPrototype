@@ -27,6 +27,7 @@ import SearchScreen from '../screens/SearchScreen';
 import MyLearningScreen from '../screens/MyLearningScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import CourseDetailScreen from '../screens/CourseDetailScreen';
 import QnaScreen from '../screens/QnaScreen';
 import VideoScreen from '../screens/VideoScreen';
@@ -233,6 +234,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Pdf" component={PdfScreen} />
           <Stack.Screen name="Reader" component={ReaderScreen} />
           <Stack.Screen name="Quiz" component={QuizScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen name="Library" component={LibraryScreen} />
           <Stack.Screen name="StudentCard">
             {(props) => <StudentCardScreen onBack={() => props.navigation.goBack()} />}

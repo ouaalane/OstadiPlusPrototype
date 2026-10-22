@@ -30,6 +30,7 @@ import { AppText, AuthAppBar, LabeledField, PrimaryButton } from '../components/
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { useStore } from '../store/StudentStore';
+import { verifyLocalPassword } from '../lib/local-password';
 import { studentForLogin } from '../lib/student-login';
 import { colors, radius, spacing } from '../theme';
 
@@ -68,23 +69,20 @@ export default function LoginScreen({
     if (Object.keys(next).length > 0) return;
     setBanner(null);
     setBusy(true);
-    // No backend — validate locally, then send a (demo) verification code.
-    setTimeout(() => {
-      setBusy(false);
-      if (targetId) onCodeSent(identifier.trim(), targetId);
-      else
-        setBanner(
-          rtl
-            ? 'لا يوجد حساب نشط مرتبط بهذا البريد. أنشئ حساباً جديداً أو تواصل مع مركزك.'
-            : 'Aucun compte actif lié à cet email. Créez un nouveau compte ou contactez votre centre.',
-        );
-    }, 450);
+    void (async () => {
+      try {
+        if (targetId && await verifyLocalPassword(targetId, password)) onCodeSent(identifier.trim(), targetId);
+        else setBanner(rtl ? 'البريد أو الهاتف أو كلمة السر غير صحيحة.' : 'Adresse, téléphone ou mot de passe incorrect.');
+      } catch {
+        setBanner(rtl ? 'تعذّر التحقق. جرّب مرة أخرى.' : 'Vérification impossible. Réessayez.');
+      } finally { setBusy(false); }
+    })();
   };
 
   const forgotAlertTitle = rtl ? 'استرجاع كلمة السر' : 'Récupérer le mot de passe';
   const forgotAlertBody = rtl
-    ? 'كلمة السر تُسلَّم من طرف مركزك. تواصل مع الأستاذ أو إدارة المركز لإعادة تعيينها.'
-    : 'Le mot de passe est délivré par votre centre. Contactez votre professeur ou la direction du centre pour le réinitialiser.';
+    ? 'تواصل مع الأستاذ أو إدارة المركز لاسترجاع حسابك.'
+    : 'Contactez votre professeur ou la direction du centre pour récupérer votre compte.';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
