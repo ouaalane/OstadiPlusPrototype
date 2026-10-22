@@ -153,6 +153,7 @@ try {
     .getByText('الملف جاهز. احفظ الدرس لتثبيت التغيير.', { exact: true })
     .waitFor();
   done('real video upload, failure state and retry');
+  await page.locator('.lesson-optional-details > summary').click();
   await page
     .getByLabel('وصف الدرس', { exact: false })
     .fill('وصف جديد من محرّر الأستاذ');

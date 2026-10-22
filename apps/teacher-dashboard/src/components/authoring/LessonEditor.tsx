@@ -1,9 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   Bold,
-  Check,
   CheckCircle2,
-  ChevronLeft,
   Download,
   Eye,
   ImagePlus,
@@ -13,11 +11,10 @@ import {
   Quote,
   Save,
   Settings2,
-  Smartphone,
   Trash2,
 } from 'lucide-react';
 import type { Lesson } from '@ostadiplus/shared';
-import { Toggle } from '@/components/ui';
+import { Field, Toggle } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 import { KIND_META } from '@/lib/lessonKind';
 import { bundledMediaUrl } from '@/lib/media';
@@ -83,21 +80,45 @@ export function LessonEditor({
     );
   }
   return (
-    <section className="lesson-editor">
+    <section
+      className="lesson-editor"
+      aria-label={`تحرير الدرس — ${chapterTitle}`}
+    >
+      <h2 className="sr-only">{lesson.title}</h2>
       <header className="lesson-editor-heading">
-        <div className="min-w-0">
-          <p className="mb-2 flex items-center gap-1 text-[10px] text-muted">
-            <span className="truncate">{chapterTitle}</span>
-            <ChevronLeft size={12} />
-            <span>{meta.label}</span>
-          </p>
-          <h2 className="truncate text-lg font-bold">{lesson.title}</h2>
+        <div className="lesson-editor-identity">
+          <span className="lesson-kind-icon">
+            <meta.icon size={18} aria-hidden="true" />
+          </span>
+          <span className="text-sm font-bold">{meta.label}</span>
+          <span className="status-label" data-draft={!lesson.published}>
+            {lesson.published ? 'منشور' : 'مسودة'}
+          </span>
         </div>
-        <span className={`status-label ${lesson.published ? '' : 'is-draft'}`}>
-          {lesson.published ? 'منشور' : 'مسودة'}
-        </span>
+        <div className="lesson-save-actions">
+          <span role="status" className="lesson-save-status">
+            {busy ? 'جارٍ التجهيز…' : dirty ? 'غير محفوظ' : 'محفوظ'}
+          </span>
+          <button
+            className={`btn btn-sm ${draft.published ? 'btn-primary' : 'btn-outline'}`}
+            disabled={busy}
+            onClick={() => save()}
+          >
+            <Save size={15} aria-hidden="true" />
+            حفظ الدرس
+          </button>
+          {!draft.published ? (
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={busy}
+              onClick={() => save(true)}
+            >
+              حفظ ونشر
+            </button>
+          ) : null}
+        </div>
       </header>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 sm:px-7">
+      <div className="lesson-editor-tabs">
         <div
           className="workspace-tabs border-0"
           role="tablist"
@@ -118,139 +139,82 @@ export function LessonEditor({
               disabled={busy}
               onClick={() => setTab(t.key)}
             >
-              <t.icon size={14} />
+              <t.icon size={15} aria-hidden="true" />
               {t.label}
             </button>
           ))}
         </div>
-        <span
-          className={`hidden items-center gap-1.5 text-[9px] sm:flex ${dirty ? 'text-brand' : 'text-muted'}`}
-        >
-          {dirty ? (
-            <span className="size-1.5 rounded-full bg-brand" />
-          ) : (
-            <Check size={12} />
-          )}{' '}
-          {busy
-            ? 'جارٍ تجهيز الملف'
-            : dirty
-              ? 'تغييرات غير محفوظة'
-              : 'محفوظ في مساحتك'}
-        </span>
       </div>
       <div className="lesson-editor-body">
         {tab === 'content' ? (
-          <div className="space-y-7">
-            <section>
-              <EditorSection
-                number="01"
-                title="تفاصيل الدرس"
-                description="عنوان واضح ووصف قصير يساعدان التلميذ على فهم ما سيتعلّمه."
+          <div className="lesson-content-fields">
+            <Field
+              label="عنوان الدرس"
+              error={
+                touched && draft.title.trim().length < 2
+                  ? 'اكتب عنواناً من حرفين على الأقل.'
+                  : undefined
+              }
+            >
+              <input
+                required
+                aria-label="عنوان الدرس"
+                className="input lesson-title-input"
+                value={draft.title}
+                onChange={(e) => patch({ title: e.target.value })}
+                maxLength={100}
               />
-              <div className="mt-5 space-y-4">
-                <label className="block">
-                  <span className="label">
-                    عنوان الدرس <span className="text-brand">*</span>
-                  </span>
-                  <input
-                    aria-label="عنوان الدرس"
-                    className="input"
-                    value={draft.title}
-                    onChange={(e) => patch({ title: e.target.value })}
-                    maxLength={100}
-                  />
-                </label>
-                <label className="block">
-                  <span className="label">
-                    وصف الدرس{' '}
-                    <span className="text-[10px] font-normal text-muted">
-                      اختياري
-                    </span>
-                  </span>
+            </Field>
+            <section className="lesson-main-content" aria-label={meta.label}>
+              {draft.kind === 'video' || draft.kind === 'pdf' ? (
+                <MediaUpload
+                  lesson={draft}
+                  onChange={patch}
+                  onBusy={setUploading}
+                />
+              ) : draft.kind === 'quiz' ? (
+                <QuizBuilder
+                  questions={draft.questions ?? []}
+                  timeLimitSec={draft.timeLimitSec ?? 0}
+                  onChange={(questions) => patch({ questions })}
+                  onTime={(timeLimitSec) => patch({ timeLimitSec })}
+                  touched={touched}
+                />
+              ) : (
+                <TextEditor
+                  value={draft.body ?? ''}
+                  onChange={(body) => patch({ body })}
+                />
+              )}
+            </section>
+            <details className="lesson-optional-details">
+              <summary>تفاصيل إضافية</summary>
+              <div className="lesson-optional-fields">
+                <Field label="وصف الدرس">
                   <textarea
-                    className="textarea min-h-24"
+                    className="textarea"
                     value={draft.description ?? ''}
                     onChange={(e) => patch({ description: e.target.value })}
-                    placeholder="شنو غادي يفهم التلميذ من هذا الدرس؟"
                     maxLength={2000}
                   />
-                </label>
+                </Field>
+                {draft.kind === 'video' ? (
+                  <div>
+                    <h3 className="text-sm font-bold">الصورة المصغّرة</h3>
+                    <Thumbnail
+                      value={draft.thumbnailUrl}
+                      onChange={(thumbnailUrl) => patch({ thumbnailUrl })}
+                      onBusy={setThumbnailBusy}
+                    />
+                  </div>
+                ) : null}
               </div>
-            </section>
-            <section className="border-t border-line pt-6">
-              <EditorSection
-                number="02"
-                title={
-                  draft.kind === 'quiz'
-                    ? 'بناء الاختبار'
-                    : draft.kind === 'video'
-                      ? 'ملف الفيديو'
-                      : draft.kind === 'pdf'
-                        ? 'المستند'
-                        : 'محتوى الدرس'
-                }
-                description={
-                  draft.kind === 'quiz'
-                    ? 'حضّر الأسئلة والاختيارات، وحدّد الإجابات الصحيحة والتوقيت.'
-                    : draft.kind === 'video'
-                      ? 'ارفع الفيديو الأصلي أو اختر ملفاً من مكتبتك.'
-                      : draft.kind === 'pdf'
-                        ? 'أرفق الملخّص أو التمارين بصيغة PDF.'
-                        : 'اكتب الدرس واستعمل أدوات التنسيق.'
-                }
-              />
-              <div className="mt-5">
-                {draft.kind === 'video' || draft.kind === 'pdf' ? (
-                  <MediaUpload
-                    lesson={draft}
-                    onChange={patch}
-                    onBusy={setUploading}
-                  />
-                ) : draft.kind === 'quiz' ? (
-                  <QuizBuilder
-                    questions={draft.questions ?? []}
-                    timeLimitSec={draft.timeLimitSec ?? 0}
-                    onChange={(questions) => patch({ questions })}
-                    onTime={(timeLimitSec) => patch({ timeLimitSec })}
-                    touched={touched}
-                  />
-                ) : (
-                  <TextEditor
-                    value={draft.body ?? ''}
-                    onChange={(body) => patch({ body })}
-                  />
-                )}
-              </div>
-            </section>
-            {draft.kind === 'video' ? (
-              <section className="border-t border-line pt-6">
-                <EditorSection
-                  number="03"
-                  title="الصورة المصغّرة"
-                  description="أول صورة كيشوفها التلميذ. اختر صورة واضحة بنسبة 16:9."
-                />
-                <Thumbnail
-                  value={draft.thumbnailUrl}
-                  onChange={(thumbnailUrl) => patch({ thumbnailUrl })}
-                  onBusy={setThumbnailBusy}
-                />
-              </section>
-            ) : null}
+            </details>
           </div>
         ) : tab === 'settings' ? (
-          <div className="space-y-7">
-            <EditorSection
-              number="01"
-              title="الظهور والوصول"
-              description="هذه الإعدادات تُطبّق بعد حفظ الدرس ونشر التحديثات."
-            />
+          <div className="lesson-settings-fields">
             <div className="setting-line">
-              <div>
-                <p className="text-xs font-bold">إظهار الدرس للتلاميذ</p>
-                <p className="mt-2 text-[10px] leading-6 text-muted">
-                  يبقى وصول التلميذ مرتبطاً باشتراكه ونشر الدورة.
-                </p>
-              </div>
+              <p className="text-sm font-bold">إظهار الدرس للتلاميذ</p>
               <Toggle
                 checked={draft.published}
                 onChange={(published) => patch({ published })}
@@ -259,15 +223,10 @@ export function LessonEditor({
             </div>
             {draft.kind === 'video' ? (
               <div className="setting-line">
-                <div>
-                  <p className="flex items-center gap-2 text-xs font-bold">
-                    <Download size={15} />
-                    السماح بالمشاهدة دون إنترنت
-                  </p>
-                  <p className="mt-2 text-[10px] leading-6 text-muted">
-                    التلميذ يقدر ينزّل الفيديو من داخل التطبيق.
-                  </p>
-                </div>
+                <p className="flex items-center gap-2 text-sm font-bold">
+                  <Download size={16} aria-hidden="true" />
+                  السماح بالمشاهدة دون إنترنت
+                </p>
                 <Toggle
                   checked={draft.allowDownload !== false}
                   onChange={(allowDownload) => patch({ allowDownload })}
@@ -275,24 +234,23 @@ export function LessonEditor({
                 />
               </div>
             ) : null}
-            <div className="flex items-center gap-3 rounded-lg bg-brand-soft/40 p-4">
-              <CheckCircle2 size={19} className="shrink-0 text-brand" />
-              <p className="text-[10px] leading-6 text-muted">
-                الواترمارك ديال التلميذ كيبقى مفعّلاً فالفيديو وPDF داخل
-                التطبيق.
+            {draft.kind === 'video' || draft.kind === 'pdf' ? (
+              <p className="flex items-center gap-2 text-xs text-muted">
+                <CheckCircle2
+                  size={16}
+                  className="text-brand"
+                  aria-hidden="true"
+                />
+                الواترمارك مفعّل
               </p>
-            </div>
-            <div className="border-t border-line pt-6">
-              <h3 className="text-xs font-bold">حذف الدرس</h3>
-              <p className="my-3 text-[10px] leading-6 text-muted">
-                الدرس ومحتواه سيتحيدان من المنهج بعد تأكيدك.
-              </p>
+            ) : null}
+            <div className="lesson-delete-action">
               <button
                 className="btn btn-outline btn-sm"
                 onClick={onDelete}
                 disabled={busy}
               >
-                <Trash2 size={14} />
+                <Trash2 size={15} aria-hidden="true" />
                 حذف الدرس
               </button>
             </div>
@@ -300,7 +258,7 @@ export function LessonEditor({
         ) : (
           <LessonPreview lesson={draft} />
         )}
-        {touched && validation ? (
+        {touched && validation && draft.title.trim().length >= 2 ? (
           <p
             role="alert"
             className="mt-5 rounded-lg bg-accent/30 p-3 text-xs leading-6"
@@ -309,61 +267,7 @@ export function LessonEditor({
           </p>
         ) : null}
       </div>
-      <footer className="lesson-editor-footer">
-        <span className="flex items-center gap-2 text-[10px] text-muted">
-          {dirty ? (
-            <span className="size-1.5 rounded-full bg-brand" />
-          ) : (
-            <Check size={13} />
-          )}{' '}
-          {busy
-            ? 'انتظر اكتمال تجهيز الملف'
-            : dirty
-              ? 'احفظ تغييراتك قبل المغادرة'
-              : 'كل التغييرات محفوظة'}
-        </span>
-        <div className="flex gap-2">
-          <button
-            className={`btn btn-sm ${draft.published ? 'btn-primary' : 'btn-outline'}`}
-            disabled={busy}
-            onClick={() => save()}
-          >
-            <Save size={14} />
-            حفظ الدرس
-          </button>
-          {!draft.published ? (
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={busy}
-              onClick={() => save(true)}
-            >
-              حفظ ونشر
-            </button>
-          ) : null}
-        </div>
-      </footer>
     </section>
-  );
-}
-function EditorSection({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="num flex size-7 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-alt/50 text-[10px] text-brand">
-        {number}
-      </span>
-      <div>
-        <h3 className="text-[13px] font-bold">{title}</h3>
-        <p className="mt-1 text-[10px] leading-6 text-muted">{description}</p>
-      </div>
-    </div>
   );
 }
 function TextEditor({
@@ -413,7 +317,7 @@ function TextEditor({
       </div>
       <textarea
         ref={area}
-        className="min-h-72 w-full resize-y border-0 p-4 text-xs leading-8 outline-none"
+        className="lesson-text-area"
         aria-label="محتوى الدرس المكتوب"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -528,10 +432,6 @@ function LessonPreview({ lesson }: { lesson: Lesson }) {
   const [result, setResult] = useState(false);
   return (
     <div>
-      <div className="mb-5 flex items-center gap-2 rounded-lg bg-brand-soft/40 px-4 py-3 text-[10px] text-muted">
-        <Smartphone size={16} className="text-brand" />
-        معاينة المحتوى قبل الحفظ. المزامنة ضرورية باش يبان فالتطبيق.
-      </div>
       <div className="mx-auto max-w-xl overflow-hidden rounded-xl border border-line">
         <div className="border-b border-line p-5">
           <span className="text-[10px] text-brand">

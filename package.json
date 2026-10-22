@@ -19,7 +19,7 @@
     "media:pdfs": "node scripts/media/import-pdfs.mjs",
     "media:sync": "node scripts/sync-media.mjs",
     "demo": "node apps/api/src/main.mjs --demo",
-    "dashboard:test": "node scripts/check-quiz-authoring.mjs && node scripts/check-teacher-workspace.mjs && node scripts/check-authoring-ux.mjs && node scripts/check-dashboard-ux.mjs && node scripts/check-student-access-ux.mjs && node scripts/check-communication-ux.mjs",
+    "dashboard:test": "node scripts/check-quiz-authoring.mjs && node scripts/check-teacher-workspace.mjs && node scripts/check-authoring-ux.mjs && node scripts/check-dashboard-ux.mjs && node scripts/check-student-access-ux.mjs && node scripts/check-communication-ux.mjs && node scripts/check-lesson-editor-ui.mjs",
     "access:test": "node scripts/check-access.mjs",
     "test:journeys": "node scripts/check-student-codes.mjs && node scripts/check-app-journeys.mjs"
   },

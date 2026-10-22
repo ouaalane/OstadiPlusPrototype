@@ -760,17 +760,6 @@ a:focus-visible {
 .lesson-editor-body {
   padding: 28px;
 }
-.lesson-editor-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--color-line);
-  background: color-mix(in srgb, var(--color-brand-soft) 22%, white);
-  border-radius: 0 0 12px 12px;
-}
 .setting-line {
   display: flex;
   align-items: center;
@@ -785,15 +774,6 @@ a:focus-visible {
   }
   .lesson-editor-body {
     padding: 20px;
-  }
-  .lesson-editor-footer {
-    padding: 16px 20px;
-  }
-  .lesson-editor-footer > div {
-    width: 100%;
-  }
-  .lesson-editor-footer > div button {
-    flex: 1;
   }
 }
 .authoring-layout {
@@ -998,14 +978,6 @@ a:focus-visible {
 /* Keep visually hidden table labels within the horizontal scroll container in RTL. */
 .workspace-shell .overflow-x-auto {
   position: relative;
-}
-/* Saving stays within reach while editing long lessons. */
-.lesson-editor-footer {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background: var(--color-surface);
-  box-shadow: 0 -4px 12px rgb(41 30 43 / 0.03);
 }
 
 /* Shared dashboard refinement: the mobile application owns a separate theme. */
@@ -1790,4 +1762,256 @@ a:focus-visible {
 }
 .subscription-plan-grid [data-period='semester'] {
   grid-column: span 3;
+}
+
+/* Focused lesson editor — scoped to the course editing screen. */
+.course-editor-page {
+  display: grid;
+  gap: 20px;
+}
+.course-editor-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.course-editor-location {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.course-editor-top .workspace-title {
+  font-size: 22px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.course-back-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+.course-back-link:hover {
+  color: var(--color-brand);
+  border-color: var(--color-brand);
+}
+.course-management-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-line);
+}
+.course-management-bar .workspace-tab {
+  padding-block: 12px;
+}
+.course-editor-page .authoring-layout {
+  grid-template-columns: 252px minmax(0, 1fr);
+  gap: 20px;
+}
+.course-editor-page .course-outline {
+  border-radius: var(--radius-xl);
+}
+.course-editor-page .course-outline > div:first-child {
+  padding: 14px 16px;
+}
+.course-editor-page .course-outline .outline-scroll {
+  flex: 1;
+}
+.course-editor-page .lesson-editor {
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+.course-editor-page .lesson-editor-heading {
+  position: sticky;
+  top: 80px;
+  z-index: 20;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-line);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--color-surface);
+  flex-wrap: wrap;
+}
+.lesson-editor-identity,
+.lesson-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.lesson-kind-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+}
+.lesson-save-status {
+  font-size: var(--text-caption);
+  color: var(--color-muted);
+}
+.lesson-editor-tabs {
+  padding-inline: 20px;
+  border-bottom: 1px solid var(--color-line);
+}
+.lesson-editor-tabs .workspace-tab {
+  padding-block: 12px;
+}
+.course-editor-page .lesson-editor-body {
+  padding: 20px;
+}
+.lesson-content-fields {
+  display: grid;
+  gap: 20px;
+}
+.lesson-title-input {
+  min-height: 48px;
+  font-size: 17px;
+}
+.lesson-main-content {
+  min-width: 0;
+}
+.lesson-text-area {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+  border: 0;
+  padding: 20px;
+  font-size: var(--text-body);
+  line-height: 1.9;
+  outline-offset: -3px;
+  overflow-wrap: anywhere;
+}
+.lesson-optional-details {
+  border-top: 1px solid var(--color-line);
+}
+.lesson-optional-details > summary {
+  cursor: pointer;
+  padding-block: 14px;
+  font-size: var(--text-support);
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.lesson-optional-details > summary::marker {
+  color: var(--color-brand);
+}
+.lesson-optional-fields {
+  display: grid;
+  gap: 20px;
+  padding-bottom: 8px;
+}
+.lesson-optional-fields .textarea {
+  min-height: 80px;
+}
+.lesson-settings-fields {
+  display: grid;
+  gap: 24px;
+}
+.lesson-delete-action {
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+}
+.lesson-outline-toggle {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .course-editor-page .authoring-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .lesson-outline-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    color: var(--color-brand);
+    background: var(--color-surface);
+    text-align: start;
+    font-size: var(--text-body);
+    cursor: pointer;
+  }
+  .lesson-outline-toggle span {
+    flex: 1;
+  }
+  .lesson-outline-toggle[aria-expanded='true'] > svg:last-child {
+    transform: rotate(180deg);
+  }
+  .course-editor-page[data-editing='false'] .lesson-outline-toggle {
+    display: none;
+  }
+  .course-editor-page .course-outline[data-expanded='false'] {
+    display: none;
+  }
+  .course-editor-page .lesson-editor-heading {
+    top: 80px;
+  }
+}
+@media (max-width: 1023px) {
+  .course-editor-page .lesson-editor-heading {
+    top: 62px;
+  }
+}
+@media (max-width: 639px) {
+  .course-editor-page {
+    gap: 16px;
+  }
+  .course-editor-top .workspace-title {
+    font-size: 18px;
+  }
+  .course-editor-location {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .course-editor-top > .flex {
+    width: 100%;
+  }
+  .course-management-bar .workspace-tabs {
+    gap: 18px;
+  }
+  .course-editor-page .lesson-editor-heading {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .lesson-save-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .lesson-save-status {
+    margin-inline-end: auto;
+  }
+  .lesson-editor-tabs {
+    padding-inline: 16px;
+  }
+  .lesson-editor-tabs .workspace-tabs {
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .lesson-editor-tabs .workspace-tab {
+    font-size: var(--text-support);
+  }
+  .course-editor-page .lesson-editor-body {
+    padding: 16px;
+  }
+  .lesson-title-input {
+    font-size: var(--text-body);
+  }
+  .lesson-text-area {
+    padding: 16px;
+    min-height: 280px;
+  }
 }

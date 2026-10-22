@@ -199,6 +199,7 @@ try {
   await addLesson(null, 'فيديو التحقق الشامل');
   await dashboard.getByLabel('رفع فيديو', { exact: true }).setInputFiles(join(root, 'apps/teacher-dashboard/public/media/videos/limits-intro.mp4'));
   await dashboard.getByText('الملف جاهز. احفظ الدرس لتثبيت التغيير.', { exact: true }).filter({ visible: true }).waitFor();
+  await dashboard.locator('.lesson-optional-details > summary').click();
   await dashboard.getByLabel('وصف الدرس', { exact: false }).fill('وصف الفيديو من الأستاذ للتحقق');
   await dashboard.getByLabel('اختيار صورة مصغّرة', { exact: true }).setInputFiles(join(root, 'apps/teacher-dashboard/public/media/posters/limits-intro.jpg'));
   await button(dashboard, 'حفظ ونشر').click();

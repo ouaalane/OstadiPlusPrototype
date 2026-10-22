@@ -44,6 +44,7 @@ export default function CourseEditor() {
   const [tab, setTab] = useState<'content' | 'info' | 'preview'>('content');
   const [semesterId, setSemester] = useState('');
   const [query, setQuery] = useState('');
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [dirty, setDirty] = useState(false);
   const onDirty = useCallback((value: boolean) => setDirty(value), []);
@@ -88,6 +89,7 @@ export default function CourseEditor() {
   function selectLesson(lessonId: string) {
     if (!canLeave()) return;
     setParams({ lesson: lessonId });
+    setOutlineOpen(false);
     setDirty(false);
   }
   function newLesson(chapterId?: string, kind: LessonKind = 'video') {
@@ -135,46 +137,32 @@ export default function CourseEditor() {
     } else setPublishReview(true);
   }
   return (
-    <>
-      <div className="mb-6">
-        <Link
-          to="/courses"
-          className="mb-5 inline-flex items-center gap-2 text-[10px] text-muted hover:text-brand"
-        >
-          <ArrowRight size={13} />
-          الدورات التعليمية
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-5">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="text-[10px] text-muted">
-                {course.subject}{' '}
-                <span className="mx-1 text-line-strong">/</span> {course.level}
-              </span>
-              <span
-                className={`status-label ${course.status === 'draft' ? 'is-draft' : ''}`}
-              >
-                {course.status === 'published' ? 'منشورة' : 'مسودة'}
-              </span>
-            </div>
-            <h1 className="workspace-title">{course.title}</h1>
-          </div>
-          <div className="flex gap-2">
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={() => changeTab('preview')}
-            >
-              <Eye size={14} />
-              معاينة التلميذ
-            </button>
-            <button className="btn btn-primary btn-sm" onClick={publish}>
-              {course.status === 'published' ? 'إيقاف النشر' : 'نشر الدورة'}
-              <ArrowUp size={14} />
-            </button>
-          </div>
+    <div className="course-editor-page" data-editing={!!selection}>
+      <header className="course-editor-top">
+        <div className="course-editor-location">
+          <Link to="/courses" className="course-back-link">
+            <ArrowRight size={16} aria-hidden="true" />
+            <span className="sr-only">الدورات التعليمية</span>
+          </Link>
+          <h1 className="workspace-title">{course.title}</h1>
+          <span className="status-label" data-draft={course.status === 'draft'}>
+            {course.status === 'published' ? 'منشورة' : 'مسودة'}
+          </span>
         </div>
-      </div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line">
+        <div className="flex gap-2">
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => changeTab('preview')}
+          >
+            <Eye size={15} aria-hidden="true" />
+            معاينة التلميذ
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={publish}>
+            {course.status === 'published' ? 'إيقاف النشر' : 'نشر الدورة'}
+          </button>
+        </div>
+      </header>
+      <div className="course-management-bar">
         <div
           className="workspace-tabs border-0"
           role="tablist"
@@ -199,11 +187,13 @@ export default function CourseEditor() {
             </button>
           ))}
         </div>
-        <p className="pb-3 text-[10px] text-muted sm:pb-0">
-          <span className="num">{lessons.length}</span> درس{' '}
-          <span className="mx-2">·</span>{' '}
-          <span className="num">{published.length}</span> منشور
-        </p>
+        {!selection ? (
+          <p className="pb-3 text-[10px] text-muted sm:pb-0">
+            <span className="num">{lessons.length}</span> درس{' '}
+            <span className="mx-2">·</span>{' '}
+            <span className="num">{published.length}</span> منشور
+          </p>
+        ) : null}
       </div>
       {tab === 'info' ? (
         <CourseInfo courseId={course.id} onDirty={onDirty} />
@@ -211,13 +201,24 @@ export default function CourseEditor() {
         <CoursePreview state={state} courseId={course.id} />
       ) : (
         <div className="authoring-layout">
-          <aside className="course-outline">
+          <button
+            className="lesson-outline-toggle"
+            aria-expanded={outlineOpen}
+            aria-controls="lesson-course-outline"
+            onClick={() => setOutlineOpen((value) => !value)}
+          >
+            <BookOpen size={17} aria-hidden="true" />
+            <span>دروس الدورة</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+          <aside
+            id="lesson-course-outline"
+            className="course-outline"
+            data-expanded={outlineOpen || !selection}
+          >
             <div className="flex items-center justify-between border-b border-line px-4 py-4">
               <div>
                 <h2 className="text-xs font-bold">مخطط الدورة</h2>
-                <p className="mt-1 text-[9px] text-muted">
-                  الفصول والدروس، في مكان واحد
-                </p>
               </div>
               <button
                 className="btn btn-icon btn-outline"
@@ -390,6 +391,7 @@ export default function CourseEditor() {
                             >
                               <button
                                 className="flex min-w-0 flex-1 items-start gap-2.5 py-3 ps-3 text-start"
+                                aria-label={`${lesson.title} — ${KIND_META[lesson.kind].label}`}
                                 onClick={() => selectLesson(lesson.id)}
                                 aria-current={
                                   selectedId === lesson.id ? 'page' : undefined
@@ -408,7 +410,6 @@ export default function CourseEditor() {
                                     <span
                                       className={`size-1.5 rounded-full ${lesson.published ? 'bg-brand' : 'border border-line-strong'}`}
                                     />
-                                    {KIND_META[lesson.kind].label} ·{' '}
                                     {lesson.published ? 'منشور' : 'مسودة'}
                                   </span>
                                 </span>
@@ -767,6 +768,6 @@ export default function CourseEditor() {
           </div>
         </Modal>
       ) : null}
-    </>
+    </div>
   );
 }
