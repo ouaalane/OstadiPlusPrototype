@@ -1,6 +1,6 @@
-/** Platform-independent lifetime policy. No screen may disable protection. */
+/** Native builds fail closed; Expo Go is an explicit, unprotected preview. */
 export type CaptureProtectionState = {
-  phase: 'checking' | 'protected' | 'unsupported' | 'unavailable' | 'error';
+  phase: 'checking' | 'protected' | 'preview' | 'unsupported' | 'unavailable' | 'error';
   foreground: boolean;
   captured: boolean;
 };
@@ -12,9 +12,11 @@ export function createCaptureProtectionController(
   platform: string,
   getClient: () => ProtectionClient | null,
   initiallyActive = true,
+  expoGoPreview = false,
 ) {
+  const previewOnly = platform === 'web' || expoGoPreview;
   let state: CaptureProtectionState = {
-    phase: platform === 'web' ? 'unsupported' : 'checking',
+    phase: platform === 'web' ? 'unsupported' : expoGoPreview ? 'preview' : 'checking',
     foreground: initiallyActive,
     captured: false,
   };
@@ -67,7 +69,7 @@ export function createCaptureProtectionController(
     },
     start() {
       running = true;
-      if (platform === 'web') return Promise.resolve();
+      if (previewOnly) return Promise.resolve();
       try {
         client = getClient();
         if (!client) {
@@ -89,7 +91,7 @@ export function createCaptureProtectionController(
     },
     setActive(value: boolean) {
       active = value;
-      if (platform === 'web') return Promise.resolve();
+      if (previewOnly) return Promise.resolve();
       if (!value) {
         ++generation;
         update({ foreground: false });

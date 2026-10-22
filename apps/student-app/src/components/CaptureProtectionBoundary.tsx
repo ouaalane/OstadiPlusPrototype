@@ -1,3 +1,4 @@
+import { isRunningInExpoGo } from 'expo';
 import {
   createContext,
   useContext,
@@ -8,6 +9,7 @@ import {
 } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   AppState,
   Platform,
   Pressable,
@@ -20,6 +22,7 @@ import { createNativeProtectionClient } from '../lib/capture-protection';
 import { colors } from '../theme';
 
 const CaptureContext = createContext({ blocked: false });
+let previewNoticeShown = false;
 export const useCaptureProtection = () => useContext(CaptureContext);
 
 export default function CaptureProtectionBoundary({
@@ -32,6 +35,7 @@ export default function CaptureProtectionBoundary({
       Platform.OS,
       createNativeProtectionClient,
       (AppState.currentState ?? 'active') === 'active',
+      isRunningInExpoGo(),
     ),
   );
   const state = useSyncExternalStore(
@@ -40,6 +44,13 @@ export default function CaptureProtectionBoundary({
     controller.getSnapshot,
   );
   useEffect(() => {
+    if (controller.getSnapshot().phase === 'preview' && !previewNoticeShown) {
+      previewNoticeShown = true;
+      Alert.alert(
+        'Expo Go · وضع المعاينة',
+        'التطبيق خدام للمعاينة. حماية screenshots وتسجيل الشاشة غير مفعّلة فـ Expo Go؛ كتحتاج النسخة الأصلية ديال التطبيق.',
+      );
+    }
     void controller.start();
     const subscription = AppState.addEventListener('change', (value) => {
       void controller.setActive(value === 'active');
@@ -49,9 +60,9 @@ export default function CaptureProtectionBoundary({
       controller.stop();
     };
   }, [controller]);
-  const web = state.phase === 'unsupported';
-  const ready = state.phase === 'protected' || web;
-  const blocked = !web && (!ready || !state.foreground || state.captured);
+  const preview = state.phase === 'unsupported' || state.phase === 'preview';
+  const ready = state.phase === 'protected' || preview;
+  const blocked = !preview && (!ready || !state.foreground || state.captured);
   const unavailable = state.phase === 'unavailable';
   const failed = state.phase === 'error' || unavailable;
   return (

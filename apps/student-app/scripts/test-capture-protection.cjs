@@ -103,6 +103,20 @@ test('failure keeps content covered; explicit retry can recover', async () => {
   await f.controller.retry();
   assert.equal(f.controller.getSnapshot().phase, 'protected');
 });
+for (const platform of ['android', 'ios'])
+  test(`${platform}: Expo Go preview stays usable without loading native protection`, async () => {
+    const controller = create(platform, () => {
+      throw new Error('Expo Go must not load the custom native module');
+    }, true, true);
+    await controller.start();
+    assert.equal(controller.getSnapshot().phase, 'preview');
+    await controller.setActive(false);
+    await controller.setActive(true);
+    await controller.retry();
+    assert.equal(controller.getSnapshot().phase, 'preview');
+    assert.equal(controller.getSnapshot().captured, false);
+    controller.stop();
+  });
 test('recording already active at startup is blocked; later capture events hide/unhide content', async () => {
   const f = fixture(async () => ({ captured: true }));
   await f.controller.start();
