@@ -20,7 +20,9 @@
  *    decoder reported frames, so it is deliberately not used here.
  *
  * Controls: back, previous lesson, rewind 10 s, play/pause, forward 10 s,
- * next lesson, mute, fullscreen, and a draggable scrubber. The scrubber is
+ * next lesson, mute, fullscreen, and a draggable scrubber. Chrome hides after
+ * four idle seconds of playback; tapping the picture reveals it without pausing.
+ * The scrubber is
  * RTL-aware: in Arabic the timeline starts on the right, so the fill is
  * anchored right and taps/drags are mirrored. Playback pauses when the screen
  * loses focus or the app goes to the background; a video that has ended
@@ -48,6 +50,7 @@ import { formatDuration } from '@ostadiplus/shared';
 
 import { AppText, IconButton } from './ui';
 import VideoWatermark from './VideoWatermark';
+import { usePlayerControls } from './usePlayerControls';
 import { useI18n } from '../i18n/useI18n';
 import { colors, overlays, spacing } from '../theme';
 
@@ -316,7 +319,17 @@ function PlayerSurface({
     return () => subscription.remove();
   }, [safePause, saveNow]);
 
+  const loading = (!firstFrame || status === 'loading') && !error;
+  const { controlsVisible, revealControls, toggleControls } = usePlayerControls({
+    playing,
+    loading,
+    dragging,
+    hasError: !!error,
+    fullscreen,
+  });
+
   const togglePlay = useCallback(() => {
+    revealControls();
     autoStarted.current = true;
     // The visible state can be one event tick ahead of the native player
     // (especially during the 600 ms surface-attach delay), so decide from the
@@ -335,10 +348,11 @@ function PlayerSurface({
       completedRef.current = false;
     }
     player.play();
-  }, [player, expectedDuration]);
+  }, [player, expectedDuration, revealControls]);
 
   const seekTo = useCallback(
     (seconds: number) => {
+      revealControls();
       const total = durationRef.current || expectedDuration;
       const max = Math.max(0, total - 0.25);
       const target = Math.max(0, Math.min(seconds, max));
@@ -347,7 +361,7 @@ function PlayerSurface({
       setPosition(target);
       if (total <= 0 || target < total - 1) completedRef.current = false;
     },
-    [player, expectedDuration],
+    [player, expectedDuration, revealControls],
   );
 
   const seekBy = useCallback(
@@ -416,7 +430,6 @@ function PlayerSurface({
   const progressRatio = total > 0 ? clamp01(position / total) : 0;
   const shownRatio = dragging ? dragRatio : progressRatio;
   const shownSeconds = dragging ? dragRatio * total : position;
-  const loading = (!firstFrame || status === 'loading') && !error;
   const atEnd = total > 0 && position >= total - 0.5;
 
   const pauseLabel = rtl ? 'إيقاف مؤقت' : 'Pause';
@@ -445,24 +458,31 @@ function PlayerSurface({
         <Image source={poster} style={StyleSheet.absoluteFill} resizeMode="contain" />
       ) : null}
 
-      {/* Legibility scrims for the controls; never touchable. */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[overlays.ink50, overlays.ink00]}
-        style={styles.topScrim}
-      />
-      <LinearGradient
-        pointerEvents="none"
-        colors={[overlays.ink00, overlays.ink68]}
-        style={styles.bottomScrim}
-      />
+      {/* The whole chrome disappears; the video and watermark stay mounted. */}
+      {controlsVisible ? (
+        <>
+          <LinearGradient
+            pointerEvents="none"
+            colors={[overlays.ink50, overlays.ink00]}
+            style={styles.topScrim}
+          />
+          <LinearGradient
+            pointerEvents="none"
+            colors={[overlays.ink00, overlays.ink68]}
+            style={styles.bottomScrim}
+          />
+        </>
+      ) : null}
 
-      {/* Anywhere the controls do not claim toggles playback. */}
       <Pressable
-        onPress={togglePlay}
+        onPress={toggleControls}
         style={StyleSheet.absoluteFill}
         accessibilityRole="button"
-        accessibilityLabel={playing ? pauseLabel : playLabel}
+        accessibilityLabel={
+          controlsVisible
+            ? rtl ? 'إخفاء أدوات التحكم' : 'Masquer les commandes'
+            : rtl ? 'إظهار أدوات التحكم' : 'Afficher les commandes'
+        }
       />
 
       {error ? (
@@ -488,172 +508,179 @@ function PlayerSurface({
         </View>
       ) : null}
 
-      <SafeAreaView
-        style={styles.overlay}
-        pointerEvents="box-none"
-        edges={fullscreen ? ['top', 'left', 'right', 'bottom'] : ['top']}
-      >
-        <View style={[styles.topBar, rtl ? styles.rowReverse : styles.row]} pointerEvents="box-none">
-          <IconButton
-            icon={rtl ? 'chevron-forward' : 'chevron-back'}
-            variant="onPhoto"
-            size={38}
-            label={rtl ? 'رجوع' : 'Retour'}
-            onPress={onBack}
-          />
-          <AppText
-            size={13}
-            weight="semibold"
-            tone="white"
-            numberOfLines={1}
-            style={styles.title}
-          >
-            {title}
-          </AppText>
-          <IconButton
-            icon={muted ? 'volume-mute' : 'volume-high'}
-            variant="onPhoto"
-            size={38}
-            label={
-              muted
-                ? rtl
-                  ? 'إلغاء كتم الصوت'
-                  : 'Activer le son'
-                : rtl
-                  ? 'كتم الصوت'
-                  : 'Couper le son'
-            }
-            onPress={() => {
-              player.muted = !muted;
-            }}
-          />
-          <IconButton
-            icon={fullscreen ? 'contract' : 'expand'}
-            variant="onPhoto"
-            size={38}
-            label={
-              fullscreen
-                ? rtl
-                  ? 'إنهاء ملء الشاشة'
-                  : 'Quitter le plein écran'
-                : rtl
-                  ? 'ملء الشاشة'
-                  : 'Plein écran'
-            }
-            onPress={onToggleFullscreen}
-          />
-        </View>
-
-        {!error ? (
-          <View style={styles.centerArea} pointerEvents="box-none">
-            <View style={styles.centerRow} pointerEvents="box-none">
-              <SeekButton
-                direction="back"
-                label={rtl ? 'الرجوع 10 ثوانٍ' : 'Reculer de 10 secondes'}
-                onPress={() => seekBy(-SKIP_SEC)}
-              />
-              <Pressable
-                onPress={togglePlay}
-                style={({ pressed }) => [styles.bigPlay, pressed && { opacity: 0.8 }]}
-                accessibilityRole="button"
-                accessibilityLabel={playing ? pauseLabel : playLabel}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Ionicons
-                    name={playing ? 'pause' : 'play'}
-                    size={28}
-                    color={colors.white}
-                    style={playing ? undefined : { marginLeft: 3 }}
-                    importantForAccessibility="no"
-                  />
-                )}
-              </Pressable>
-              <SeekButton
-                direction="forward"
-                label={rtl ? 'التقدم 10 ثوانٍ' : 'Avancer de 10 secondes'}
-                onPress={() => seekBy(SKIP_SEC)}
-              />
-            </View>
-          </View>
-        ) : (
-          <View style={{ flex: 1 }} pointerEvents="none" />
-        )}
-
-        <View style={styles.bottomArea} pointerEvents="box-none">
-          <View
-            style={[styles.timeRow, rtl ? styles.rowReverse : styles.row]}
-            pointerEvents="box-none"
-          >
-            <ControlButton
-              icon="play-skip-back"
-              label={rtl ? 'الدرس السابق' : 'Leçon précédente'}
-              size={28}
-              disabled={!hasPrev}
-              onPress={hasPrev ? onPrev : undefined}
+      {controlsVisible ? (
+        <SafeAreaView
+          style={styles.overlay}
+          pointerEvents="box-none"
+          onTouchStart={revealControls}
+          edges={fullscreen ? ['top', 'left', 'right', 'bottom'] : ['top']}
+        >
+          <View style={[styles.topBar, rtl ? styles.rowReverse : styles.row]} pointerEvents="box-none">
+            <IconButton
+              icon={rtl ? 'chevron-forward' : 'chevron-back'}
+              variant="onPhoto"
+              size={38}
+              label={rtl ? 'رجوع' : 'Retour'}
+              onPress={onBack}
             />
-            <AppText size={11.5} weight="medium" tone="white" style={styles.timeLabel}>
-              {formatDuration(shownSeconds)}
-            </AppText>
-            <View
-              ref={trackRef}
-              style={styles.scrubTrack}
-              onLayout={measureTrack}
-              onStartShouldSetResponder={() => true}
-              onMoveShouldSetResponder={() => true}
-              onResponderGrant={startScrub}
-              onResponderMove={moveScrub}
-              onResponderRelease={commitScrub}
-              onResponderTerminate={cancelScrub}
-              onResponderTerminationRequest={() => false}
-              accessibilityRole="adjustable"
-              accessibilityLabel={rtl ? 'شريط التقدم' : 'Barre de progression'}
-              accessibilityValue={{
-                min: 0,
-                max: Math.max(1, Math.round(total)),
-                now: Math.round(shownSeconds),
-                text: `${formatDuration(shownSeconds)} / ${formatDuration(total)}`,
-              }}
-              accessibilityActions={[
-                { name: 'increment', label: rtl ? '+10 ثوانٍ' : '+10 secondes' },
-                { name: 'decrement', label: rtl ? '-10 ثوانٍ' : '-10 secondes' },
-              ]}
-              onAccessibilityAction={(event) => {
-                if (event.nativeEvent.actionName === 'increment') seekBy(SKIP_SEC);
-                if (event.nativeEvent.actionName === 'decrement') seekBy(-SKIP_SEC);
-              }}
+            <AppText
+              size={13}
+              weight="semibold"
+              tone="white"
+              numberOfLines={1}
+              style={styles.title}
             >
-              <View style={styles.scrubBg} />
-              <View
-                style={[
-                  styles.scrubFill,
-                  { width: percent(shownRatio) },
-                  rtl ? styles.fillRtl : styles.fillLtr,
-                ]}
-              />
-              <View
-                style={[
-                  styles.scrubThumb,
-                  rtl
-                    ? { right: percent(shownRatio), marginRight: -6 }
-                    : { left: percent(shownRatio), marginLeft: -6 },
-                ]}
-              />
-            </View>
-            <AppText size={11.5} weight="medium" tone="white" style={styles.timeLabel}>
-              {formatDuration(total)}
+              {title}
             </AppText>
-            <ControlButton
-              icon="play-skip-forward"
-              label={rtl ? 'الدرس التالي' : 'Leçon suivante'}
-              size={28}
-              disabled={!hasNext}
-              onPress={hasNext ? onNext : undefined}
+            <IconButton
+              icon={muted ? 'volume-mute' : 'volume-high'}
+              variant="onPhoto"
+              size={38}
+              label={
+                muted
+                  ? rtl
+                    ? 'إلغاء كتم الصوت'
+                    : 'Activer le son'
+                  : rtl
+                    ? 'كتم الصوت'
+                    : 'Couper le son'
+              }
+              onPress={() => {
+                revealControls();
+                player.muted = !muted;
+              }}
+            />
+            <IconButton
+              icon={fullscreen ? 'contract' : 'expand'}
+              variant="onPhoto"
+              size={38}
+              label={
+                fullscreen
+                  ? rtl
+                    ? 'إنهاء ملء الشاشة'
+                    : 'Quitter le plein écran'
+                  : rtl
+                    ? 'ملء الشاشة'
+                    : 'Plein écran'
+              }
+              onPress={() => {
+                revealControls();
+                onToggleFullscreen();
+              }}
             />
           </View>
-        </View>
-      </SafeAreaView>
+
+          {!error ? (
+            <View style={styles.centerArea} pointerEvents="box-none">
+              <View style={styles.centerRow} pointerEvents="box-none">
+                <SeekButton
+                  direction="back"
+                  label={rtl ? 'الرجوع 10 ثوانٍ' : 'Reculer de 10 secondes'}
+                  onPress={() => seekBy(-SKIP_SEC)}
+                />
+                <Pressable
+                  onPress={togglePlay}
+                  style={({ pressed }) => [styles.bigPlay, pressed && { opacity: 0.8 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={playing ? pauseLabel : playLabel}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Ionicons
+                      name={playing ? 'pause' : 'play'}
+                      size={28}
+                      color={colors.white}
+                      style={playing ? undefined : { marginLeft: 3 }}
+                      importantForAccessibility="no"
+                    />
+                  )}
+                </Pressable>
+                <SeekButton
+                  direction="forward"
+                  label={rtl ? 'التقدم 10 ثوانٍ' : 'Avancer de 10 secondes'}
+                  onPress={() => seekBy(SKIP_SEC)}
+                />
+              </View>
+            </View>
+          ) : (
+            <View style={{ flex: 1 }} pointerEvents="none" />
+          )}
+
+          <View style={styles.bottomArea} pointerEvents="box-none">
+            <View
+              style={[styles.timeRow, rtl ? styles.rowReverse : styles.row]}
+              pointerEvents="box-none"
+            >
+              <ControlButton
+                icon="play-skip-back"
+                label={rtl ? 'الدرس السابق' : 'Leçon précédente'}
+                size={28}
+                disabled={!hasPrev}
+                onPress={hasPrev ? onPrev : undefined}
+              />
+              <AppText size={11.5} weight="medium" tone="white" style={styles.timeLabel}>
+                {formatDuration(shownSeconds)}
+              </AppText>
+              <View
+                ref={trackRef}
+                style={styles.scrubTrack}
+                onLayout={measureTrack}
+                onStartShouldSetResponder={() => true}
+                onMoveShouldSetResponder={() => true}
+                onResponderGrant={startScrub}
+                onResponderMove={moveScrub}
+                onResponderRelease={commitScrub}
+                onResponderTerminate={cancelScrub}
+                onResponderTerminationRequest={() => false}
+                accessibilityRole="adjustable"
+                accessibilityLabel={rtl ? 'شريط التقدم' : 'Barre de progression'}
+                accessibilityValue={{
+                  min: 0,
+                  max: Math.max(1, Math.round(total)),
+                  now: Math.round(shownSeconds),
+                  text: `${formatDuration(shownSeconds)} / ${formatDuration(total)}`,
+                }}
+                accessibilityActions={[
+                  { name: 'increment', label: rtl ? '+10 ثوانٍ' : '+10 secondes' },
+                  { name: 'decrement', label: rtl ? '-10 ثوانٍ' : '-10 secondes' },
+                ]}
+                onAccessibilityAction={(event) => {
+                  if (event.nativeEvent.actionName === 'increment') seekBy(SKIP_SEC);
+                  if (event.nativeEvent.actionName === 'decrement') seekBy(-SKIP_SEC);
+                }}
+              >
+                <View style={styles.scrubBg} />
+                <View
+                  style={[
+                    styles.scrubFill,
+                    { width: percent(shownRatio) },
+                    rtl ? styles.fillRtl : styles.fillLtr,
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.scrubThumb,
+                    rtl
+                      ? { right: percent(shownRatio), marginRight: -6 }
+                      : { left: percent(shownRatio), marginLeft: -6 },
+                  ]}
+                />
+              </View>
+              <AppText size={11.5} weight="medium" tone="white" style={styles.timeLabel}>
+                {formatDuration(total)}
+              </AppText>
+              <ControlButton
+                icon="play-skip-forward"
+                label={rtl ? 'الدرس التالي' : 'Leçon suivante'}
+                size={28}
+                disabled={!hasNext}
+                onPress={hasNext ? onNext : undefined}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      ) : null}
 
       {code ? (
         <MemoWatermark

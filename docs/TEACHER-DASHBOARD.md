@@ -42,6 +42,8 @@ The workspace was rebuilt around a persistent course outline, inline lesson edit
 | Progress and results | Actual synchronized completions, saved playback positions and quiz attempts |
 | Existing teacher/center settings and payload export | Existing settings and manual dataset export remain available |
 
+The mobile video controls (header, playback buttons, timeline and timestamps) hide together after four idle seconds of playback, in portrait and fullscreen. Tapping the picture toggles the controls without pausing. Pausing, buffering, errors and dragging the timeline keep controls available; interacting with a control restarts the idle window. The video surface and ownership watermark stay mounted. Verify timer behavior and rotation guards with `node --test apps/student-app/scripts/test-player-controls.cjs apps/student-app/scripts/test-video-rotation.cjs`.
+
 Uploads: MP4/WebM/MOV and PDF, maximum 100 MB per file. MP4/H.264 is recommended for device compatibility; uploads are not transcoded. Thumbnails: JPG/PNG/WebP up to 8 MB, cropped to 16:9 and compressed in the browser. Uploaded media and demo state survive API restart under `apps/api/data/demo/`; watermark records remain in SQLite. Back up that directory to retain the demo. Clearing browser storage alone does not delete server files.
 
 The analytics “recorded viewing minutes” sums saved playback positions, not total engagement time. Quiz attempts are recorded locally when completed or timed out, and uploaded during sync. Seed metrics are demonstration data, not business traction.
