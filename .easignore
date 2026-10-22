@@ -1,0 +1,60 @@
+# EAS archives the Git repository root, including this monorepo's other apps.
+# A root .easignore replaces ALL .gitignore files for archive filtering.
+# Keep mobile source/assets/native modules, shared code and workspace metadata.
+
+.git/
+node_modules/
+dist/
+build/
+.expo/
+.kotlin/
+.cache/
+.DS_Store
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.tsbuildinfo
+*.orig.*
+*.apk
+*.aab
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+.env*.local
+.vscode/
+.idea/
+.opencode/
+.playwright-mcp/
+.metro-health-check*
+
+# Regenerate native projects on EAS so config plugins are applied.
+# Do NOT ignore modules/**/android or modules/**/ios: those are source code.
+/apps/student-app/android/
+/apps/student-app/ios/
+/apps/student-app/.pdf-build/
+/apps/student-app/.metro-health-check*
+/apps/student-app/expo-env.d.ts
+/apps/student-app/web-build/
+
+# Dashboard-only assets are duplicated under student-app/src/assets.
+# Retain the dashboard package.json because the root has npm workspaces.
+/apps/teacher-dashboard/public/
+/apps/api/data/
+
+# Design inputs, original media, docs and local review artifacts aren't APK inputs.
+/media/
+/incoming/
+/docs/
+/shots/
+/graphify-out/
+/.codex/
+/AGENTS.md
+/*.png
+/*.jpg
+/*.jpeg
+/*.zip
+/*.bundle
