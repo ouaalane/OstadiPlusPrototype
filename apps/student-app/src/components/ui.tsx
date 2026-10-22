@@ -46,6 +46,13 @@ const SUBJECT_ICONS: Record<string, IconName> = {
   'الفيزياء والكيمياء': 'flask-outline',
 };
 
+/** AI-generated photographic subject art, bundled for offline/Expo Go use. */
+const SUBJECT_IMAGES: Record<string, import('react-native').ImageSourcePropType> = {
+  'الرياضيات': require('../assets/subjects/mathematics.png'),
+  'الفيزياء': require('../assets/subjects/physics.png'),
+  'الفيزياء والكيمياء': require('../assets/subjects/physics.png'),
+};
+
 /* ------------------------------------------------------------------ */
 /* Text                                                                */
 /* ------------------------------------------------------------------ */
@@ -872,6 +879,7 @@ export function SearchBar({ placeholder, onPress }: { placeholder: string; onPre
 
 export function SubjectTile({ subject, onPress }: { subject: string; onPress?: () => void }) {
   const icon = SUBJECT_ICONS[subject] ?? 'albums-outline';
+  const image = SUBJECT_IMAGES[subject];
   return (
     <Pressable
       style={({ pressed }) => [styles.subjectTile, pressed && { opacity: 0.7 }]}
@@ -881,7 +889,11 @@ export function SubjectTile({ subject, onPress }: { subject: string; onPress?: (
       accessibilityLabel={subject}
     >
       <View style={styles.subjectCircle} importantForAccessibility="no">
-        <Ionicons name={icon} size={24} color={colors.brand} />
+        {image ? (
+          <Image source={image} resizeMode="contain" style={styles.subjectImage} />
+        ) : (
+          <Ionicons name={icon} size={24} color={colors.brand} />
+        )}
       </View>
       <AppText size={12} weight="medium" tone="body" numberOfLines={1} style={{ textAlign: 'center', width: 74 }}>
         {subject}
@@ -1966,6 +1978,7 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
 
+  subjectImage: { width: 52, height: 52 },
   subjectTile: { width: 74, alignItems: 'center', gap: 6 },
   subjectCircle: {
     width: 58,
