@@ -14,7 +14,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { formatDuration, formatSize } from '@ostadiplus/shared';
-import { Confirm, EmptyState, Modal } from '@/components/ui';
+import { Confirm, EmptyState, Modal, TableScroll } from '@/components/ui';
 import { NewLessonDialog } from '@/components/authoring/NewLessonDialog';
 import { lessonPublishError } from '@/lib/authoring';
 import { KIND_META } from '@/lib/lessonKind';
@@ -286,7 +286,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
           </div>
         ) : null}
         {rows.length ? (
-          <div className="overflow-x-auto">
+          <TableScroll label="المحتوى التعليمي">
             <table className="workspace-table min-w-[790px]">
               <thead>
                 <tr>
@@ -382,16 +382,39 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                             ? `${lesson.questions?.length ?? 0} أسئلة`
                             : meta.label}
                         </p>
-                        <p className="num mt-1 text-[9px] text-muted">
-                          {quiz
-                            ? lesson.timeLimitSec
-                              ? `${lesson.timeLimitSec}s`
-                              : 'دون توقيت'
-                            : lesson.kind === 'video'
-                              ? `${formatDuration(lesson.durationSec)} · ${formatSize(lesson.sizeMb)}`
-                              : lesson.kind === 'pdf'
-                                ? `${lesson.pages} صفحات · ${formatSize(lesson.sizeMb)}`
-                                : 'نص منسّق'}
+                        <p className="content-file-meta mt-1 text-[9px] text-muted">
+                          {quiz ? (
+                            lesson.timeLimitSec ? (
+                              <span className="num">
+                                {lesson.timeLimitSec}s
+                              </span>
+                            ) : (
+                              'دون توقيت'
+                            )
+                          ) : lesson.kind === 'video' ? (
+                            <>
+                              <span className="num">
+                                {formatDuration(lesson.durationSec)}
+                              </span>
+                              <span aria-hidden="true">·</span>
+                              <span className="num">
+                                {formatSize(lesson.sizeMb)}
+                              </span>
+                            </>
+                          ) : lesson.kind === 'pdf' ? (
+                            <>
+                              <span>
+                                <span className="num">{lesson.pages}</span>{' '}
+                                صفحات
+                              </span>
+                              <span aria-hidden="true">·</span>
+                              <span className="num">
+                                {formatSize(lesson.sizeMb)}
+                              </span>
+                            </>
+                          ) : (
+                            'نص منسّق'
+                          )}
                         </p>
                       </td>
                       <td>
@@ -433,7 +456,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                 })}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         ) : (
           <div className="p-8">
             <EmptyState

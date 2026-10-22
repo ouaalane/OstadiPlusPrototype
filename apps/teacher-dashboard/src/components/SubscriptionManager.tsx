@@ -201,10 +201,11 @@ export default function SubscriptionManager({
                 ? 'تعديل الاشتراك'
                 : 'اشتراك جديد'}
           </legend>
-          <div className="flex flex-wrap gap-2">
+          <div className="subscription-plan-grid">
             {[1, 2, 3].map((n) => (
               <button
                 key={n}
+                data-period="months"
                 type="button"
                 aria-pressed={choice === `months:${n}`}
                 className={`btn btn-sm ${choice === `months:${n}` ? 'btn-primary' : 'btn-outline'}`}
@@ -221,6 +222,7 @@ export default function SubscriptionManager({
             {course?.semesters.map((s) => (
               <button
                 key={s.id}
+                data-period="semester"
                 type="button"
                 aria-pressed={choice === `semester:${s.id}`}
                 className={`btn btn-sm ${choice === `semester:${s.id}` ? 'btn-primary' : 'btn-outline'}`}

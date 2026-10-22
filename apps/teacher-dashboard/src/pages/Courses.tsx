@@ -19,7 +19,13 @@ import {
   coverGradients,
   relativeTime,
 } from '@ostadiplus/shared';
-import { CourseCover, EmptyState, Field, Modal } from '@/components/ui';
+import {
+  CourseCover,
+  EmptyState,
+  Field,
+  Modal,
+  TableScroll,
+} from '@/components/ui';
 import { useAction, useStore, newId, type NewCourse } from '@/store/DemoStore';
 const LEVELS = [
   '2ème Bac — SVT & PC',
@@ -158,7 +164,7 @@ export default function Courses() {
         </div>
         {courses.length ? (
           view === 'list' ? (
-            <div className="overflow-x-auto">
+            <TableScroll label="الدورات التعليمية">
               <table className="workspace-table min-w-[780px]">
                 <thead>
                   <tr>
@@ -187,7 +193,7 @@ export default function Courses() {
                             className="h-16 w-24 shrink-0 rounded-lg"
                           />
                           <span>
-                            <span className="block max-w-64 truncate font-bold">
+                            <span className="block max-w-72 break-words font-bold">
                               {c.title}
                             </span>
                             <span className="mt-1 block text-[10px] text-muted">
@@ -235,7 +241,7 @@ export default function Courses() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           ) : (
             <div className="grid gap-5 p-5 sm:grid-cols-2 xl:grid-cols-3">
               {courses.map((c) => (
@@ -260,7 +266,7 @@ export default function Courses() {
                     >
                       {c.status === 'published' ? 'منشورة' : 'مسودة'}
                     </span>
-                    <h2 className="line-clamp-2 text-base font-bold">
+                    <h2 className="break-words text-base font-bold">
                       {c.title}
                     </h2>
                     <p className="text-[10px] text-muted">{c.level}</p>
@@ -451,7 +457,7 @@ function CreateCourseModal({
 
         <div>
           <span className="label">غلاف الدورة</span>
-          <div className="flex flex-wrap gap-2">
+          <div className="cover-choice-grid">
             {COVERS.map((key) => {
               const selected = cover === key;
               return (
@@ -461,13 +467,14 @@ function CreateCourseModal({
                   aria-label={`غلاف ${key}`}
                   aria-pressed={selected}
                   onClick={() => setCover(key)}
-                  className={`overflow-hidden rounded-lg transition-transform ${
-                    selected
-                      ? 'scale-110 ring-2 ring-ink ring-offset-2'
-                      : 'hover:scale-105'
-                  }`}
+                  className="cover-choice"
+                  data-selected={selected}
                 >
-                  <CourseCover cover={key} subject={''} className="h-12 w-20" />
+                  <CourseCover
+                    cover={key}
+                    subject={''}
+                    className="aspect-[5/3] w-full"
+                  />
                 </button>
               );
             })}

@@ -138,14 +138,13 @@ export default function Students() {
           <div className="flex items-center gap-3">
             <Avatar label={student.monogram} seed={index} size={38} />
             <div className="min-w-0">
-              <div className="truncate text-[14.5px] font-bold text-ink">
+              <div className="student-name text-[14.5px] font-bold text-ink">
                 {student.fullName}
               </div>
-              <div className="truncate text-xs text-muted">
+              <div className="student-meta text-xs text-muted">
                 <span dir="ltr" className="num">
                   {student.phone}
                 </span>
-                {' · '}
                 <span dir="ltr" className="num">
                   {student.studentCode}
                 </span>
@@ -221,7 +220,7 @@ export default function Students() {
                     key={course.id}
                     title={`${course.title} — ${isEnrollmentExpired(enrollment) ? 'اشتراك منتهي' : enrollmentHasAccess(enrollment) ? 'اشتراك ساري' : 'بدون وصول حالياً'}`}
                     className={[
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                      'student-course-label text-[11px] font-semibold',
                       enrollmentHasAccess(enrollment)
                         ? 'bg-success-soft text-success'
                         : enrollment.status === 'pending'
@@ -229,9 +228,7 @@ export default function Students() {
                           : 'bg-surface-alt text-muted',
                     ].join(' ')}
                   >
-                    {course.title.length > 14
-                      ? `${course.title.slice(0, 14)}…`
-                      : course.title}
+                    {course.title}
                   </span>
                 );
               })}

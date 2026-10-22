@@ -13,6 +13,7 @@ import {
 } from 'react';
 import {
   AlertCircle,
+  ArrowLeftRight,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -195,9 +196,7 @@ export function CourseCover({
       />
       <div className="relative flex h-full flex-col justify-between p-4">
         {!compact && subject ? (
-          <span className="pill bg-white/20 text-white backdrop-blur-sm">
-            {subject}
-          </span>
+          <span className="course-cover-subject">{subject}</span>
         ) : null}
         {children}
       </div>
@@ -327,7 +326,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className={`card animate-rise relative flex max-h-[92dvh] w-full flex-col overflow-hidden sm:rounded-2xl ${width}`}
+        className={`modal-panel card animate-rise relative flex max-h-[92dvh] w-full flex-col overflow-hidden sm:rounded-2xl ${width}`}
         style={{ boxShadow: 'var(--shadow-overlay)' }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
@@ -354,7 +353,7 @@ export function Modal({
           {children}
         </div>
         {footer ? (
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-alt/60 px-5 py-4 sm:px-6">
+          <footer className="modal-footer flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-alt/60 px-5 py-4 sm:px-6">
             {footer}
           </footer>
         ) : null}
@@ -581,6 +580,53 @@ export function Field({
 /* Data Table — modern card-style table (sort, search, select, pages)  */
 /* ------------------------------------------------------------------ */
 
+/** Keeps existing tables intact and makes horizontal overflow visible. */
+export function TableScroll({
+  children,
+  label = 'جدول البيانات',
+  inset = false,
+}: {
+  children: ReactNode;
+  label?: string;
+  inset?: boolean;
+}) {
+  const region = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  const hintId = useId();
+  useEffect(() => {
+    const element = region.current;
+    if (!element) return;
+    const measure = () =>
+      setOverflow(element.scrollWidth > element.clientWidth + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    if (element.firstElementChild) observer.observe(element.firstElementChild);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div className="table-scroll-frame">
+      {overflow ? (
+        <p id={hintId} className="table-scroll-hint">
+          <ArrowLeftRight size={15} aria-hidden="true" />
+          حرّك الجدول أفقياً لعرض بقية الأعمدة والإجراءات.
+        </p>
+      ) : null}
+      <div
+        ref={region}
+        className="table-scroll-region scrollbar-slim overflow-x-auto"
+        data-inset={inset || undefined}
+        tabIndex={overflow ? 0 : undefined}
+        role={overflow ? 'region' : undefined}
+        aria-label={overflow ? label : undefined}
+        aria-describedby={overflow ? hintId : undefined}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export interface DataTableColumn<T> {
   /** Unique key for this column. */
   key: string;
@@ -796,12 +842,7 @@ export function DataTable<T>({
       )}
 
       {/* ---- Table ---- */}
-      <div
-        className="data-table-scroll scrollbar-slim overflow-x-auto px-6 pb-2"
-        tabIndex={0}
-        role="region"
-        aria-label={title || 'جدول البيانات'}
-      >
+      <TableScroll label={title || 'جدول البيانات'} inset>
         <table
           className="w-full border-collapse text-sm"
           style={{ minWidth: 640 }}
@@ -948,7 +989,7 @@ export function DataTable<T>({
             )}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
 
       {/* ---- Footer: per-page selector | page buttons ---- */}
       {totalPages > 1 ? (
@@ -1108,7 +1149,9 @@ export function StatCard({
       </span>
       <div className="min-w-0">
         <div className="text-xs font-semibold text-muted">{label}</div>
-        <div className="num mt-0.5 text-2xl font-bold text-ink">{value}</div>
+        <div className="mt-0.5 text-2xl font-bold text-ink">
+          <span className="num">{value}</span>
+        </div>
         {hint ? <div className="mt-0.5 text-xs text-faint">{hint}</div> : null}
       </div>
     </div>

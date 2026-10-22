@@ -112,7 +112,7 @@ export function CourseInfo({
 
         <div>
           <span className="label">غلاف الدورة</span>
-          <div className="flex flex-wrap gap-2">
+          <div className="cover-choice-grid">
             {Object.keys(coverGradients).map((key) => {
               const selected = form.cover === key;
               return (
@@ -124,13 +124,14 @@ export function CourseInfo({
                   onClick={() =>
                     setForm({ ...form, cover: key as NewCourse['cover'] })
                   }
-                  className={`overflow-hidden rounded-lg transition-transform ${
-                    selected
-                      ? 'scale-110 ring-2 ring-ink ring-offset-2'
-                      : 'hover:scale-105'
-                  }`}
+                  className="cover-choice"
+                  data-selected={selected}
                 >
-                  <CourseCover cover={key} subject={''} className="h-12 w-20" />
+                  <CourseCover
+                    cover={key}
+                    subject={''}
+                    className="aspect-[5/3] w-full"
+                  />
                 </button>
               );
             })}

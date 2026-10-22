@@ -139,8 +139,8 @@
 @utility card {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-xl);
+  box-shadow: none;
 }
 
 @utility btn {
@@ -226,7 +226,7 @@
   --btn-h: 36px;
   --btn-px: 12px;
   --btn-fs: 13.5px;
-  --btn-r: 10px;
+  --btn-r: var(--radius-md);
 }
 
 @utility btn-icon {
@@ -1032,6 +1032,7 @@ a:focus-visible {
 }
 .data-table-card thead th {
   border-bottom: 1px solid var(--color-line);
+  background: var(--color-workspace-canvas);
 }
 .table-sort {
   display: inline-flex;
@@ -1049,9 +1050,6 @@ a:focus-visible {
 }
 .data-table-card tbody tr[data-selected='true'] {
   background: var(--color-brand-soft);
-}
-.data-table-scroll {
-  outline-offset: -3px;
 }
 .field-message {
   display: flex;
@@ -1655,4 +1653,141 @@ a:focus-visible {
   .content-kind-label {
     width: 90px;
   }
+}
+
+/* Visual clarity for the web dashboard, using the existing identity tokens. */
+.course-cover-subject {
+  align-self: flex-start;
+  display: inline-flex;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.student-name {
+  overflow-wrap: anywhere;
+}
+.student-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 4px;
+}
+.student-meta .num {
+  white-space: nowrap;
+}
+.student-course-label {
+  display: block;
+  max-width: 190px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  line-height: 1.8;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.analytics-table th:first-child,
+.analytics-table td:first-child {
+  min-width: 190px;
+}
+.analytics-table td:first-child p {
+  overflow-wrap: anywhere;
+}
+.analytics-table td:not(:first-child) {
+  white-space: nowrap;
+}
+.analytics-table td .num {
+  display: inline-block;
+}
+.modal-footer {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.modal-panel {
+  border-radius: var(--radius-xl);
+}
+@media (max-width: 639px) {
+  .modal-panel {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+}
+
+.content-file-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+.workspace-metric > :first-child {
+  min-block-size: 40px;
+  align-items: flex-start;
+}
+.table-scroll-frame {
+  min-width: 0;
+}
+.table-scroll-region {
+  position: relative;
+  outline-offset: -3px;
+}
+.table-scroll-region[data-inset='true'] {
+  padding-inline: 24px;
+  padding-bottom: 8px;
+}
+.table-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-workspace-canvas);
+  font-size: var(--text-caption);
+  color: var(--color-muted);
+}
+.table-scroll-hint svg {
+  flex-shrink: 0;
+  color: var(--color-brand);
+}
+.cover-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.cover-choice {
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+  cursor: pointer;
+}
+.cover-choice > div {
+  border-radius: var(--radius-md);
+}
+.cover-choice:hover {
+  border-color: var(--color-brand);
+}
+.cover-choice[data-selected='true'] {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+.subscription-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.subscription-plan-grid .btn {
+  grid-column: span 2;
+  height: auto;
+  min-height: 40px;
+  padding: 8px;
+  white-space: normal;
+  line-height: 1.5;
+}
+.subscription-plan-grid [data-period='semester'] {
+  grid-column: span 3;
 }

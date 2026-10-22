@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
 import { accessibleCourses, allLessons } from '@ostadiplus/shared';
-import { EmptyState, ProgressBar } from '@/components/ui';
+import { EmptyState, ProgressBar, TableScroll } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 export default function Analytics() {
   const { state } = useStore();
@@ -99,9 +99,9 @@ export default function Analytics() {
           />
         </div>
         {visible.length ? (
-          <div className="overflow-x-auto">
+          <TableScroll label="تقدّم التلاميذ ونتائجهم">
             <table
-              className="workspace-table min-w-[650px]"
+              className="workspace-table analytics-table min-w-[650px]"
               aria-label="تقدّم التلاميذ ونتائجهم"
             >
               <thead>
@@ -136,15 +136,17 @@ export default function Analytics() {
                         {row.student.studentCode}
                       </span>
                     </td>
-                    <td className="px-4 py-4">{row.courses}</td>
+                    <td className="px-4 py-4">
+                      <span className="num">{row.courses}</span>
+                    </td>
                     <td className="min-w-40 px-4 py-4">
                       {row.total ? (
                         <>
                           <div className="mb-2 flex justify-between text-xs">
-                            <span>
+                            <span className="num">
                               {row.completed} / {row.total}
                             </span>
-                            <span>{row.percent}%</span>
+                            <span className="num">{row.percent}%</span>
                           </div>
                           <ProgressBar
                             value={row.percent}
@@ -158,20 +160,24 @@ export default function Analytics() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-4">{row.minutes} د</td>
-                    <td className="px-4 py-4">{row.attempts}</td>
+                    <td className="px-4 py-4">
+                      <span className="num">{row.minutes}</span> د
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="num">{row.attempts}</span>
+                    </td>
                     <td className="px-4 py-4">
                       {row.score === null ? (
                         <span className="text-xs text-muted">لم يحاول بعد</span>
                       ) : (
-                        `${row.score}%`
+                        <span className="num">{row.score}%</span>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         ) : (
           <EmptyState
             icon={<BarChart3 size={24} />}

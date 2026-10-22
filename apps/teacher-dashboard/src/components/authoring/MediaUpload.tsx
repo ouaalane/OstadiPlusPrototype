@@ -158,7 +158,7 @@ export function MediaUpload({
               {formatSize(lesson.sizeMb)}
             </span>
             <button
-              className="font-bold text-brand"
+              className="btn btn-outline btn-sm"
               disabled={busy}
               onClick={() => input.current?.click()}
             >
@@ -281,7 +281,7 @@ export function MediaUpload({
             : 'المستند يظهر للتلميذ بالزوم والواترمارك.'}
         </span>
         <button
-          className="inline-flex items-center gap-2 font-bold text-brand"
+          className="btn btn-ghost btn-sm"
           disabled={busy}
           onClick={() => void showLibrary()}
         >
@@ -338,7 +338,7 @@ export function MediaUpload({
                 )
                 .map((i) => ({
                   file: i.name,
-                  title: `ملف مرفوع · ${i.name.split('/').pop()?.slice(0, 12)}`,
+                  title: `ملف مرفوع · ${i.name.split('/').pop() ?? i.name}`,
                   durationSec: i.durationSec,
                   pages: i.pages,
                   sizeMb: i.sizeMb,
@@ -346,7 +346,7 @@ export function MediaUpload({
             ].map((i) => (
               <button
                 key={i.file}
-                className="flex items-center gap-3 rounded-lg border border-line p-3 text-start hover:bg-surface-alt"
+                className="flex h-full min-h-24 items-start gap-3 rounded-lg border border-line p-4 text-start hover:bg-surface-alt"
                 onClick={() => {
                   onChange({
                     file: i.file,
@@ -364,8 +364,8 @@ export function MediaUpload({
                     <FileText size={19} />
                   )}
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-xs font-bold">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-bold leading-6 [overflow-wrap:anywhere]">
                     {i.title}
                   </span>
                   <span className="mt-1 block text-[10px] text-muted">
