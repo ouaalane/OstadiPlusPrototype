@@ -24,7 +24,9 @@ import {
 } from '@ostadiplus/shared';
 import {
   DataTable,
+  EmptyState,
   Field,
+  PageHeader,
   Pill,
   Segmented,
   type DataTableColumn,
@@ -69,10 +71,18 @@ export default function Reception() {
   } | null>(null);
 
   const center = state.centers[0];
+  const selectedMembership = (state.memberships ?? []).find(
+    (membership) =>
+      membership.studentId === selectedStudent?.id &&
+      membership.centerId === center?.id &&
+      (membership.status === 'active' || membership.status === 'requested'),
+  );
 
   const searchStudent = useCallback(() => {
     const code = searchCode.trim();
     if (!code) {
+      setSelectedStudent(null);
+      setSubscriptionCourse(null);
       setResult({ tone: 'error', text: 'أدخل رمز الطالب أولاً.' });
       return;
     }
@@ -83,6 +93,8 @@ export default function Reception() {
       return;
     }
     setSelectedStudent(student);
+    setSubscriptionCourse(null);
+    setTab('all');
     setResult({
       tone: 'success',
       text: `تم العثور على ${student.fullName} (${student.studentCode}).`,
@@ -233,14 +245,19 @@ export default function Reception() {
 
   const handleRegisterLink = useCallback(() => {
     if (!selectedStudent) return;
-    const existing = pendingMemberships.find(
-      (m: CenterMembership) =>
-        m.studentId === selectedStudent.id && m.status === 'requested',
+    const existing = (state.memberships ?? []).find(
+      (membership) =>
+        membership.studentId === selectedStudent.id &&
+        membership.centerId === center?.id &&
+        (membership.status === 'requested' || membership.status === 'active'),
     );
     if (existing) {
       setResult({
         tone: 'error',
-        text: 'يوجد طلب انضمام قيد الانتظار لهذا التلميذ بالفعل.',
+        text:
+          existing.status === 'active'
+            ? 'التلميذ مرتبط بهذا المركز بالفعل.'
+            : 'يوجد طلب انضمام قيد الانتظار لهذا التلميذ بالفعل.',
       });
       return;
     }
@@ -256,20 +273,27 @@ export default function Reception() {
       tone: 'success',
       text: `تم إرسال طلب انضمام إلى ${center.name} — ينتظر موافقة التلميذ.`,
     });
-  }, [selectedStudent, pendingMemberships, center, action]);
+  }, [selectedStudent, state.memberships, center, action]);
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="استقبال التلاميذ"
+        description="ابحث برمز التلميذ، راجع هويته، ثم خصّص اشتراكه مع الأستاذ والمقرر المناسبين."
+      />
       {/* Result banner */}
       {result ? (
         <div
+          role={result.tone === 'error' ? 'alert' : 'status'}
           className={`rounded-lg p-4 text-sm flex items-center gap-3 ${
             result.tone === 'success'
               ? 'bg-success-soft text-success border border-success/20'
               : 'bg-danger-soft text-danger border border-danger/20'
           }`}
         >
-          <span>{result.tone === 'success' ? '✓' : '✕'}</span>
+          <span aria-hidden="true">
+            {result.tone === 'success' ? '✓' : '✕'}
+          </span>
           <p>{result.text}</p>
         </div>
       ) : null}
@@ -287,7 +311,12 @@ export default function Reception() {
                   className="input"
                   dir="ltr"
                   value={searchCode}
-                  onChange={(e) => setSearchCode(e.target.value)}
+                  onChange={(e) => {
+                    setSearchCode(e.target.value);
+                    setSelectedStudent(null);
+                    setSubscriptionCourse(null);
+                    setResult(null);
+                  }}
                   placeholder="UST-7F3K2"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') searchStudent();
@@ -307,20 +336,33 @@ export default function Reception() {
                 type="button"
                 className="btn btn-outline"
                 onClick={handleRegisterLink}
-                disabled={
-                  !!pendingMemberships.find(
-                    (m: CenterMembership) =>
-                      m.studentId === selectedStudent.id &&
-                      m.status === 'requested',
-                  )
-                }
+                disabled={!center || !!selectedMembership}
               >
-                ربط بالمركز
+                {selectedMembership?.status === 'active'
+                  ? 'مرتبط بالمركز'
+                  : selectedMembership?.status === 'requested'
+                    ? 'طلب قيد الانتظار'
+                    : 'ربط بالمركز'}
               </button>
             )}
           </div>
+          {selectedStudent && selectedMembership ? (
+            <p className="mt-3 text-xs text-muted">
+              {selectedMembership.status === 'active'
+                ? `التلميذ مرتبط بـ ${center?.name}. الاشتراكات مخصّصة لكل مقرر على حدة.`
+                : 'تم إرسال الطلب؛ تبقى موافقة التلميذ مطلوبة في التطبيق.'}
+            </p>
+          ) : null}
         </div>
       </div>
+
+      {!selectedStudent && !result ? (
+        <EmptyState
+          icon={<Inbox size={26} aria-hidden="true" />}
+          title="ابدأ ببطاقة التلميذ"
+          description="اطلب من التلميذ رمز UST الموجود في بطاقته داخل التطبيق، ثم أدخله في خانة البحث أعلاه."
+        />
+      ) : null}
 
       {selectedStudent ? (
         <>

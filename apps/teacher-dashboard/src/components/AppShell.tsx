@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -135,7 +135,14 @@ function WorkspaceSearch() {
   const { state } = useStore();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLFormElement>(null);
+  const location = useLocation();
+  const resultsId = useId();
+  const statusId = useId();
+  useEffect(() => {
+    setOpen(false);
+    setQuery('');
+  }, [location.pathname, location.search]);
   useEffect(() => {
     const close = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) setOpen(false);
@@ -162,7 +169,22 @@ function WorkspaceSearch() {
         .slice(0, 7)
     : [];
   return (
-    <div ref={root} className="relative w-full max-w-md">
+    <form
+      ref={root}
+      role="search"
+      aria-label="البحث في مساحة العمل"
+      className="relative w-full max-w-md"
+      onSubmit={(event) => {
+        event.preventDefault();
+        root.current
+          ?.querySelector<HTMLAnchorElement>('[data-search-result]')
+          ?.click();
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setOpen(false);
+      }}
+    >
       <Search
         size={17}
         className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
@@ -171,6 +193,9 @@ function WorkspaceSearch() {
         aria-label="البحث في الدورات والدروس"
         placeholder="ابحث عن دورة أو درس…"
         className="workspace-search"
+        autoComplete="off"
+        aria-controls={open && needle ? resultsId : undefined}
+        aria-describedby={open && needle ? statusId : undefined}
         value={query}
         onFocus={() => setOpen(true)}
         onChange={(e) => {
@@ -178,11 +203,22 @@ function WorkspaceSearch() {
           setOpen(true);
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Escape') setOpen(false);
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            setOpen(false);
+          }
         }}
       />
+      <span id={statusId} role="status" className="sr-only">
+        {open && needle
+          ? results.length
+            ? `${results.length} نتائج. اضغط Enter لفتح أول نتيجة أو Tab لاستعراض النتائج.`
+            : 'لا توجد نتائج مطابقة.'
+          : ''}
+      </span>
       {open && needle ? (
         <div
+          id={resultsId}
           className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-line bg-white p-2 shadow-raised"
           aria-label="نتائج البحث"
         >
@@ -190,6 +226,7 @@ function WorkspaceSearch() {
             results.map((r) => (
               <Link
                 key={r.to}
+                data-search-result
                 to={r.to}
                 onClick={() => {
                   setOpen(false);
@@ -216,7 +253,7 @@ function WorkspaceSearch() {
           )}
         </div>
       ) : null}
-    </div>
+    </form>
   );
 }
 export function AppShell() {
@@ -225,6 +262,7 @@ export function AppShell() {
   const contentRef = useRef<HTMLElement>(null);
   useEffect(() => {
     setDrawer(false);
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [location.pathname]);
   useEffect(() => {
     if (!drawer) return;

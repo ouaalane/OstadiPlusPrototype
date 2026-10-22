@@ -14,8 +14,11 @@ import {
   makeReply,
   relativeTime,
 } from '@ostadiplus/shared';
-import { Avatar } from '@/components/ui';
+import { Avatar, EmptyState } from '@/components/ui';
+import { useUnsavedChanges } from '@/components/authoring/useUnsavedChanges';
 import { useStore } from '@/store/DemoStore';
+const ignoreDirty = () => {};
+
 export default function Questions() {
   const { state, dispatch, notify } = useStore();
   const [filter, setFilter] = useState<'all' | 'unanswered'>('all');
@@ -23,6 +26,11 @@ export default function Questions() {
   const [courseId, setCourse] = useState('all');
   const [selected, setSelected] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savedReply, setSavedReply] = useState<string | null>(null);
+  useUnsavedChanges(
+    Object.values(drafts).some((value) => value.trim() !== ''),
+    ignoreDirty,
+  );
   const questions = useMemo(
     () =>
       [...(state.questions ?? [])].sort((a, b) =>
@@ -40,6 +48,13 @@ export default function Questions() {
         .includes(query.trim().toLowerCase()),
   );
   const active = visible.find((q) => q.id === selected) ?? visible[0];
+  const filtered =
+    query.trim() !== '' || courseId !== 'all' || filter !== 'all';
+  function clearFilters() {
+    setQuery('');
+    setCourse('all');
+    setFilter('all');
+  }
   const course = state.courses.find((c) => c.id === active?.courseId);
   const lessonTitle = active ? lessonTitleForQuestion(state, active) : '';
   const draft = active ? (drafts[active.id] ?? '') : '';
@@ -58,11 +73,12 @@ export default function Questions() {
       },
     });
     setDrafts((d) => ({ ...d, [active.id]: '' }));
+    setSavedReply(active.authorName);
     notify('تم حفظ الرد. انشر التحديثات لتصل إلى التلميذ.');
   }
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="dashboard-heading">
         <div>
           <p className="section-kicker">قريب من تلاميذك</p>
           <h1 className="workspace-title">كل سؤال، بداية للفهم</h1>
@@ -75,11 +91,24 @@ export default function Questions() {
           <ArrowUpLeft size={14} />
         </Link>
       </div>
+      {savedReply ? (
+        <div
+          className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-brand-soft p-4"
+          role="status"
+        >
+          <p className="text-sm">
+            تم حفظ ردك على سؤال {savedReply}. انشر التحديثات ليصل إلى التلميذ.
+          </p>
+          <Link to="/sync" className="text-link">
+            نشر الأجوبة <ArrowUpLeft size={14} aria-hidden="true" />
+          </Link>
+        </div>
+      ) : null}
       <section className="workspace-panel">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5">
           <div
             className="workspace-tabs border-0"
-            role="tablist"
+            role="group"
             aria-label="تصفية الأسئلة"
           >
             {(
@@ -89,8 +118,8 @@ export default function Questions() {
               ] as const
             ).map(([key, label, count]) => (
               <button
-                role="tab"
-                aria-selected={filter === key}
+                type="button"
+                aria-pressed={filter === key}
                 key={key}
                 className="workspace-tab"
                 onClick={() => setFilter(key)}
@@ -120,6 +149,7 @@ export default function Questions() {
           <aside className="inbox-list">
             <div className="relative border-b border-line p-4">
               <Search
+                aria-hidden="true"
                 size={14}
                 className="pointer-events-none absolute start-7 top-7 text-muted"
               />
@@ -132,6 +162,9 @@ export default function Questions() {
               />
             </div>
             <div className="inbox-threads">
+              <p className="px-4 py-2 text-xs text-muted" role="status">
+                {visible.length} من {questions.length} أسئلة
+              </p>
               {visible.length ? (
                 visible.map((q) => (
                   <button
@@ -153,14 +186,25 @@ export default function Questions() {
                         {q.authorName}
                       </span>
                       {!isQuestionAnswered(q) ? (
-                        <span
-                          className="size-1.5 rounded-full bg-brand"
-                          aria-label="بانتظار جواب"
-                        />
+                        <span className="inline-flex items-center gap-1">
+                          <span
+                            className="size-1.5 rounded-full bg-brand"
+                            aria-hidden="true"
+                          />
+                          <span className="sr-only">بانتظار جواب</span>
+                        </span>
                       ) : (
-                        <CheckCheck size={12} className="text-brand" />
+                        <span className="inline-flex items-center gap-1 text-[10px] text-brand">
+                          <CheckCheck size={12} aria-hidden="true" />
+                          <span className="sr-only">تمت الإجابة</span>
+                        </span>
                       )}
                     </div>
+                    {drafts[q.id]?.trim() ? (
+                      <span className="mb-2 block text-xs font-bold text-brand">
+                        مسودة رد
+                      </span>
+                    ) : null}
                     <p className="line-clamp-2 text-[11px] leading-6">
                       {q.body}
                     </p>
@@ -176,7 +220,9 @@ export default function Questions() {
                 ))
               ) : (
                 <p className="p-8 text-center text-xs leading-7 text-muted">
-                  لا أسئلة مطابقة. جرّب بحثاً أو تصفية أخرى.
+                  {questions.length
+                    ? 'لا أسئلة تطابق التصفية الحالية.'
+                    : 'لا توجد أسئلة بعد.'}
                 </p>
               )}
             </div>
@@ -221,7 +267,7 @@ export default function Questions() {
                       </p>
                     </div>
                   </div>
-                  <p className="rounded-xl border border-line p-4 text-xs leading-8">
+                  <p className="whitespace-pre-wrap break-words rounded-xl border border-line p-4 text-xs leading-8">
                     {active.body}
                   </p>
                 </div>
@@ -270,11 +316,19 @@ export default function Questions() {
                       setDrafts((d) => ({ ...d, [active.id]: e.target.value }))
                     }
                     maxLength={2000}
+                    aria-describedby="teacher-reply-hint teacher-reply-length"
                   />
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-[9px] leading-6 text-muted">
-                      الجواب كيبان لمشتركي الدورة بعد نشر التحديثات.
-                    </p>
+                    <div className="text-xs leading-6 text-muted">
+                      <p id="teacher-reply-hint">
+                        {draft.trim()
+                          ? 'الجواب كيبان لمشتركي الدورة بعد نشر التحديثات.'
+                          : 'اكتب جواباً لتفعيل الإرسال. سيظهر للتلميذ بعد نشر التحديثات.'}
+                      </p>
+                      <p id="teacher-reply-length">
+                        <span className="num">{draft.length} / 2000</span> حرف
+                      </p>
+                    </div>
                     <button
                       className="btn btn-primary btn-sm"
                       disabled={!draft.trim()}
@@ -288,16 +342,35 @@ export default function Questions() {
               </div>
             </article>
           ) : (
-            <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center">
-              <MessageCircle
-                size={32}
-                strokeWidth={1.3}
-                className="text-brand"
+            <div className="flex min-h-96 items-center justify-center p-8">
+              <EmptyState
+                icon={<MessageCircle size={32} strokeWidth={1.3} />}
+                title={
+                  filtered
+                    ? filter === 'unanswered' &&
+                      !query.trim() &&
+                      courseId === 'all'
+                      ? 'لا أسئلة بانتظار جواب'
+                      : 'لا أسئلة مطابقة'
+                    : 'مساحة للنقاش والتوضيح'
+                }
+                description={
+                  filtered
+                    ? 'يمكنك إزالة البحث والتصفية للرجوع إلى جميع الأسئلة.'
+                    : 'ستظهر أسئلة التلاميذ هنا بعد جلبها من صفحة المزامنة.'
+                }
+                action={
+                  filtered ? (
+                    <button className="btn btn-outline" onClick={clearFilters}>
+                      عرض كل الأسئلة
+                    </button>
+                  ) : (
+                    <Link to="/sync" className="btn btn-outline">
+                      جلب الأسئلة
+                    </Link>
+                  )
+                }
               />
-              <h2 className="text-sm font-bold">مساحة للنقاش والتوضيح</h2>
-              <p className="max-w-xs text-xs leading-7 text-muted">
-                أسئلة تلاميذك غاتبان هنا من بعد المزامنة.
-              </p>
             </div>
           )}
         </div>

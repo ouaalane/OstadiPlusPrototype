@@ -558,11 +558,13 @@ a:focus-visible {
   color: var(--color-muted);
   white-space: nowrap;
 }
-.workspace-tab[aria-selected='true'] {
+.workspace-tab[aria-selected='true'],
+.workspace-tab[aria-pressed='true'] {
   color: var(--color-brand);
   font-weight: 700;
 }
-.workspace-tab[aria-selected='true']::after {
+.workspace-tab[aria-selected='true']::after,
+.workspace-tab[aria-pressed='true']::after {
   content: '';
   position: absolute;
   bottom: -1px;
@@ -901,10 +903,11 @@ a:focus-visible {
   }
   .course-outline {
     position: static;
-    max-height: 360px;
+    max-height: none;
   }
   .outline-scroll {
-    max-height: 230px;
+    max-height: 280px;
+    flex-shrink: 0;
   }
   .workspace-content-editor {
     padding-inline: 20px;

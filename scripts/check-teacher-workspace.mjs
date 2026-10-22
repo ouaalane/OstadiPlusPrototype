@@ -346,7 +346,8 @@ try {
     '2027-07-31',
   );
   await page.waitForTimeout(4500);
-  const screenshots = process.env.OUSTADI_SCREENSHOT_DIR || join(directory, 'screenshots');
+  const screenshots =
+    process.env.OUSTADI_SCREENSHOT_DIR || join(directory, 'screenshots');
   await mkdir(screenshots, { recursive: true });
   await page.screenshot({
     path: join(screenshots, 'subscriptions-desktop.png'),
@@ -427,6 +428,10 @@ try {
   await page
     .getByRole('button', { name: 'جلب تحديثات التلاميذ', exact: true })
     .click();
+  await page
+    .getByRole('alertdialog', { name: 'جلب نسخة الخادم؟' })
+    .getByRole('button', { name: 'جلب نسخة الخادم', exact: true })
+    .click();
   await page.goto(base + '/#/questions');
   await page.getByRole('button').filter({ hasText: question.body }).click();
   await page
@@ -451,7 +456,7 @@ try {
     .fill('اختبار تجربة المحرّر');
   assert.equal(await page.locator('tbody tr').count(), 1);
   await page.goto(base + '/#/library');
-  await page.getByRole('tab', { name: 'PDF', exact: true }).click();
+  await page.getByRole('button', { name: 'PDF', exact: true }).click();
   assert.ok((await page.locator('tbody tr').count()) > 0);
   done('quiz bank and content library filters');
   await page

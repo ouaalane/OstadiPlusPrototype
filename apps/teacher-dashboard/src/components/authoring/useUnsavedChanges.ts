@@ -15,11 +15,34 @@ export function useUnsavedChanges(
       event.returnValue = '';
     };
     const click = (event: MouseEvent) => {
-      const link = (event.target as HTMLElement).closest('a');
       if (
-        link &&
-        link.target !== '_blank' &&
-        link.href &&
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        !(event.target instanceof Element)
+      )
+        return;
+      const link = event.target.closest('a');
+      if (
+        !link ||
+        !link.href ||
+        link.hasAttribute('download') ||
+        (link.target && link.target !== '_self')
+      )
+        return;
+      const destination = new URL(link.href, window.location.href);
+      const rawHref = link.getAttribute('href') ?? '';
+      // HashRouter routes begin with #/. Ordinary page anchors keep this draft open.
+      if (
+        !['http:', 'https:'].includes(destination.protocol) ||
+        destination.href === window.location.href ||
+        (rawHref.startsWith('#') && !rawHref.startsWith('#/'))
+      )
+        return;
+      if (
         !window.confirm('عندك تغييرات غير محفوظة. واش بغيتي تغادر بلا حفظ؟')
       ) {
         event.preventDefault();

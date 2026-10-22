@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   centerToday,
   createAccessPeriod,
@@ -18,6 +19,7 @@ export default function SubscriptionManager({
   onClose: () => void;
 }) {
   const { state } = useStore();
+  const formId = useId();
   const action = useAction();
   const [courseId, setCourseId] = useState(
     initialCourseId ?? state.courses[0]?.id ?? '',
@@ -88,6 +90,7 @@ export default function SubscriptionManager({
           الأستاذ والمقرر
           <select
             aria-label="الأستاذ والمقرر"
+            disabled={!state.courses.length}
             className="input w-full mt-2"
             value={courseId}
             onChange={(e) => {
@@ -95,6 +98,9 @@ export default function SubscriptionManager({
               reset();
             }}
           >
+            {!state.courses.length ? (
+              <option value="">لا توجد مقررات بعد</option>
+            ) : null}
             {state.courses.map((c) => (
               <option key={c.id} value={c.id}>
                 {courseTeacher(state, c).name} — {c.title} · {c.level}
@@ -102,6 +108,19 @@ export default function SubscriptionManager({
             ))}
           </select>
         </label>
+        {!course ? (
+          <p className="rounded-lg bg-brand-soft p-3 text-sm">
+            لا يوجد مقرر لتخصيص اشتراك.{' '}
+            <Link
+              to="/courses"
+              className="text-brand underline"
+              onClick={onClose}
+            >
+              انتقل إلى الدورات لإضافة مقرر
+            </Link>
+            .
+          </p>
+        ) : null}
         <section className="rounded-xl border border-line p-4 space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-sm">الاشتراكات المسجلة</h3>
@@ -113,7 +132,7 @@ export default function SubscriptionManager({
               إضافة اشتراك
             </button>
           </div>
-          {!enrollment ? (
+          {!enrollment || enrollment.accessPeriods?.length === 0 ? (
             <p className="text-sm text-muted">لا يوجد اشتراك لهذا المقرر.</p>
           ) : !enrollment.accessPeriods ? (
             <p className="text-sm text-muted">
@@ -170,9 +189,17 @@ export default function SubscriptionManager({
             </ul>
           )}
         </section>
-        <fieldset className="space-y-3">
+        <fieldset
+          className="space-y-3"
+          disabled={saved || !course}
+          aria-describedby={error ? `${formId}-error` : undefined}
+        >
           <legend className="text-sm font-bold mb-3">
-            {periodId ? 'تعديل الاشتراك' : 'اشتراك جديد'}
+            {saved
+              ? 'تم حفظ الاشتراك'
+              : periodId
+                ? 'تعديل الاشتراك'
+                : 'اشتراك جديد'}
           </legend>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3].map((n) => (
@@ -185,6 +212,7 @@ export default function SubscriptionManager({
                   setChoice(`months:${n}`);
                   setMonths(n);
                   setSaved(false);
+                  setError('');
                 }}
               >
                 {n === 1 ? 'شهر' : n === 2 ? 'شهران' : 'ثلاثة أشهر'}
@@ -199,6 +227,7 @@ export default function SubscriptionManager({
                 onClick={() => {
                   setChoice(`semester:${s.id}`);
                   setSaved(false);
+                  setError('');
                 }}
               >
                 {s.title}
@@ -222,6 +251,7 @@ export default function SubscriptionManager({
                 onChange={(e) => {
                   setStartsOn(e.target.value);
                   setSaved(false);
+                  setError('');
                 }}
               />
             </label>
@@ -238,6 +268,7 @@ export default function SubscriptionManager({
                   onChange={(e) => {
                     setEndsOn(e.target.value);
                     setSaved(false);
+                    setError('');
                   }}
                 />
               </label>
@@ -256,6 +287,7 @@ export default function SubscriptionManager({
                     setMonths(Number(e.target.value));
                     setChoice(`months:${e.target.value}`);
                     setSaved(false);
+                    setError('');
                   }}
                 />
               </label>
@@ -269,13 +301,19 @@ export default function SubscriptionManager({
           </p>
         )}
         {error && (
-          <p role="alert" className="text-sm text-danger">
+          <p
+            id={`${formId}-error`}
+            role="alert"
+            className="text-sm text-danger"
+          >
             {error}
           </p>
         )}
         {saved && (
           <p role="status" className="text-sm text-brand">
-            تم حفظ الاشتراك. انشر التحديثات من صفحة المزامنة.
+            تم حفظ الاشتراك. لإضافة مدة أخرى اختر «إضافة اشتراك»، ولتغيير
+            الاشتراك الحالي اختر «تعديل» من القائمة. انشر التحديثات من صفحة
+            المزامنة.
           </p>
         )}
         <div className="flex gap-2">

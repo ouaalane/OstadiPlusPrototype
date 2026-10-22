@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -11,6 +11,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { useStore } from '@/store/DemoStore';
+import { Confirm, Field } from '@/components/ui';
 import {
   demoEndpoint,
   saveDemoEndpoint,
@@ -23,11 +24,28 @@ export default function Sync() {
   const [busy, setBusy] = useState<'publish' | 'pull' | null>(null);
   const [last, setLast] = useState('');
   const [error, setError] = useState('');
+  const [endpointError, setEndpointError] = useState('');
+  const [confirmPull, setConfirmPull] = useState(false);
+  const endpointRef = useRef<HTMLInputElement>(null);
+  function validEndpoint() {
+    try {
+      const url = new URL(endpoint.trim());
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+      setEndpointError('');
+      return true;
+    } catch {
+      setEndpointError('أدخل رابطاً كاملاً يبدأ بـ http:// أو https://.');
+      endpointRef.current?.focus();
+      return false;
+    }
+  }
   async function run(direction: 'publish' | 'pull') {
+    if (busy || !validEndpoint()) return;
     setBusy(direction);
     setError('');
     try {
-      saveDemoEndpoint(endpoint);
+      const origin = saveDemoEndpoint(endpoint);
+      setEndpoint(origin);
       const data =
         direction === 'publish' ? await publishDemo(state) : await pullDemo();
       dispatch({ type: 'replace', state: { ...data, lang: state.lang } });
@@ -39,7 +57,13 @@ export default function Sync() {
       );
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'تعذّرت المزامنة. حاول مجدداً.',
+        e instanceof TypeError
+          ? 'تعذّر الاتصال بخادم المركز. تحقق من الرابط وتشغيل الخادم، ثم حاول مجدداً.'
+          : e instanceof DOMException && e.name === 'AbortError'
+            ? 'انتهت مهلة الاتصال. تحقق من الشبكة وحاول مجدداً.'
+            : e instanceof Error
+              ? e.message
+              : 'تعذّرت المزامنة. حاول مجدداً.',
       );
     } finally {
       setBusy(null);
@@ -115,7 +139,9 @@ export default function Sync() {
             ) : (
               <ArrowUpFromLine size={15} />
             )}
-            نشر التحديثات للتطبيق
+            {busy === 'publish'
+              ? 'جارٍ نشر التحديثات…'
+              : 'نشر التحديثات للتطبيق'}
           </button>
         </section>
         <section className="workspace-panel p-6">
@@ -142,15 +168,21 @@ export default function Sync() {
           <button
             className="btn btn-outline w-full"
             disabled={!!busy}
-            onClick={() => void run('pull')}
+            onClick={() => {
+              if (validEndpoint()) setConfirmPull(true);
+            }}
           >
             {busy === 'pull' ? (
               <LoaderCircle size={15} className="animate-spin" />
             ) : (
               <ArrowDownToLine size={15} />
             )}
-            جلب تحديثات التلاميذ
+            {busy === 'pull' ? 'جارٍ جلب التحديثات…' : 'جلب تحديثات التلاميذ'}
           </button>
+          <p className="mt-3 text-xs leading-7 text-muted">
+            الجلب يعوّض النسخة المحلية بنسخة الخادم كاملة. انشر تعديلاتك أولاً
+            إذا أردت الاحتفاظ بها.
+          </p>
         </section>
       </div>
       {error ? (
@@ -183,18 +215,26 @@ export default function Sync() {
         </header>
         <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div>
-            <label className="label" htmlFor="demo-url">
-              رابط خادم العرض التجريبي
-            </label>
-            <input
-              id="demo-url"
-              className="input"
-              dir="ltr"
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-              placeholder="http://192.168.1.10:8787"
-              disabled={!!busy}
-            />
+            <Field
+              label="رابط خادم العرض التجريبي"
+              error={endpointError}
+              hint="يُحفظ رابط الخادم عند النشر أو الجلب. يُستعمل أصل الرابط دون مسار إضافي."
+            >
+              <input
+                id="demo-url"
+                ref={endpointRef}
+                type="url"
+                className="input"
+                dir="ltr"
+                value={endpoint}
+                onChange={(e) => {
+                  setEndpoint(e.target.value);
+                  setEndpointError('');
+                }}
+                placeholder="http://192.168.1.10:8787"
+                disabled={!!busy}
+              />
+            </Field>
             <p className="mt-3 text-[10px] leading-7 text-muted">
               استعمل نفس الرابط في تطبيق التلميذ. على الهاتف، دخل عنوان IP ديال
               الحاسوب، وخليهم في نفس الشبكة.
@@ -221,6 +261,18 @@ export default function Sync() {
           حاسوب الخادم؛ الربط ماشي خدمة cloud ديال الإنتاج.
         </div>
       </section>
+      <Confirm
+        open={confirmPull}
+        title="جلب نسخة الخادم؟"
+        message="سيتم تعويض بيانات هذه المساحة بنسخة الخادم كاملة. التعديلات المحلية التي لم تنشرها قد تضيع. انشرها أولاً إذا أردت الاحتفاظ بها."
+        confirmLabel="جلب نسخة الخادم"
+        tone="brand"
+        onCancel={() => setConfirmPull(false)}
+        onConfirm={() => {
+          setConfirmPull(false);
+          void run('pull');
+        }}
+      />
     </>
   );
 }

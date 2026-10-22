@@ -60,6 +60,17 @@ export default function Students() {
    * opaque code (UST-XXXXX), never by name or phone (multi-center privacy). */
   const [method, setMethod] = useState<'code' | 'qr'>('code');
   const [codeInput, setCodeInput] = useState('');
+  const center = state.centers[0];
+  const verifiedStudent = state.students.find(
+    (student) => student.id === expanded,
+  );
+  const existingMembership = (state.memberships ?? []).find(
+    (membership) =>
+      membership.studentId === expanded &&
+      membership.centerId === center?.id &&
+      (membership.status === 'active' || membership.status === 'requested'),
+  );
+
   const [activation, setActivation] = useState<{
     tone: 'ok' | 'error';
     text: string;
@@ -75,6 +86,7 @@ export default function Students() {
           return { student, enrollments };
         })
         .filter(({ enrollments }) => {
+          if (filter === 'pending' && enrollments.length === 0) return true;
           if (
             filter !== 'all' &&
             !enrollments.some((e) =>
@@ -102,11 +114,15 @@ export default function Students() {
         .filter((e) => enrollmentHasAccess(e))
         .map((e) => e.studentId),
     ).size;
-    const pending = new Set(
-      state.enrollments
-        .filter((e) => e.status === 'pending')
-        .map((e) => e.studentId),
-    ).size;
+    const pending = state.students.filter((student) => {
+      const enrollments = state.enrollments.filter(
+        (enrollment) => enrollment.studentId === student.id,
+      );
+      return (
+        enrollments.length === 0 ||
+        enrollments.some((enrollment) => enrollment.status === 'pending')
+      );
+    }).length;
     return { total, active, pending };
   }, [state.students, state.enrollments]);
 
@@ -251,6 +267,8 @@ export default function Students() {
    * by code only — never by name or phone (multi-center privacy). */
   const verifyStudent = () => {
     const needle = codeInput.trim();
+    setExpanded(null);
+    setRequestResult(null);
     if (!needle) {
       setActivation({ tone: 'error', text: 'أدخل رمز الطالب أولاً.' });
       return;
@@ -267,7 +285,7 @@ export default function Students() {
     setExpanded(found.id);
     setActivation({
       tone: 'ok',
-      text: `تم التحقق من ${found.fullName} (${found.studentCode}) — اختر المركز لإرسال طلب الانضمام.`,
+      text: `تم التحقق من ${found.fullName} (${found.studentCode}) — راجع معلومات التلميذ ثم أرسل طلب الانضمام إلى المركز.`,
     });
   };
 
@@ -276,15 +294,14 @@ export default function Students() {
    * student must accept via their app before the center can see details or
    * assign courses. */
   const sendRequest = () => {
-    if (!expanded) return;
-    const center = state.centers[0];
+    if (!verifiedStudent || existingMembership) return;
     if (!center) {
       setRequestResult({ tone: 'error', text: 'لم يتم إعداد مركز للمعلم.' });
       return;
     }
     action({
       type: 'membership/request',
-      payload: { studentId: expanded, centerId: center.id },
+      payload: { studentId: verifiedStudent.id, centerId: center.id },
     });
     setRequestResult({
       tone: 'ok',
@@ -301,7 +318,15 @@ export default function Students() {
           (e) => e.studentId === s.id && e.status === 'pending',
         ),
       ) ?? state.students[0];
-    if (!target) return;
+    setRequestResult(null);
+    if (!target) {
+      setExpanded(null);
+      setActivation({
+        tone: 'error',
+        text: 'لا توجد بيانات تلاميذ لتجربة QR حالياً.',
+      });
+      return;
+    }
     setCodeInput(target.studentCode);
     setActivation({
       tone: 'ok',
@@ -322,6 +347,8 @@ export default function Students() {
         </div>
         <button
           className="btn btn-primary"
+          aria-expanded={activationOpen}
+          aria-controls={activationOpen ? 'student-link-panel' : undefined}
           onClick={() => setActivationOpen((v) => !v)}
         >
           <UserPlus size={16} />
@@ -331,7 +358,7 @@ export default function Students() {
 
       {/* ربط تلميذ بالمركز بالمعرف أو رمز QR */}
       {activationOpen ? (
-        <div className="card mb-5 overflow-hidden p-0">
+        <div id="student-link-panel" className="card mb-5 overflow-hidden p-0">
           <div className="flex flex-wrap items-center gap-3 border-b border-line bg-brand-softer px-5 py-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white">
               <UserPlus size={19} />
@@ -346,6 +373,7 @@ export default function Students() {
               <button
                 type="button"
                 onClick={() => setMethod('code')}
+                aria-pressed={method === 'code'}
                 className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                   method === 'code'
                     ? 'bg-white text-brand-dark shadow-sm'
@@ -358,6 +386,7 @@ export default function Students() {
               <button
                 type="button"
                 onClick={() => setMethod('qr')}
+                aria-pressed={method === 'qr'}
                 className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                   method === 'qr'
                     ? 'bg-white text-brand-dark shadow-sm'
@@ -376,12 +405,19 @@ export default function Students() {
                     <div className="flex gap-2">
                       <input
                         className="input"
+                        aria-label="رمز الطالب"
+                        aria-invalid={activation?.tone === 'error' || undefined}
+                        aria-describedby={
+                          activation ? 'student-code-result' : undefined
+                        }
                         dir="ltr"
                         value={codeInput}
                         placeholder="UST-7F3K2"
                         onChange={(event) => {
                           setCodeInput(event.target.value);
                           setActivation(null);
+                          setExpanded(null);
+                          setRequestResult(null);
                         }}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter') verifyStudent();
@@ -396,6 +432,8 @@ export default function Students() {
                               (await navigator.clipboard.readText()).trim(),
                             );
                             setActivation(null);
+                            setExpanded(null);
+                            setRequestResult(null);
                           } catch {
                             setActivation({
                               tone: 'error',
@@ -418,17 +456,6 @@ export default function Students() {
                   <ShieldCheck size={16} />
                   تحقق
                 </button>
-                {expanded && (
-                  <button
-                    type="button"
-                    className="btn btn-dark"
-                    onClick={sendRequest}
-                    disabled={!!requestResult}
-                  >
-                    <UserPlus size={16} />
-                    إرسال طلب انضمام
-                  </button>
-                )}
               </div>
             ) : (
               <button
@@ -443,6 +470,8 @@ export default function Students() {
 
             {activation ? (
               <p
+                id="student-code-result"
+                role={activation.tone === 'error' ? 'alert' : 'status'}
                 className={`mt-3 rounded-lg px-3 py-2 text-xs font-semibold ${
                   activation.tone === 'ok'
                     ? 'bg-success-soft text-success'
@@ -452,8 +481,48 @@ export default function Students() {
                 {activation.text}
               </p>
             ) : null}
+            {verifiedStudent ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-4">
+                <div>
+                  <p className="text-sm font-bold">
+                    {verifiedStudent.fullName}{' '}
+                    <span className="num text-xs text-muted">
+                      {verifiedStudent.studentCode}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {center
+                      ? `المركز: ${center.name}`
+                      : 'لم يتم إعداد مركز للمعلم.'}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {existingMembership?.status === 'active'
+                      ? 'التلميذ مرتبط بهذا المركز بالفعل.'
+                      : existingMembership?.status === 'requested'
+                        ? 'طلب الانضمام ينتظر موافقة التلميذ في التطبيق.'
+                        : 'إرسال الطلب لا يفعّل الاشتراكات تلقائياً؛ تبقى موافقة التلميذ مطلوبة.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-dark"
+                  onClick={sendRequest}
+                  disabled={!center || !!existingMembership}
+                >
+                  <UserPlus size={16} aria-hidden="true" />
+                  {existingMembership?.status === 'active'
+                    ? 'مرتبط بالمركز'
+                    : existingMembership?.status === 'requested'
+                      ? 'طلب قيد الانتظار'
+                      : 'إرسال طلب انضمام'}
+                </button>
+              </div>
+            ) : null}
             {requestResult ? (
-              <p className="mt-3 rounded-lg px-3 py-2 text-xs font-semibold bg-brand-soft text-brand-dark">
+              <p
+                role={requestResult.tone === 'error' ? 'alert' : 'status'}
+                className="mt-3 rounded-lg px-3 py-2 text-xs font-semibold bg-brand-soft text-brand-dark"
+              >
                 {requestResult.text}
               </p>
             ) : null}
@@ -509,7 +578,7 @@ export default function Students() {
         />
       </div>
 
-      {rows.length === 0 ? (
+      {state.students.length === 0 ? (
         <EmptyState
           icon={<Users size={24} />}
           title={filter !== 'all' ? 'لا تلاميذ بهذه الحالة' : 'لا تلاميذ بعد'}
@@ -524,6 +593,7 @@ export default function Students() {
           columns={columns}
           rows={rows}
           getRowId={({ student }) => student.id}
+          getRowLabel={({ student }) => student.fullName}
           title="تلاميذ المركز"
           searchPlaceholder="بحث بالاسم أو الرمز…"
           selectedIds={selected}
@@ -551,6 +621,15 @@ export default function Students() {
               <Users size={28} className="text-faint" />
               <p className="text-sm font-semibold">لا توجد نتائج مطابقة</p>
               <p className="text-xs">جرّب تعديل البحث أو التصفية.</p>
+              {filter !== 'all' ? (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setFilter('all')}
+                >
+                  عرض كل الحالات
+                </button>
+              ) : null}
             </div>
           }
         />

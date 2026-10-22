@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, Film, ListChecks, Type } from 'lucide-react';
 import type { LessonKind } from '@ostadiplus/shared';
-import { Modal } from '@/components/ui';
+import { Field, Modal } from '@/components/ui';
 import { newId, useStore } from '@/store/DemoStore';
 const kinds = [
   { kind: 'video', label: 'فيديو', detail: 'شرح بالصوت والصورة', icon: Film },
@@ -108,32 +108,38 @@ export function NewLessonDialog({
             ))}
           </div>
         </fieldset>
-        <label className="block">
-          <span className="label">عنوان الدرس</span>
+        <Field
+          label="عنوان الدرس"
+          error={
+            touched && title.trim().length < 2
+              ? 'اكتب عنواناً من حرفين على الأقل.'
+              : undefined
+          }
+        >
           <input
+            required
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="مثلاً: مدخل إلى النهايات"
             maxLength={100}
           />
-        </label>
-        {touched && title.trim().length < 2 ? (
-          <p className="text-xs text-brand" role="alert">
-            اكتب عنواناً من حرفين على الأقل.
-          </p>
-        ) : null}
+        </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <label>
             <span className="label">الدورة</span>
             <select
               className="input"
               value={selectedCourse}
+              disabled={!state.courses.length}
               onChange={(e) => {
                 setCourse(e.target.value);
                 setChapter('');
               }}
             >
+              {!state.courses.length ? (
+                <option value="">لا توجد دورات بعد</option>
+              ) : null}
               {state.courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -146,8 +152,10 @@ export function NewLessonDialog({
             <select
               className="input"
               value={target}
+              disabled={!target}
               onChange={(e) => setChapter(e.target.value)}
             >
+              {!target ? <option value="">لا توجد فصول بعد</option> : null}
               {course?.semesters.map((s) => (
                 <optgroup key={s.id} label={s.title}>
                   {s.chapters.map((c) => (
@@ -161,9 +169,20 @@ export function NewLessonDialog({
           </label>
         </div>
         {!target ? (
-          <p className="rounded-lg bg-brand-soft p-3 text-xs text-brand">
-            أضف فصلاً إلى الدورة أولاً، ثم أضف محتواك.
-          </p>
+          <div className="rounded-lg bg-brand-soft p-4 text-sm text-brand">
+            <p>
+              {course
+                ? 'أضف فصلاً إلى الدورة أولاً، ثم أضف محتواك.'
+                : 'أنشئ دورة وأضف إليها فصلاً قبل إضافة المحتوى.'}
+            </p>
+            <Link
+              className="mt-3 inline-flex font-bold underline underline-offset-4"
+              to={course ? `/courses/${course.id}` : '/courses?action=new'}
+              onClick={close}
+            >
+              {course ? 'فتح الدورة لإضافة فصل' : 'إنشاء دورة'}
+            </Link>
+          </div>
         ) : null}
       </div>
     </Modal>

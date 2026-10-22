@@ -31,6 +31,8 @@ export function MediaUpload({
   const [error, setError] = useState('');
   const [canRetry, setCanRetry] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerError, setPickerError] = useState(false);
   const [drag, setDrag] = useState(false);
   const [uploads, setUploads] = useState<
     Awaited<ReturnType<typeof listUploads>>
@@ -101,10 +103,15 @@ export function MediaUpload({
   }
   async function showLibrary() {
     setPicker(true);
+    setPickerLoading(true);
+    setPickerError(false);
     try {
       setUploads(await listUploads());
     } catch {
       setUploads([]);
+      setPickerError(true);
+    } finally {
+      setPickerLoading(false);
     }
   }
   return (
@@ -290,7 +297,30 @@ export function MediaUpload({
           description="اختر ملفاً موجوداً لإضافته إلى هذا الدرس."
           size="lg"
         >
-          <div className="grid gap-2 sm:grid-cols-2">
+          {pickerLoading ? (
+            <p role="status" className="mb-4 text-sm text-muted">
+              جارٍ تحميل الملفات المرفوعة…
+            </p>
+          ) : null}
+          {pickerError ? (
+            <div
+              role="alert"
+              className="mb-4 rounded-lg border border-line bg-accent/20 p-4 text-sm"
+            >
+              <p>
+                تعذّر تحميل الملفات المرفوعة. الملفات المرفقة بالنسخة تبقى متاحة
+                أدناه.
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm mt-3"
+                onClick={() => void showLibrary()}
+              >
+                إعادة تحميل المكتبة
+              </button>
+            </div>
+          ) : null}
+          <div className="grid gap-2 sm:grid-cols-2" aria-busy={pickerLoading}>
             {[
               ...library
                 .filter((i) => i.kind === kind)

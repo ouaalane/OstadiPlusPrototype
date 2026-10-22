@@ -244,6 +244,7 @@ export function Modal({
   children,
   footer,
   size = 'md',
+  role = 'dialog',
 }: {
   open: boolean;
   onClose: () => void;
@@ -252,6 +253,7 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  role?: 'dialog' | 'alertdialog';
 }) {
   const titleId = useId();
   const descId = useId();
@@ -265,7 +267,12 @@ export function Modal({
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeRef.current();
+      const dialogs = document.querySelectorAll('[aria-modal="true"]');
+      if (dialogs[dialogs.length - 1] !== panelRef.current) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+      }
       if (event.key === 'Tab') {
         const items = panelRef.current?.querySelectorAll<HTMLElement>(
           'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]',
@@ -286,9 +293,11 @@ export function Modal({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const timer = window.setTimeout(() => {
-      const focusable = panelRef.current?.querySelector<HTMLElement>(
-        'input, textarea, select, button, [tabindex]:not([tabindex="-1"])',
-      );
+      const focusable =
+        panelRef.current?.querySelector<HTMLElement>('[data-autofocus]') ??
+        panelRef.current?.querySelector<HTMLElement>(
+          'input:not(:disabled), textarea:not(:disabled), select:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        );
       focusable?.focus();
     }, 30);
     return () => {
@@ -314,11 +323,11 @@ export function Modal({
       />
       <div
         ref={panelRef}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className={`card animate-rise relative flex max-h-[92vh] w-full flex-col overflow-hidden sm:rounded-2xl ${width}`}
+        className={`card animate-rise relative flex max-h-[92dvh] w-full flex-col overflow-hidden sm:rounded-2xl ${width}`}
         style={{ boxShadow: 'var(--shadow-overlay)' }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
@@ -461,9 +470,15 @@ export function Confirm({
       onClose={onCancel}
       title={title}
       size="sm"
+      role="alertdialog"
       footer={
         <>
-          <button type="button" className="btn btn-outline" onClick={onCancel}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={onCancel}
+            data-autofocus
+          >
             تراجع
           </button>
           <button
@@ -587,6 +602,7 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   rows: T[];
   getRowId: (row: T) => string;
+  getRowLabel?: (row: T) => string;
   /** Big card heading (like «Team Members»). */
   title?: string;
   /** Small line under the heading — description or selection counter. */
@@ -615,6 +631,7 @@ export function DataTable<T>({
   columns,
   rows,
   getRowId,
+  getRowLabel,
   title,
   description,
   searchPlaceholder,
@@ -643,7 +660,7 @@ export function DataTable<T>({
   /* --- filtering --- */
   const filtered = useMemo(() => {
     if (!query.trim()) return rows;
-    const needle = query.toLowerCase();
+    const needle = query.trim().toLowerCase();
     return rows.filter((row) =>
       columns.some((col) => {
         const val = col.sortValue?.(row);
@@ -904,7 +921,7 @@ export function DataTable<T>({
                           type="checkbox"
                           checked={!!isSelected}
                           onChange={() => toggleSelectRow(id)}
-                          aria-label={`تحديد ${id}`}
+                          aria-label={`تحديد ${getRowLabel?.(row) ?? id}`}
                           className="h-4 w-4 cursor-pointer rounded border-line-strong accent-[var(--color-ink)]"
                         />
                       </td>
@@ -974,9 +991,8 @@ export function DataTable<T>({
                 if (Math.abs(i - safePage) <= 1) return true;
                 return false;
               })
-              .reduce<(number | 'gap')[]>((acc, i, _, arr) => {
-                if (arr.length > 0 && i - (arr[arr.length - 1] as number) > 1)
-                  acc.push('gap');
+              .reduce<(number | 'gap')[]>((acc, i, index, arr) => {
+                if (index > 0 && i - arr[index - 1] > 1) acc.push('gap');
                 acc.push(i);
                 return acc;
               }, [])
@@ -1037,7 +1053,7 @@ export function Segmented<T extends string>({
   return (
     <div
       className="inline-flex flex-wrap gap-1 rounded-xl border border-line bg-surface-alt p-1"
-      role="tablist"
+      role="group"
       aria-label={ariaLabel}
     >
       {options.map(([key, label]) => {
@@ -1046,8 +1062,7 @@ export function Segmented<T extends string>({
           <button
             key={key}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onChange(key)}
             className={[
               'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-colors',

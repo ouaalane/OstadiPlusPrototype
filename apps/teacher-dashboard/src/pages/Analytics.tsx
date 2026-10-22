@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
 import { accessibleCourses, allLessons } from '@ostadiplus/shared';
 import { EmptyState, ProgressBar } from '@/components/ui';
@@ -41,7 +42,7 @@ export default function Analytics() {
   const visible = rows.filter((r) =>
     `${r.student.fullName} ${r.student.studentCode} ${r.student.level}`
       .toLowerCase()
-      .includes(query.toLowerCase()),
+      .includes(query.trim().toLowerCase()),
   );
   return (
     <>
@@ -65,7 +66,7 @@ export default function Analytics() {
             icon: CheckCircle2,
           },
           {
-            label: 'دقائق مشاهدة مسجّلة',
+            label: 'مجموع مواضع المشاهدة (دقائق)',
             value: rows.reduce((n, r) => n + r.minutes, 0),
             icon: Clock3,
           },
@@ -80,7 +81,9 @@ export default function Analytics() {
               <span className="text-[10px]">{m.label}</span>
               <m.icon size={16} strokeWidth={1.5} />
             </div>
-            <p className="metric-number num">{m.value}</p>
+            <p className="metric-number">
+              <span className="num">{m.value}</span>
+            </p>
           </div>
         ))}
       </section>
@@ -97,18 +100,25 @@ export default function Analytics() {
         </div>
         {visible.length ? (
           <div className="overflow-x-auto">
-            <table className="workspace-table min-w-[650px]">
+            <table
+              className="workspace-table min-w-[650px]"
+              aria-label="تقدّم التلاميذ ونتائجهم"
+            >
               <thead>
                 <tr>
                   {[
                     'التلميذ',
                     'الدورات',
                     'التقدّم',
-                    'المشاهدة',
+                    'موضع المشاهدة',
                     'الاختبارات',
                     'متوسط النتيجة',
                   ].map((label) => (
-                    <th key={label} className="px-4 py-3 text-start font-bold">
+                    <th
+                      key={label}
+                      scope="col"
+                      className="px-4 py-3 text-start font-bold"
+                    >
                       {label}
                     </th>
                   ))}
@@ -128,22 +138,34 @@ export default function Analytics() {
                     </td>
                     <td className="px-4 py-4">{row.courses}</td>
                     <td className="min-w-40 px-4 py-4">
-                      <div className="mb-2 flex justify-between text-xs">
-                        <span>
-                          {row.completed} / {row.total}
+                      {row.total ? (
+                        <>
+                          <div className="mb-2 flex justify-between text-xs">
+                            <span>
+                              {row.completed} / {row.total}
+                            </span>
+                            <span>{row.percent}%</span>
+                          </div>
+                          <ProgressBar
+                            value={row.percent}
+                            height={6}
+                            label={`تقدّم ${row.student.fullName}`}
+                          />
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted">
+                          لا دروس متاحة
                         </span>
-                        <span>{row.percent}%</span>
-                      </div>
-                      <ProgressBar
-                        value={row.percent}
-                        height={6}
-                        label={`تقدّم ${row.student.fullName}`}
-                      />
+                      )}
                     </td>
                     <td className="px-4 py-4">{row.minutes} د</td>
                     <td className="px-4 py-4">{row.attempts}</td>
                     <td className="px-4 py-4">
-                      {row.score === null ? '—' : `${row.score}%`}
+                      {row.score === null ? (
+                        <span className="text-xs text-muted">لم يحاول بعد</span>
+                      ) : (
+                        `${row.score}%`
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -153,17 +175,39 @@ export default function Analytics() {
         ) : (
           <EmptyState
             icon={<BarChart3 size={24} />}
-            title="لا توجد نتائج"
-            description="جرّب اسماً أو رمزاً آخر."
+            title={query.trim() ? 'لا توجد نتائج مطابقة' : 'لا يوجد تلاميذ بعد'}
+            description={
+              query.trim()
+                ? 'جرّب اسماً أو رمزاً آخر، أو امسح البحث لعرض الجميع.'
+                : 'اربط التلاميذ بالمركز لمتابعة تقدّمهم ونتائجهم هنا.'
+            }
+            action={
+              query.trim() ? (
+                <button
+                  className="btn btn-outline"
+                  onClick={() => setQuery('')}
+                >
+                  مسح البحث
+                </button>
+              ) : (
+                <Link to="/students" className="btn btn-outline">
+                  إدارة التلاميذ
+                </Link>
+              )
+            }
           />
         )}
       </section>
+      <p className="mt-3 text-xs leading-6 text-muted">
+        موضع المشاهدة هو آخر موضع مسجّل في الدروس المتاحة، وليس الوقت الفعلي
+        الذي قضاه التلميذ في المشاهدة.
+      </p>
       <section className="workspace-panel mt-5 p-5">
         <h2 className="mb-4 text-sm font-bold">آخر محاولات الاختبار</h2>
         {attempts.length ? (
           <ul className="divide-y divide-line">
             {[...attempts]
-              .reverse()
+              .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
               .slice(0, 12)
               .map((a) => (
                 <li
@@ -178,8 +222,16 @@ export default function Analytics() {
                       .flatMap((c) => allLessons(c))
                       .find((l) => l.id === a.lessonId)?.title ?? a.lessonId}
                   </span>
-                  <span className="num font-bold text-brand">
-                    {a.correct}/{a.total} · {a.elapsedSec}s
+                  <span className="flex flex-wrap items-center gap-3">
+                    <time
+                      dateTime={a.submittedAt}
+                      className="text-xs text-muted"
+                    >
+                      {new Date(a.submittedAt).toLocaleDateString('ar-MA')}
+                    </time>
+                    <span className="num font-bold text-brand">
+                      {a.correct}/{a.total} · {a.elapsedSec}s
+                    </span>
                   </span>
                 </li>
               ))}

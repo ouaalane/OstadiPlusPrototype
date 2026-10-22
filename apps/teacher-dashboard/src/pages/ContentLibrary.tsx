@@ -31,6 +31,18 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [publishFeedback, setPublishFeedback] = useState<{
+    message: string;
+    blocked: { id: string; title: string; to: string; error: string }[];
+  } | null>(null);
+  useEffect(() => {
+    setQuery('');
+    setCourseFilter('all');
+    setSelected(new Set());
+    setPublishFeedback(null);
+    setPreview(null);
+    setDeleting(null);
+  }, [quiz]);
   useEffect(() => {
     if (params.get('action')) {
       setCreating(true);
@@ -86,10 +98,20 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
           published: value,
         },
       });
-    setSelected(new Set());
-    notify(
-      `تم تحديث ${valid.length} دروس${valid.length < targets.length ? ' — الدروس غير الجاهزة بقات مسودة' : ''}`,
-    );
+    const blocked = targets
+      .filter((r) => !valid.includes(r))
+      .map((r) => ({
+        id: r.lesson.id,
+        title: r.lesson.title,
+        to: `/courses/${r.course.id}?lesson=${r.lesson.id}`,
+        error: lessonPublishError(r.lesson)!,
+      }));
+    const message = valid.length
+      ? `تم ${value ? 'نشر' : 'إخفاء'} ${valid.length} من ${targets.length} عناصر. انشر التحديثات لتصل إلى التطبيق.`
+      : 'لم يتم نشر أي عنصر. أكمل المحتوى المطلوب أولاً.';
+    setSelected(new Set(blocked.map((item) => item.id)));
+    setPublishFeedback({ message, blocked });
+    notify(message, blocked.length ? 'error' : 'success');
   }
   return (
     <>
@@ -150,7 +172,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
           ) : (
             <div
               className="workspace-tabs border-0"
-              role="tablist"
+              role="group"
               aria-label="نوع المحتوى"
             >
               {[
@@ -160,13 +182,14 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                 ['text', 'نصوص'],
               ].map(([k, label]) => (
                 <button
-                  role="tab"
-                  aria-selected={kind === k}
+                  type="button"
+                  aria-pressed={kind === k}
                   key={k}
                   className="workspace-tab"
                   onClick={() => {
                     setKind(k);
                     setSelected(new Set());
+                    setPublishFeedback(null);
                   }}
                 >
                   {label}
@@ -179,13 +202,17 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
           <div className="relative flex-1">
             <Search
               size={15}
-              className="pointer-events-none absolute start-3 top-3 text-muted"
+              className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
             />
             <input
               aria-label="بحث في المحتوى"
               className="workspace-search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSelected(new Set());
+                setPublishFeedback(null);
+              }}
               placeholder={quiz ? 'ابحث عن اختبار…' : 'ابحث عن عنوان أو دورة…'}
             />
           </div>
@@ -196,6 +223,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
             onChange={(e) => {
               setCourseFilter(e.target.value);
               setSelected(new Set());
+              setPublishFeedback(null);
             }}
           >
             <option value="all">كل الدورات</option>
@@ -234,6 +262,29 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
             </button>
           </div>
         ) : null}
+        {publishFeedback ? (
+          <div
+            className="border-b border-line bg-brand-soft/40 p-5"
+            role={publishFeedback.blocked.length ? 'alert' : 'status'}
+          >
+            <p className="text-sm font-semibold">{publishFeedback.message}</p>
+            {publishFeedback.blocked.length ? (
+              <ul className="mt-3 space-y-2 text-sm">
+                {publishFeedback.blocked.map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      className="font-bold text-brand underline underline-offset-4"
+                      to={item.to}
+                    >
+                      {item.title}
+                    </Link>
+                    <span className="text-muted"> — {item.error}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
         {rows.length ? (
           <div className="overflow-x-auto">
             <table className="workspace-table min-w-[790px]">
@@ -244,6 +295,11 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                       type="checkbox"
                       aria-label="تحديد كل المحتوى المعروض"
                       checked={allSelected}
+                      ref={(node) => {
+                        if (node)
+                          node.indeterminate =
+                            selected.size > 0 && !allSelected;
+                      }}
                       onChange={(e) =>
                         setSelected(
                           e.target.checked
@@ -382,15 +438,37 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
           <div className="p-8">
             <EmptyState
               icon={quiz ? <ListChecks size={26} /> : <Film size={26} />}
-              title="لا توجد عناصر مطابقة"
-              description="غيّر البحث أو أضف محتوى تعليمياً جديداً."
+              title={
+                all.length
+                  ? 'لا توجد عناصر مطابقة'
+                  : quiz
+                    ? 'ابدأ بأول اختبار'
+                    : 'أضف محتواك التعليمي'
+              }
+              description={
+                all.length
+                  ? 'لا توجد نتائج تطابق البحث والتصفية الحالية. اعرض كل المحتوى وحاول مجدداً.'
+                  : 'اختر الدورة والفصل، ثم أضف المحتوى في المحرّر.'
+              }
               action={
                 <button
                   className="btn btn-primary"
-                  onClick={() => setCreating(true)}
+                  onClick={() => {
+                    if (all.length) {
+                      setQuery('');
+                      setKind('all');
+                      setCourseFilter('all');
+                      setSelected(new Set());
+                      setPublishFeedback(null);
+                    } else setCreating(true);
+                  }}
                 >
-                  <Plus size={15} />
-                  {quiz ? 'إنشاء اختبار' : 'إضافة محتوى'}
+                  <Plus size={15} aria-hidden="true" />
+                  {all.length
+                    ? 'مسح البحث والتصفية'
+                    : quiz
+                      ? 'إنشاء اختبار'
+                      : 'إضافة محتوى'}
                 </button>
               }
             />
