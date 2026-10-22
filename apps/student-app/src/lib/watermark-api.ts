@@ -62,13 +62,29 @@ export async function requestPlaybackGrant(input: {
   courseId: string;
   videoId: string;
 }): Promise<PlaybackGrant> {
+  return requestWatermarkGrant('/api/playback/start', input);
+}
+
+/** Same code/ledger mechanism, scoped to opening a published PDF lesson. */
+export async function requestDocumentGrant(input: {
+  studentId: string;
+  courseId: string;
+  documentId: string;
+}): Promise<PlaybackGrant> {
+  return requestWatermarkGrant('/api/documents/open', input);
+}
+
+async function requestWatermarkGrant(
+  path: string,
+  input: { studentId: string; courseId: string; videoId?: string; documentId?: string },
+): Promise<PlaybackGrant> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= REQUEST_ATTEMPTS; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(`${WATERMARK_API_URL}/api/playback/start`, {
+      const response = await fetch(`${WATERMARK_API_URL}${path}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...input, deviceInfo: deviceInfoString() }),

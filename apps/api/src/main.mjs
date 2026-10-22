@@ -100,6 +100,7 @@ function printHelp() {
 Endpoints:
   GET  /health
   POST /api/playback/start              { studentId, courseId, videoId, deviceInfo? }
+  POST /api/documents/open              { studentId, courseId, documentId, deviceInfo? }
   GET  /api/admin/watermarks/:code      (X-Admin-Token header)
 
 CLI:

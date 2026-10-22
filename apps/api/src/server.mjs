@@ -7,6 +7,8 @@
  *   POST /api/playback/start          → validate the playback + issue a code
  *                                       { studentId, courseId, videoId, deviceInfo? }
  *                                       → 201 { code, sessionId, createdAt }
+ *   POST /api/documents/open          → validate PDF access + issue a code
+ *                                       { studentId, courseId, documentId, deviceInfo? }
  *   GET  /api/admin/watermarks/:code  → trace a leaked code back to the
  *                                       student/course/video/date
  *                                       (header: X-Admin-Token)
@@ -19,7 +21,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { openDatabase } from './db.mjs';
 import { CODE_LENGTH, isWatermarkCode } from './codes.mjs';
 import { findWatermarkByCode, issueWatermark } from './watermarks.mjs';
-import { resolveWatermarkRecord, validatePlayback } from './validate.mjs';
+import { resolveWatermarkRecord, validateDocument, validatePlayback } from './validate.mjs';
 
 const BODY_LIMIT_BYTES = 16 * 1024;
 const DEVICE_INFO_MAX = 160;
@@ -74,6 +76,8 @@ export function createWatermarkApi(options = {}) {
         };
       } else if (req.method === 'POST' && url.pathname === '/api/playback/start') {
         ({ status, body } = await startPlayback(req));
+      } else if (req.method === 'POST' && url.pathname === '/api/documents/open') {
+        ({ status, body } = await startPlayback(req, 'pdf'));
       } else if (req.method === 'GET' && url.pathname.startsWith(ADMIN_PATH)) {
         ({ status, body } = adminLookup(req, url));
       } else {
@@ -90,8 +94,8 @@ export function createWatermarkApi(options = {}) {
     logger.log(`[api] ${status} ${req.method} ${url.pathname} (${Date.now() - startedAt}ms)`);
   }
 
-  /** POST /api/playback/start — validate, mint, record. */
-  async function startPlayback(req) {
+  /** Video playback / PDF reading — validate, mint, record in the same ledger. */
+  async function startPlayback(req, kind = 'video') {
     const payload = await readJsonBody(req);
     if (!payload || typeof payload !== 'object') {
       return { status: 400, body: { error: 'invalid-json' } };
@@ -99,32 +103,36 @@ export function createWatermarkApi(options = {}) {
 
     const studentId = cleanId(payload.studentId);
     const courseId = cleanId(payload.courseId);
-    const videoId = cleanId(payload.videoId);
+    const idField = kind === 'pdf' ? 'documentId' : 'videoId';
+    const lessonId = cleanId(payload[idField]);
     const deviceInfo =
       typeof payload.deviceInfo === 'string'
         ? payload.deviceInfo.replace(/\s+/g, ' ').trim().slice(0, DEVICE_INFO_MAX)
         : '';
 
-    if (!studentId || !courseId || !videoId) {
+    if (!studentId || !courseId || !lessonId) {
       return {
         status: 400,
-        body: { error: 'invalid-request', message: 'studentId, courseId and videoId are required' },
+        body: { error: 'invalid-request', message: `studentId, courseId and ${idField} are required` },
       };
     }
 
-    const check = validatePlayback({ studentId, courseId, videoId });
+    const check = kind === 'pdf'
+      ? validateDocument({ studentId, courseId, documentId: lessonId })
+      : validatePlayback({ studentId, courseId, videoId: lessonId });
     if (!check.ok) return { status: check.status, body: { error: check.error } };
 
     const record = issueWatermark(db, {
       studentId,
       courseId,
-      videoId,
+      // Legacy ledger column stores the lesson id for both videos and PDFs.
+      videoId: lessonId,
       deviceInfo,
       mode,
       hmacSecret,
     });
     logger.log(
-      `[watermark] issued ${record.code} → ${studentId} / ${courseId} / ${videoId} ` +
+      `[watermark] issued ${record.code} → ${studentId} / ${courseId} / ${lessonId} ` +
         `(session ${record.sessionId}${deviceInfo ? `, ${deviceInfo}` : ''})`,
     );
 

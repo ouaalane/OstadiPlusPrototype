@@ -50,7 +50,7 @@ const {
   findWatermarkByCode,
   issueWatermark,
 } = await import('./apps/api/src/watermarks.mjs');
-const { resolveWatermarkRecord, validatePlayback } = await import('./apps/api/src/validate.mjs');
+const { resolveWatermarkRecord, validateDocument, validatePlayback } = await import('./apps/api/src/validate.mjs');
 const { createWatermarkApi } = await import('./apps/api/src/server.mjs');
 const { DEMO_STATE, allLessons } = await import('@ostadiplus/shared');
 
@@ -454,6 +454,55 @@ await test('HTTP: issuance, admin trace, auth and error paths end-to-end', async
   } finally {
     await api.close();
   }
+});
+
+await test('PDF grants require enrollment and a published PDF in the requested course', () => {
+  const pdf = allLessons(mathCourse).find((lesson) => lesson.kind === 'pdf' && lesson.published);
+  assert.ok(pdf, 'seed provides a published PDF');
+  const request = { studentId: 'st-iman', courseId: mathCourse.id, documentId: pdf.id };
+  assert.equal(validateDocument(request).ok, true);
+  assert.equal(validateDocument({ ...request, studentId: 'st-omar' }).error, 'not-enrolled');
+  assert.equal(validateDocument({ ...request, studentId: 'st-nobody' }).error, 'unknown-student');
+  assert.equal(validateDocument({ ...request, documentId: mathVideo.id }).error, 'unknown-document');
+  assert.equal(validateDocument({ ...request, courseId: 'crs-phys-2bac' }).error, 'unknown-document');
+});
+
+await test('HTTP: PDF opens issue fresh traceable codes without changing video issuance', async () => {
+  const api = createWatermarkApi({ dbPath: ':memory:', adminToken: 'test-token', logger: quiet });
+  const { url } = await api.listen(0);
+  const pdf = allLessons(mathCourse).find((lesson) => lesson.kind === 'pdf' && lesson.published);
+  const post = (body) => fetch(`${url}/api/documents/open`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+  });
+  const request = { studentId: 'st-iman', courseId: mathCourse.id, documentId: pdf.id, deviceInfo: 'PDF test' };
+  try {
+    const first = await post(request);
+    assert.equal(first.status, 201);
+    const grant = await first.json();
+    assert.ok(isServerCode(grant.code));
+    const second = await post(request);
+    assert.equal(second.status, 201);
+    const reopened = await second.json();
+    assert.notEqual(reopened.code, grant.code);
+    assert.notEqual(reopened.sessionId, grant.sessionId);
+    const trace = await fetch(`${url}/api/admin/watermarks/${grant.code}`, {
+      headers: { 'x-admin-token': 'test-token' },
+    });
+    assert.equal(trace.status, 200);
+    const report = await trace.json();
+    assert.equal(report.student.id, request.studentId);
+    assert.equal(report.lesson.id, pdf.id);
+    assert.equal(report.lesson.kind, 'pdf');
+    assert.equal(report.deviceInfo, 'PDF test');
+    const denied = await post({ ...request, studentId: 'st-omar' });
+    assert.equal(denied.status, 403);
+    const wrongKind = await post({ ...request, documentId: mathVideo.id });
+    assert.equal(wrongKind.status, 404);
+    const missingId = await post({ ...request, documentId: undefined });
+    assert.equal(missingId.status, 400);
+    const noToken = await fetch(`${url}/api/admin/watermarks/${grant.code}`);
+    assert.equal(noToken.status, 401);
+  } finally { await api.close(); }
 });
 
 console.log(`\n${passed} checks passed`);

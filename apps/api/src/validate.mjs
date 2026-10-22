@@ -23,6 +23,14 @@ import {
  *          `{ ok: false, status, error }` ready to send as the response.
  */
 export function validatePlayback({ studentId, courseId, videoId }) {
+  return validateLessonAccess({ studentId, courseId, lessonId: videoId }, 'video');
+}
+
+export function validateDocument({ studentId, courseId, documentId }) {
+  return validateLessonAccess({ studentId, courseId, lessonId: documentId }, 'pdf');
+}
+
+function validateLessonAccess({ studentId, courseId, lessonId }, kind) {
   const student = DEMO_STATE.students.find((s) => s.id === studentId);
   if (!student) return { ok: false, status: 403, error: 'unknown-student' };
 
@@ -40,9 +48,9 @@ export function validatePlayback({ studentId, courseId, videoId }) {
   );
   if (!enrolled) return { ok: false, status: 403, error: 'not-enrolled' };
 
-  const lesson = allLessons(course).find((l) => l.id === videoId);
-  if (!lesson || lesson.kind !== 'video' || !lesson.published) {
-    return { ok: false, status: 404, error: 'unknown-video' };
+  const lesson = allLessons(course).find((l) => l.id === lessonId);
+  if (!lesson || lesson.kind !== kind || !lesson.published) {
+    return { ok: false, status: 404, error: kind === 'pdf' ? 'unknown-document' : 'unknown-video' };
   }
 
   return { ok: true, student, course, lesson };
@@ -74,6 +82,6 @@ export function resolveWatermarkRecord(record) {
       email: student.email,
     },
     course: course && { id: course.id, title: course.title, level: course.level },
-    lesson: lesson && { id: lesson.id, title: lesson.title, file: lesson.file },
+    lesson: lesson && { id: lesson.id, kind: lesson.kind, title: lesson.title, file: lesson.file },
   };
 }

@@ -1,7 +1,7 @@
 # OstadiPlus — watermark API
 
 Prototype backend that issues **per-playback watermark codes** for protected
-lesson videos and traces them back to a student when a recording leaks.
+lesson videos and PDF reading sessions, and traces them back to a student when a recording leaks.
 
 - Zero dependencies — Node built-ins only (`node:http`, `node:sqlite`,
   `node:crypto`), and it imports the TypeScript domain model straight from
@@ -46,6 +46,33 @@ curl -s http://localhost:8787/api/playback/start \
 
 The request is only honored for a seeded student with an active, non-expired
 enrollment in a published course, and the video must belong to that course.
+
+**Open a PDF reading session**:
+
+```http
+POST /api/documents/open
+Content-Type: application/json
+
+{"studentId":"st-iman","courseId":"crs-math-2bac","documentId":"lsn-004","deviceInfo":"Android"}
+```
+
+Returns the same `201 {code, sessionId, createdAt}` shape as video playback.
+The student must have an active enrollment, and the lesson must be a published
+PDF in the requested course. The existing ledger is reused: its legacy
+`video_id` column holds the PDF lesson ID. Admin trace reports include
+`lesson.kind` (`video` or `pdf`); existing video requests remain unchanged.
+
+The app overlays this code across the PDF viewport, so it stays visible while
+paging and moves using the video watermark engine. Dark ink is used over the
+white document. It does not rewrite/export a permanently stamped PDF file.
+The overlay does not receive touches or expose student names/phone numbers.
+
+Like the existing video demo, disconnected operation permits unregistered local
+codes when `WATERMARK_ALLOW_OFFLINE_FALLBACK` is enabled. PDFs show a provisional
+local code immediately while awaiting the API, then replace it with the issued
+code. Local codes cannot be traced via the server ledger. The prototype API
+still validates against the shared seeded catalog; imported lessons that are
+not in that catalog use the demo fallback until a synchronized backend exists.
 
 **Trace a leaked code** (admin):
 

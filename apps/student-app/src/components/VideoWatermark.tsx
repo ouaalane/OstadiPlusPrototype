@@ -52,6 +52,8 @@ interface VideoWatermarkProps {
   playing: boolean;
   /** Bumped by the screen when an external screen capture is detected. */
   nonce?: number;
+  /** Documents need dark ink on white pages; videos keep their original look. */
+  appearance?: 'video' | 'document';
 }
 
 /** What the effect-driven engine exposes to the watchdog / capture probe. */
@@ -67,7 +69,7 @@ function clampIndex(value: number, count: number): number {
   return value >= 0 && value < count ? value : randomInt(0, count);
 }
 
-export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWatermarkProps) {
+export default function VideoWatermark({ code, playing, nonce = 0, appearance = 'video' }: VideoWatermarkProps) {
   const primaryOpacity = useRef(new Animated.Value(0)).current;
   const secondaryOpacity = useRef(new Animated.Value(0)).current;
   const primaryX = useRef(new Animated.Value(0)).current;
@@ -318,7 +320,7 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
       onLayout={measureContainer}
-      testID="video-watermark"
+      testID={appearance === 'document' ? 'pdf-watermark' : 'video-watermark'}
     >
       <Animated.View
         onLayout={measurePrimary}
@@ -328,7 +330,14 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
           { opacity: primaryOpacity, transform: [{ translateX: primaryX }, { translateY: primaryY }] },
         ]}
       >
-        <AppText lang="fr" size={11} weight="semibold" tone="white" numberOfLines={1} style={styles.text}>
+        <AppText
+          lang="fr"
+          size={11}
+          weight="semibold"
+          tone={appearance === 'document' ? 'ink' : 'white'}
+          numberOfLines={1}
+          style={[styles.text, appearance === 'document' && styles.documentText]}
+        >
           {code}
         </AppText>
       </Animated.View>
@@ -344,7 +353,14 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
           },
         ]}
       >
-        <AppText lang="fr" size={9} weight="medium" tone="white" numberOfLines={1} style={styles.text}>
+        <AppText
+          lang="fr"
+          size={9}
+          weight="medium"
+          tone={appearance === 'document' ? 'ink' : 'white'}
+          numberOfLines={1}
+          style={[styles.text, appearance === 'document' && styles.documentText]}
+        >
           {code}
         </AppText>
       </Animated.View>
@@ -353,6 +369,7 @@ export default function VideoWatermark({ code, playing, nonce = 0 }: VideoWaterm
 }
 
 const styles = StyleSheet.create({
+  documentText: { textShadowColor: overlays.white92 },
   copy: {
     position: 'absolute',
     top: 0,

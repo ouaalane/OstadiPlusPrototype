@@ -7,7 +7,7 @@
  * Bilingual: strings from the shared dictionary, layout flips RTL↔LTR.
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -16,7 +16,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { allLessons } from '@ostadiplus/shared';
@@ -24,6 +24,9 @@ import { allLessons } from '@ostadiplus/shared';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
 import { AppText, Pill, PrimaryButton, TopBar } from '../components/ui';
+import VideoWatermark from '../components/VideoWatermark';
+import { localFallbackCode } from '../lib/watermark';
+import { requestDocumentGrant, WATERMARK_ALLOW_OFFLINE_FALLBACK, type PlaybackGrant } from '../lib/watermark-api';
 import { lessonRoute } from '../lib/lesson';
 import { resolveLessonMedia } from '../media/lookup';
 import { useStore } from '../store/StudentStore';
@@ -33,13 +36,15 @@ import type { RootStackParamList } from '../navigation/types';
 export default function PdfScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Pdf'>>();
-  const { state, progressOf, markCompleted } = useStore();
+  const { state, me, progressOf, markCompleted } = useStore();
+  const focused = useIsFocused();
   const { lang, t } = useI18n();
   const l = useLayout(lang);
   const rtl = lang === 'ar';
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<number>>(null);
   const [page, setPage] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   const found = React.useMemo(() => {
     for (const course of state.courses) {
@@ -48,6 +53,38 @@ export default function PdfScreen() {
     }
     return null;
   }, [state.courses, params.lessonId]);
+
+  const studentId = me?.id ?? '';
+  const courseId = found?.course.id ?? '';
+  const documentId = found?.lesson.id ?? '';
+  const sessionKey = studentId && found?.lesson.kind === 'pdf'
+    ? JSON.stringify([studentId, courseId, documentId])
+    : '';
+  // The standalone demo already permits unregistered offline codes. Show one
+  // immediately while requesting the traceable server-issued document code.
+  const provisionalCode = useMemo(
+    () => sessionKey && WATERMARK_ALLOW_OFFLINE_FALLBACK ? localFallbackCode() : '',
+    [sessionKey],
+  );
+  const [issued, setIssued] = useState<{ key: string; grant: PlaybackGrant } | null>(null);
+  useEffect(() => {
+    if (!sessionKey) return;
+    let cancelled = false;
+    void requestDocumentGrant({ studentId, courseId, documentId })
+      .then((grant) => {
+        if (!cancelled) {
+          setIssued({
+            key: sessionKey,
+            grant: grant.source === 'offline' && provisionalCode
+              ? { ...grant, code: provisionalCode }
+              : grant,
+          });
+        }
+      })
+      .catch((error) => console.log(`[watermark] no document grant issued: ${String(error)}`));
+    return () => { cancelled = true; };
+  }, [sessionKey, studentId, courseId, documentId, provisionalCode]);
+  const watermarkCode = issued?.key === sessionKey ? issued.grant.code : provisionalCode;
 
   if (!found) return null;
 
@@ -96,30 +133,40 @@ export default function PdfScreen() {
         </AppText>
       </View>
 
-      <FlatList
-        ref={listRef}
-        data={pages}
-        keyExtractor={(item, index) => `${lesson.id}-${index}`}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        initialScrollIndex={0}
-        onMomentumScrollEnd={(event) => {
-          const nextIndex = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
-          if (nextIndex >= 0 && nextIndex < pages.length) setPage(nextIndex);
-        }}
-        getItemLayout={(_, index) => ({
-          length: pageWidth,
-          offset: pageWidth * index,
-          index,
-        })}
-        renderItem={({ item }) => (
-          <View style={{ width: pageWidth, paddingHorizontal: spacing.lg }}>
-            <Image source={item} style={[styles.page, { width: pageWidth }]} resizeMode="contain" />
-          </View>
-        )}
-        style={{ flex: 1, backgroundColor: colors.surfaceAlt }}
-      />
+      <View
+        style={styles.documentViewport}
+        onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
+      >
+        <FlatList
+          ref={listRef}
+          data={pages}
+          keyExtractor={(item, index) => `${lesson.id}-${index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          initialScrollIndex={0}
+          onMomentumScrollEnd={(event) => {
+            const nextIndex = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
+            if (nextIndex >= 0 && nextIndex < pages.length) setPage(nextIndex);
+          }}
+          getItemLayout={(_, index) => ({
+            length: pageWidth,
+            offset: pageWidth * index,
+            index,
+          })}
+          renderItem={({ item }) => (
+            <View style={{ width: pageWidth, height: viewportHeight, paddingHorizontal: spacing.lg }}>
+              <Image
+                source={item}
+                style={[styles.page, { width: pageWidth, height: Math.max(0, viewportHeight - spacing.md * 2) }]}
+                resizeMode="contain"
+              />
+            </View>
+          )}
+          style={{ flex: 1, backgroundColor: colors.surfaceAlt }}
+        />
+        <VideoWatermark code={watermarkCode} playing={focused} appearance="document" />
+      </View>
 
       <View style={styles.footer}>
         <View style={[l.rowBetween]}>
@@ -149,6 +196,7 @@ export default function PdfScreen() {
 }
 
 const styles = StyleSheet.create({
+  documentViewport: { flex: 1, backgroundColor: colors.surfaceAlt },
   safe: { flex: 1, backgroundColor: colors.canvas },
   topBarWrap: {
     backgroundColor: colors.surface,
