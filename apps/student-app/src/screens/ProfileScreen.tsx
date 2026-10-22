@@ -10,7 +10,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BrandTextInput as TextInput } from '../components/BrandTextInput';
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Notifications } from '../notifications/client';
@@ -23,6 +23,7 @@ import { AppText, Card, Pill, PrimaryButton } from '../components/ui';
 import { bundledAssetCount } from '../media/lookup';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
+import ProfilePhotoButton from '../components/ProfilePhotoButton';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, shadow, spacing } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
@@ -106,6 +107,7 @@ export default function ProfileScreen() {
     lang,
     setLang,
     signOut,
+    setProfilePhoto,
     importPayload,
     resetDemo,
     lastSyncedAt,
@@ -173,16 +175,9 @@ export default function ProfileScreen() {
         </AppText>
 
         <View style={styles.identity}>
-          <View style={styles.avatar}>
-            {myCourses.length ? (
-              <Image source={require('../assets/student-avatar.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-            ) : (
-              <AppText size={25} weight="bold" tone="brand">{me.monogram}</AppText>
-            )}
-            <View style={styles.cameraBadge}>
-              <Ionicons name="camera" size={12} color={colors.white} />
-            </View>
-          </View>
+          <ProfilePhotoButton photo={me.profilePhoto} monogram={me.monogram}
+            fallback={myCourses.length ? require('../assets/student-avatar.jpg') : undefined}
+            onChange={setProfilePhoto} />
           <AppText size={19} weight="bold" tone="ink">
             {me.fullName}
           </AppText>
@@ -579,29 +574,6 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   identity: { alignItems: 'center', gap: 7, marginTop: spacing.sm },
-  avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: -2,
-    start: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.accent,
-    borderWidth: 2,
-    borderColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   levelChip: {
     alignItems: 'center',
     gap: 5,

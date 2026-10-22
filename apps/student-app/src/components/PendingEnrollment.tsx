@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { Student } from '@ostadiplus/shared';
@@ -20,6 +20,7 @@ export default function PendingEnrollment({ student, onShowCard }: {
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <BrandWordmark size={30} lang={lang} />
+        {student.profilePhoto ? <Image source={{ uri: student.profilePhoto }} style={styles.avatar} accessibilityLabel={student.fullName} /> : null}
         <View style={styles.intro}>
           <AppText size={23} weight="bold" style={styles.center}>
             {rtl ? `مرحباً ${student.fullName} 👋` : `Bienvenue ${student.fullName} 👋`}
@@ -50,6 +51,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xl },
   intro: { gap: spacing.sm, maxWidth: 440 },
   center: { textAlign: 'center' },
+  avatar: { width: 64, height: 64, borderRadius: 32 },
   card: { width: '100%', maxWidth: 440, alignItems: 'center', gap: spacing.md, padding: spacing.xl },
   qr: { backgroundColor: colors.white, padding: spacing.md, borderRadius: radius.md },
 });

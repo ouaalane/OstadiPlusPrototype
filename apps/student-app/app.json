@@ -27,6 +27,20 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autoriser oustadi plus à sélectionner une photo de profil.",
+          "cameraPermission": false,
+          "microphonePermission": false,
+          "colors": {
+            "cropToolbarColor": "#68234F",
+            "cropToolbarIconColor": "#FFFFFF",
+            "cropToolbarActionTextColor": "#FFFFFF",
+            "cropBackgroundColor": "#F1E9F4"
+          }
+        }
+      ],
       ["expo-screen-orientation", { "initialOrientation": "PORTRAIT_UP" }],
       "expo-video",
       "expo-font",

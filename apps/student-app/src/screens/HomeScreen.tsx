@@ -352,7 +352,7 @@ export default function HomeScreen() {
               style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.75 }]}
             >
               <Image
-                source={require('../assets/student-avatar.jpg')}
+                source={me?.profilePhoto ? { uri: me.profilePhoto } : require('../assets/student-avatar.jpg')}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
               />

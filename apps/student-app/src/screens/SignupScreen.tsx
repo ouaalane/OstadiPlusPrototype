@@ -34,6 +34,7 @@ import {
 } from '../components/ui';
 import { useI18n } from '../i18n/useI18n';
 import { useLayout } from '../i18n/layout';
+import ProfilePhotoButton from '../components/ProfilePhotoButton';
 import { useStore } from '../store/StudentStore';
 import { colors, radius, spacing } from '../theme';
 
@@ -221,6 +222,7 @@ export default function SignupScreen({
   const [step, setStep] = useState(1);
 
   // step 1
+  const [profilePhoto, setProfilePhoto] = useState<string>();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -295,7 +297,7 @@ export default function SignupScreen({
       return;
     }
     registerStudent({
-      fullName: name, email, phone: phone ? `+212 ${phone}` : '', password,
+      profilePhoto, fullName: name, email, phone: phone ? `+212 ${phone}` : '', password,
       level: level.title[lang],
       studentType: levelId === 'free' ? 'bac-libre' : 'moutamadris',
     });
@@ -320,6 +322,10 @@ export default function SignupScreen({
               <AppText size={17} weight="bold" tone="ink">
                 {rtl ? 'معلوماتك الشخصية' : 'Vos informations personnelles'}
               </AppText>
+              <View style={{ alignItems: 'center', gap: spacing.sm }}>
+                <ProfilePhotoButton photo={profilePhoto} onChange={setProfilePhoto} />
+                <AppText size={12.5} tone="muted">{rtl ? 'صورة شخصية (اختيارية)' : 'Photo de profil (facultative)'}</AppText>
+              </View>
               <LabeledField
                 label={rtl ? 'الاسم الكامل' : 'Nom complet'}
                 icon="person-outline"

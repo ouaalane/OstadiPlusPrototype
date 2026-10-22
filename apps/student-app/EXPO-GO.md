@@ -1,5 +1,20 @@
 # Preview in Expo Go
 
+Profile photos are optional during signup and can be replaced by tapping the
+profile avatar/camera badge. The system image picker selects one photo; a square
+JPEG thumbnail of at most 512 × 512 is stored locally with that student, so it
+survives cache cleanup and app restarts. Cancellation leaves the old photo intact.
+Install the updated native dependencies before starting Metro:
+
+```sh
+npm ci --prefix apps/student-app
+npm run start --prefix apps/student-app -- --go --clear
+```
+
+Use SDK 57-compatible Expo Go. Existing custom binaries need rebuilding to include
+`expo-image-picker` and `expo-image-manipulator`; older binaries skip their native
+imports safely and explain the required update when the photo button is tapped.
+
 Signup and “Continue as guest” create independent local prototype students.
 They open an empty welcome screen with their own code and centre instructions;
 courses appear only after that student's access is activated in the demo data.

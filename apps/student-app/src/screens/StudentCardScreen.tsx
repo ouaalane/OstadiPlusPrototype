@@ -99,8 +99,8 @@ export default function StudentCardScreen({ onBack }: { onBack: () => void }) {
           {/* identity row */}
           <View style={[l.row, styles.identity]}>
             <View style={styles.avatar}>
-              {!pending && me ? (
-                <Image source={require('../assets/student-avatar.jpg')} style={styles.avatarImg} resizeMode="cover" accessibilityIgnoresInvertColors accessibilityLabel={me.fullName} />
+              {me && (me.profilePhoto || !pending) ? (
+                <Image source={me.profilePhoto ? { uri: me.profilePhoto } : require('../assets/student-avatar.jpg')} style={styles.avatarImg} resizeMode="cover" accessibilityIgnoresInvertColors accessibilityLabel={me.fullName} />
               ) : (
                 <AppText size={18} weight="bold" tone="white">{me?.monogram ?? '?'}</AppText>
               )}

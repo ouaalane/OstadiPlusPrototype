@@ -120,6 +120,8 @@ interface StoreValue {
   downloadUriFor: (lessonId: string) => string | undefined;
   /** Get the download status for a lesson. */
   downloadStatusFor: (lessonId: string) => DownloadStatus | undefined;
+  /** Replace only the signed-in student's local profile thumbnail. */
+  setProfilePhoto: (photo: string) => void;
   /** Register a new student account (creates the student in the store). */
   registerStudent: (args: {
     fullName: string;
@@ -128,6 +130,7 @@ interface StoreValue {
     level: string;
     studentType: 'bac-libre' | 'moutamadris';
     password: string;
+    profilePhoto?: string;
   }) => string; // returns new studentId
 }
 
@@ -162,7 +165,8 @@ type Action =
   | { type: 'qna/ask'; question: QnaQuestion }
   | { type: 'membership/request'; centerId: string; studentId: string }
   | { type: 'membership/respond'; membershipId: string; accept: boolean; studentId: string }
-  | { type: 'student/register'; student: Student };
+  | { type: 'student/register'; student: Student }
+  | { type: 'student/photo'; studentId: string; photo: string };
 
 const nowIso = () => new Date().toISOString();
 
@@ -316,6 +320,11 @@ function reducer(state: DemoState, action: Action): DemoState {
         return n;
       });
       return { ...state, memberships, notifications };
+    }
+
+    case 'student/photo': {
+      return { ...state, students: state.students.map(student => student.id === action.studentId
+        ? { ...student, profilePhoto: action.photo } : student) };
     }
 
     case 'student/register': {
@@ -841,6 +850,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       level: string;
       studentType: 'bac-libre' | 'moutamadris';
       password: string;
+      profilePhoto?: string;
     }): string => {
       const id = newId('st');
       const parts = args.fullName.trim().split(/\s+/);
@@ -856,12 +866,17 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
         monogram: monogram || 'ط',
         studentCode,
         studentType: args.studentType,
+        ...(args.profilePhoto ? { profilePhoto: args.profilePhoto } : {}),
       };
       dispatch({ type: 'student/register', student });
       return id;
     },
     [],
   );
+
+  const setProfilePhoto = useCallback((photo: string) => {
+    if (state.activeStudentId) dispatch({ type: 'student/photo', studentId: state.activeStudentId, photo });
+  }, [state.activeStudentId]);
 
   const value = useMemo<StoreValue>(
     () => ({
@@ -905,6 +920,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       downloadUriFor,
       downloadStatusFor,
       registerStudent,
+      setProfilePhoto,
     }),
     [
       hydrated,
@@ -947,6 +963,7 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
       downloadUriFor,
       downloadStatusFor,
       registerStudent,
+      setProfilePhoto,
     ],
   );
 

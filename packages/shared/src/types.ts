@@ -189,6 +189,8 @@ export interface Course {
 /* ------------------------------------------------------------------ */
 
 export interface Student {
+  /** Optional local profile thumbnail, persisted with this student. */
+  profilePhoto?: string;
   id: string;
   fullName: string;
   phone: string;
