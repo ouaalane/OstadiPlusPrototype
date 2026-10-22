@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useEffect, useRef, useState } from 'react';
 import { ClipboardCopy, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { Confirm, Field, PageHeader } from '@/components/ui';
@@ -7,6 +9,7 @@ import { useUnsavedChanges } from '@/components/authoring/useUnsavedChanges';
 const ignoreDirty = () => {};
 
 export default function Settings() {
+  useI18n();
   const { state, notify, exportPayload, isDirty } = useStore();
   const dispatch = useAction();
   const teacher = state.teacher;
@@ -35,8 +38,8 @@ export default function Settings() {
   return (
     <>
       <PageHeader
-        title="الإعدادات"
-        description="بياناتك التي تظهر للطلاب وأدوات البيانات التجريبية."
+        title={t('الإعدادات')}
+        description={t('بياناتك التي تظهر للطلاب وأدوات البيانات التجريبية.')}
       />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
@@ -61,19 +64,22 @@ export default function Settings() {
                   email: form.email.trim(),
                 },
               },
-              'تم حفظ الملف الشخصي',
+              t('تم حفظ الملف الشخصي'),
             );
             setSaved(true);
           }}
         >
-          <h2 className="text-lg">الملف الشخصي</h2>
+          <h2 className="text-lg">{t('الملف الشخصي')}</h2>
 
           <div className="mt-5 space-y-4">
             <Field
-              label="الاسم"
-              error={touched && nameInvalid ? 'اكتب اسماً صحيحاً.' : undefined}
+              label={t('الاسم')}
+              error={
+                touched && nameInvalid ? t('اكتب اسماً صحيحاً.') : undefined
+              }
             >
               <input
+                dir="auto"
                 ref={nameRef}
                 required
                 autoComplete="name"
@@ -86,7 +92,7 @@ export default function Settings() {
             </Field>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="الاسم اللاتيني">
+              <Field label={t('الاسم اللاتيني')}>
                 <input
                   className="input"
                   dir="ltr"
@@ -96,8 +102,9 @@ export default function Settings() {
                   }
                 />
               </Field>
-              <Field label="المادة">
+              <Field label={t('المادة')}>
                 <input
+                  dir="auto"
                   className="input"
                   value={form.subject}
                   onChange={(event) =>
@@ -108,8 +115,9 @@ export default function Settings() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="اسم المركز">
+              <Field label={t('اسم المركز')}>
                 <input
+                  dir="auto"
                   className="input"
                   value={form.centerName}
                   onChange={(event) =>
@@ -117,8 +125,9 @@ export default function Settings() {
                   }
                 />
               </Field>
-              <Field label="المدينة">
+              <Field label={t('المدينة')}>
                 <input
+                  dir="auto"
                   className="input"
                   value={form.centerCity}
                   onChange={(event) =>
@@ -130,8 +139,10 @@ export default function Settings() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
-                label="البريد الإلكتروني"
-                error={touched && emailInvalid ? 'بريد غير صحيح.' : undefined}
+                label={t('البريد الإلكتروني')}
+                error={
+                  touched && emailInvalid ? t('بريد غير صحيح.') : undefined
+                }
               >
                 <input
                   className="input"
@@ -145,7 +156,7 @@ export default function Settings() {
                   }
                 />
               </Field>
-              <Field label="الهاتف">
+              <Field label={t('الهاتف')}>
                 <input
                   className="input"
                   type="tel"
@@ -159,8 +170,12 @@ export default function Settings() {
               </Field>
             </div>
 
-            <Field label="نبذة" hint="سطر أو سطرين عن أسلوبك في التدريس.">
+            <Field
+              label={t('نبذة')}
+              hint={t('سطر أو سطرين عن أسلوبك في التدريس.')}
+            >
               <textarea
+                dir="auto"
                 className="textarea"
                 style={{ minHeight: 90 }}
                 maxLength={240}
@@ -174,15 +189,15 @@ export default function Settings() {
 
           <div role="status" className="mt-4 text-sm text-brand">
             {saved
-              ? 'تم حفظ تغييرات الملف الشخصي.'
+              ? t('تم حفظ تغييرات الملف الشخصي.')
               : dirty
-                ? 'لديك تغييرات غير محفوظة.'
+                ? t('لديك تغييرات غير محفوظة.')
                 : ''}
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
             <span className="inline-flex items-center gap-1.5 text-xs text-faint">
               <ShieldCheck size={14} />
-              البيانات محلية على هذا الجهاز فقط.
+              {t('البيانات محلية على هذا الجهاز فقط.')}
             </span>
             <div className="flex gap-2">
               <button
@@ -194,11 +209,11 @@ export default function Settings() {
                   setSaved(false);
                 }}
               >
-                تراجع
+                {t('تراجع')}
               </button>
               <button type="submit" className="btn btn-primary">
                 <Save size={16} />
-                حفظ
+                {t('حفظ')}
               </button>
             </div>
           </div>
@@ -206,10 +221,13 @@ export default function Settings() {
 
         {/* ---- demo data ---- */}
         <section className="card h-fit p-5">
-          <h2 className="text-lg">بيانات العرض التجريبي</h2>
+          <h2 className="text-lg">{t('بيانات العرض التجريبي')}</h2>
           <p className="mt-1 text-sm text-muted">
-            {state.courses.length} دورات · {state.students.length} تلميذاً
-            {isDirty ? ' · عُدّلت' : ''}
+            {state.courses.length}
+            {t(' دورات · ')}
+            {state.students.length}
+            {t(' تلميذاً')}
+            {isDirty ? t(' · عُدّلت') : ''}
           </p>
 
           <div className="mt-4 space-y-3">
@@ -217,10 +235,10 @@ export default function Settings() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-sm font-bold text-ink">
                   <ClipboardCopy size={16} />
-                  نقل البيانات إلى تطبيق التلاميذ
+                  {t('نقل البيانات إلى تطبيق التلاميذ')}
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  انسخ رمز المزامنة والصقه في تطبيق التلاميذ.
+                  {t('انسخ رمز المزامنة والصقه في تطبيق التلاميذ.')}
                 </p>
               </div>
               <button
@@ -236,10 +254,12 @@ export default function Settings() {
                     setManualPayload(payload);
                     await navigator.clipboard.writeText(payload);
                     setManualPayload('');
-                    notify('تم نسخ رمز المزامنة — الصقه في تطبيق التلاميذ');
+                    notify(t('تم نسخ رمز المزامنة — الصقه في تطبيق التلاميذ'));
                   } catch {
                     setCopyError(
-                      'تعذّر النسخ التلقائي. يمكنك تحديد الرمز أدناه ونسخه يدوياً.',
+                      t(
+                        'تعذّر النسخ التلقائي. يمكنك تحديد الرمز أدناه ونسخه يدوياً.',
+                      ),
                     );
                   } finally {
                     setCopying(false);
@@ -247,7 +267,7 @@ export default function Settings() {
                 }}
               >
                 <ClipboardCopy size={15} />
-                {copying ? 'جارٍ النسخ…' : 'نسخ رمز المزامنة'}
+                {copying ? t('جارٍ النسخ…') : t('نسخ رمز المزامنة')}
               </button>
             </div>
 
@@ -258,8 +278,10 @@ export default function Settings() {
                 </p>
                 {manualPayload ? (
                   <Field
-                    label="رمز المزامنة للنسخ اليدوي"
-                    hint="حدّد الرمز كاملاً ثم انسخه والصقه في تطبيق التلميذ."
+                    label={t('رمز المزامنة للنسخ اليدوي')}
+                    hint={t(
+                      'حدّد الرمز كاملاً ثم انسخه والصقه في تطبيق التلميذ.',
+                    )}
                   >
                     <textarea
                       className="textarea mt-3"
@@ -276,10 +298,10 @@ export default function Settings() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-sm font-bold text-ink">
                   <RotateCcw size={16} />
-                  إعادة ضبط العرض
+                  {t('إعادة ضبط العرض')}
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  يحذف تعديلاتك ويعيد البيانات الأصلية.
+                  {t('يحذف تعديلاتك ويعيد البيانات الأصلية.')}
                 </p>
               </div>
               <button
@@ -289,7 +311,7 @@ export default function Settings() {
                 onClick={() => setResetOpen(true)}
               >
                 <RotateCcw size={15} />
-                إعادة الضبط
+                {t('إعادة الضبط')}
               </button>
             </div>
           </div>
@@ -298,11 +320,16 @@ export default function Settings() {
 
       <Confirm
         open={resetOpen}
-        title="إعادة ضبط بيانات العرض؟"
-        message="سيُحذف كل ما عدّلته (دورات، تلاميذ، تقدّم) وتعود البيانات الأصلية."
-        confirmLabel="إعادة الضبط"
+        title={t('إعادة ضبط بيانات العرض؟')}
+        message={t(
+          'سيُحذف كل ما عدّلته (دورات، تلاميذ، تقدّم) وتعود البيانات الأصلية.',
+        )}
+        confirmLabel={t('إعادة الضبط')}
         onConfirm={() => {
-          dispatch({ type: 'reset' }, 'عادت بيانات العرض إلى حالتها الأصلية');
+          dispatch(
+            { type: 'reset' },
+            t('عادت بيانات العرض إلى حالتها الأصلية'),
+          );
           setResetOpen(false);
         }}
         onCancel={() => setResetOpen(false)}

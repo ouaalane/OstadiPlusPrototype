@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, getDirection } from '@/i18n/locale';
 import {
   Children,
   cloneElement,
@@ -51,6 +53,7 @@ export function Avatar({
   seed?: number;
   square?: boolean;
 }) {
+  useI18n();
   const [from, to] = AVATAR_TONES[Math.abs(seed) % AVATAR_TONES.length];
   return (
     <span
@@ -65,7 +68,7 @@ export function Avatar({
         backgroundImage: `linear-gradient(135deg, ${from}, ${to})`,
       }}
     >
-      {label}
+      {t(label)}
     </span>
   );
 }
@@ -95,6 +98,7 @@ export function Pill({
   children: ReactNode;
   dot?: boolean;
 }) {
+  useI18n();
   const style = PILL_STYLES[tone];
   return (
     <span className="pill" style={{ background: style.bg, color: style.fg }}>
@@ -117,13 +121,14 @@ export function ProgressBar({
   value,
   tone = 'brand',
   height = 8,
-  label = 'التقدّم',
+  label = t('التقدّم'),
 }: {
   value: number;
   label?: string;
   tone?: 'brand' | 'success' | 'accent';
   height?: number;
 }) {
+  useI18n();
   const color =
     tone === 'success'
       ? palette.success
@@ -135,7 +140,7 @@ export function ProgressBar({
       className="w-full overflow-hidden rounded-full bg-surface-alt"
       style={{ height }}
       role="progressbar"
-      aria-label={label}
+      aria-label={t(label)}
       aria-valuenow={Math.min(100, Math.max(0, value))}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -168,6 +173,7 @@ export function CourseCover({
   compact?: boolean;
   children?: ReactNode;
 }) {
+  useI18n();
   const [from, to] = coverGradients[cover] ?? coverGradients.blue;
   // Real rendered cover art; the flat gradient stays behind as a fallback
   // while the image loads (and for any cover key without art).
@@ -219,13 +225,14 @@ export function EmptyState({
   description: string;
   action?: ReactNode;
 }) {
+  useI18n();
   return (
     <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-softer text-brand">
         {icon}
       </span>
       <h3 className="text-lg">{title}</h3>
-      <p className="max-w-sm text-sm text-muted">{description}</p>
+      <p className="max-w-sm text-sm text-muted">{t(description)}</p>
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
@@ -254,6 +261,7 @@ export function Modal({
   size?: 'sm' | 'md' | 'lg';
   role?: 'dialog' | 'alertdialog';
 }) {
+  useI18n();
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -316,7 +324,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
       <button
         type="button"
-        aria-label="إغلاق"
+        aria-label={t('إغلاق')}
         onClick={onClose}
         className="absolute inset-0 animate-fade bg-[rgba(41,30,43,0.55)]"
       />
@@ -336,14 +344,14 @@ export function Modal({
             </h2>
             {description ? (
               <p id={descId} className="mt-1 text-sm text-muted">
-                {description}
+                {t(description)}
               </p>
             ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="إغلاق النافذة"
+            aria-label={t('إغلاق النافذة')}
             className="btn btn-ghost btn-icon shrink-0"
           >
             <X size={18} />
@@ -367,6 +375,7 @@ export function Modal({
 /* ------------------------------------------------------------------ */
 
 export function ToastHost() {
+  useI18n();
   const { toasts, dismissToast } = useStore();
   return (
     <div
@@ -396,7 +405,7 @@ export function ToastHost() {
           >
             <Icon size={18} style={{ color: tone.fg }} />
             <span className="flex-1 text-sm font-semibold text-ink">
-              {toast.message}
+              {t(toast.message)}
             </span>
           </button>
         );
@@ -422,12 +431,13 @@ export function Toggle({
   onChange: (value: boolean) => void;
   label: string;
 }) {
+  useI18n();
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label}
+      aria-label={t(label)}
       onClick={() => onChange(!checked)}
       className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
       style={{
@@ -436,7 +446,11 @@ export function Toggle({
     >
       <span
         className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
-        style={{ transform: checked ? 'translateX(-20px)' : 'translateX(0)' }}
+        style={{
+          transform: checked
+            ? `translateX(${getDirection() === 'rtl' ? -20 : 20}px)`
+            : 'translateX(0)',
+        }}
       />
     </button>
   );
@@ -450,7 +464,7 @@ export function Confirm({
   open,
   title,
   message,
-  confirmLabel = 'تأكيد',
+  confirmLabel = t('تأكيد'),
   tone = 'danger',
   onConfirm,
   onCancel,
@@ -463,11 +477,12 @@ export function Confirm({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  useI18n();
   return (
     <Modal
       open={open}
       onClose={onCancel}
-      title={title}
+      title={t(title)}
       size="sm"
       role="alertdialog"
       footer={
@@ -478,19 +493,19 @@ export function Confirm({
             onClick={onCancel}
             data-autofocus
           >
-            تراجع
+            {t('تراجع')}
           </button>
           <button
             type="button"
             className={`btn ${tone === 'danger' ? 'btn-danger' : 'btn-primary'}`}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {t(confirmLabel)}
           </button>
         </>
       }
     >
-      <p className="text-sm leading-relaxed text-body">{message}</p>
+      <p className="text-sm leading-relaxed text-body">{t(message)}</p>
     </Modal>
   );
 }
@@ -508,12 +523,13 @@ export function PageHeader({
   description?: string;
   actions?: ReactNode;
 }) {
+  useI18n();
   return (
     <div className="dashboard-heading">
       <div className="min-w-0">
         <h1 className="workspace-title">{title}</h1>
         {description ? (
-          <p className="workspace-subtitle max-w-2xl">{description}</p>
+          <p className="workspace-subtitle max-w-2xl">{t(description)}</p>
         ) : null}
       </div>
       {actions ? (
@@ -534,6 +550,7 @@ export function Field({
   error?: string;
   children: ReactNode;
 }) {
+  useI18n();
   const fieldId = useId();
   const labelId = `${fieldId}-label`;
   const messageId = `${fieldId}-message`;
@@ -559,17 +576,17 @@ export function Field({
   return (
     <label className="field block" data-invalid={error ? true : undefined}>
       <span id={labelId} className="label">
-        {labelText}
+        {t(labelText)}
       </span>
       {controls}
       {error ? (
         <span id={messageId} role="alert" className="field-message field-error">
           <AlertCircle size={14} aria-hidden="true" />
-          {error}
+          {t(error)}
         </span>
       ) : hint ? (
         <span id={messageId} className="field-message field-hint">
-          {hint}
+          {t(hint)}
         </span>
       ) : null}
     </label>
@@ -583,13 +600,14 @@ export function Field({
 /** Keeps existing tables intact and makes horizontal overflow visible. */
 export function TableScroll({
   children,
-  label = 'جدول البيانات',
+  label = t('جدول البيانات'),
   inset = false,
 }: {
   children: ReactNode;
   label?: string;
   inset?: boolean;
 }) {
+  useI18n();
   const region = useRef<HTMLDivElement>(null);
   const [overflow, setOverflow] = useState(false);
   const hintId = useId();
@@ -609,7 +627,7 @@ export function TableScroll({
       {overflow ? (
         <p id={hintId} className="table-scroll-hint">
           <ArrowLeftRight size={15} aria-hidden="true" />
-          حرّك الجدول أفقياً لعرض بقية الأعمدة والإجراءات.
+          {t('حرّك الجدول أفقياً لعرض بقية الأعمدة والإجراءات.')}
         </p>
       ) : null}
       <div
@@ -691,6 +709,7 @@ export function DataTable<T>({
   compact = false,
   highlightRow,
 }: DataTableProps<T>) {
+  const { lang } = useI18n();
   const tableTitleId = useId();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -714,7 +733,7 @@ export function DataTable<T>({
         return String(val).toLowerCase().includes(needle);
       }),
     );
-  }, [rows, columns, query]);
+  }, [rows, columns, query, lang]);
 
   /* --- sorting --- */
   const sorted = useMemo(() => {
@@ -730,7 +749,7 @@ export function DataTable<T>({
           : String(av).localeCompare(String(bv), 'ar');
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir, columns]);
+  }, [filtered, sortKey, sortDir, columns, lang]);
 
   /* --- pagination --- */
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -748,7 +767,7 @@ export function DataTable<T>({
         setSortDir('asc');
       }
     },
-    [sortKey],
+    [sortKey, lang],
   );
 
   /* --- selection helpers --- */
@@ -789,7 +808,7 @@ export function DataTable<T>({
             {title}
           </h2>
           {description ? (
-            <p className="mt-1 text-sm text-muted">{description}</p>
+            <p className="mt-1 text-sm text-muted">{t(description)}</p>
           ) : null}
         </div>
       ) : null}
@@ -804,14 +823,15 @@ export function DataTable<T>({
           >
             {selectable && selectedCount > 0 ? (
               <span className="font-semibold text-ink">
-                <span className="num">{selectedCount}</span> عنصر محدد
+                <span className="num">{selectedCount}</span>
+                {t(' عنصر محدد')}
               </span>
             ) : (
               <span>
                 <span className="num font-semibold text-ink">
                   {sorted.length}
                 </span>{' '}
-                عنصر
+                {t('عنصر')}
               </span>
             )}
           </div>
@@ -824,15 +844,16 @@ export function DataTable<T>({
                   className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-faint"
                 />
                 <input
+                  dir="auto"
                   type="search"
                   className="input h-9 rounded-xl ps-9 text-[13px]"
-                  placeholder={searchPlaceholder}
+                  placeholder={t(searchPlaceholder)}
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
                     setPage(0);
                   }}
-                  aria-label={searchPlaceholder}
+                  aria-label={t(searchPlaceholder)}
                 />
               </div>
             ) : null}
@@ -842,18 +863,19 @@ export function DataTable<T>({
       )}
 
       {/* ---- Table ---- */}
-      <TableScroll label={title || 'جدول البيانات'} inset>
+      <TableScroll label={title || t('جدول البيانات')} inset>
         <table
           className="w-full border-collapse text-sm"
           style={{ minWidth: 640 }}
           aria-labelledby={title ? tableTitleId : undefined}
-          aria-label={title ? undefined : 'جدول البيانات'}
+          aria-label={title ? undefined : t('جدول البيانات')}
         >
           <thead>
             <tr className="rounded-xl bg-surface-alt">
               {selectable ? (
                 <th scope="col" className="w-10 px-3 py-3 text-start">
                   <input
+                    dir="auto"
                     type="checkbox"
                     ref={(node) => {
                       if (node)
@@ -863,7 +885,7 @@ export function DataTable<T>({
                     }}
                     checked={allPageSelected}
                     onChange={toggleSelectAll}
-                    aria-label="تحديد الكل"
+                    aria-label={t('تحديد الكل')}
                     className="h-4 w-4 cursor-pointer rounded border-line-strong accent-[var(--color-ink)]"
                   />
                 </th>
@@ -905,7 +927,9 @@ export function DataTable<T>({
                         data-active={active ? true : undefined}
                         onClick={() => toggleSort(col.key)}
                       >
-                        {col.header}
+                        {typeof col.header === 'string'
+                          ? t(col.header)
+                          : col.header}
                         {active ? (
                           sortDir === 'asc' ? (
                             <ArrowUp size={13} aria-hidden="true" />
@@ -934,8 +958,12 @@ export function DataTable<T>({
                   {emptyState ?? (
                     <div className="flex flex-col items-center gap-2 text-muted">
                       <Search size={28} className="text-faint" />
-                      <p className="text-sm font-semibold">لا توجد نتائج</p>
-                      <p className="text-xs">جرّب تعديل البحث أو التصفية.</p>
+                      <p className="text-sm font-semibold">
+                        {t('لا توجد نتائج')}
+                      </p>
+                      <p className="text-xs">
+                        {t('جرّب تعديل البحث أو التصفية.')}
+                      </p>
                     </div>
                   )}
                 </td>
@@ -959,10 +987,13 @@ export function DataTable<T>({
                     {selectable ? (
                       <td className="w-10 px-3 py-3">
                         <input
+                          dir="auto"
                           type="checkbox"
                           checked={!!isSelected}
                           onChange={() => toggleSelectRow(id)}
-                          aria-label={`تحديد ${getRowLabel?.(row) ?? id}`}
+                          aria-label={t('تحديد {0}', [
+                            getRowLabel?.(row) ?? id,
+                          ])}
                           className="h-4 w-4 cursor-pointer rounded border-line-strong accent-[var(--color-ink)]"
                         />
                       </td>
@@ -995,7 +1026,7 @@ export function DataTable<T>({
       {totalPages > 1 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 pb-5 pt-3">
           <div className="flex items-center gap-2 text-[13px] text-muted">
-            <span>عرض</span>
+            <span>{t('عرض')}</span>
             <select
               className="num rounded-lg border border-line bg-white px-2 py-1 text-[13px] font-semibold text-ink"
               value={pageSize}
@@ -1003,7 +1034,7 @@ export function DataTable<T>({
                 setPageSize(Number(e.target.value));
                 setPage(0);
               }}
-              aria-label="عدد العناصر في الصفحة"
+              aria-label={t('عدد العناصر في الصفحة')}
             >
               {pageSizeOptions.map((n) => (
                 <option key={n} value={n}>
@@ -1011,7 +1042,7 @@ export function DataTable<T>({
                 </option>
               ))}
             </select>
-            <span>عناصر في الصفحة</span>
+            <span>{t('عناصر في الصفحة')}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -1020,7 +1051,7 @@ export function DataTable<T>({
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-surface-alt disabled:opacity-40"
               disabled={safePage === 0}
               onClick={() => setPage(safePage - 1)}
-              aria-label="الصفحة السابقة"
+              aria-label={t('الصفحة السابقة')}
             >
               <ChevronRight size={15} />
             </button>
@@ -1065,7 +1096,7 @@ export function DataTable<T>({
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-surface-alt disabled:opacity-40"
               disabled={safePage >= totalPages - 1}
               onClick={() => setPage(safePage + 1)}
-              aria-label="الصفحة التالية"
+              aria-label={t('الصفحة التالية')}
             >
               <ChevronLeft size={15} />
             </button>
@@ -1091,11 +1122,12 @@ export function Segmented<T extends string>({
   options: readonly [T, string][];
   ariaLabel?: string;
 }) {
+  useI18n();
   return (
     <div
       className="inline-flex flex-wrap gap-1 rounded-xl border border-line bg-surface-alt p-1"
       role="group"
-      aria-label={ariaLabel}
+      aria-label={t(ariaLabel)}
     >
       {options.map(([key, label]) => {
         const active = value === key;
@@ -1112,7 +1144,7 @@ export function Segmented<T extends string>({
                 : 'text-muted hover:text-ink',
             ].join(' ')}
           >
-            {label}
+            {t(label)}
           </button>
         );
       })}
@@ -1133,6 +1165,7 @@ export function StatCard({
   icon: ReactNode;
   tone?: 'brand' | 'success' | 'accent';
 }) {
+  useI18n();
   const tones = {
     brand: { bg: 'var(--color-brand-soft)', fg: 'var(--color-brand-dark)' },
     success: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' },
@@ -1148,11 +1181,13 @@ export function StatCard({
         {icon}
       </span>
       <div className="min-w-0">
-        <div className="text-xs font-semibold text-muted">{label}</div>
+        <div className="text-xs font-semibold text-muted">{t(label)}</div>
         <div className="mt-0.5 text-2xl font-bold text-ink">
           <span className="num">{value}</span>
         </div>
-        {hint ? <div className="mt-0.5 text-xs text-faint">{hint}</div> : null}
+        {hint ? (
+          <div className="mt-0.5 text-xs text-faint">{t(hint)}</div>
+        ) : null}
       </div>
     </div>
   );

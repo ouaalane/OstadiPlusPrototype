@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useEffect, useRef, useState } from 'react';
 import {
   Check,
@@ -24,6 +26,7 @@ export function MediaUpload({
   onChange: (asset: Asset) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  useI18n();
   const [stage, setStage] = useState<'idle' | 'reading' | 'uploading' | 'done'>(
     'idle',
   );
@@ -58,13 +61,13 @@ export function MediaUpload({
     if (!matches) {
       setError(
         kind === 'pdf'
-          ? 'اختر ملف PDF صالحاً.'
-          : 'اختر فيديو بصيغة MP4 أو WebM أو MOV.',
+          ? t('اختر ملف PDF صالحاً.')
+          : t('اختر فيديو بصيغة MP4 أو WebM أو MOV.'),
       );
       return;
     }
     if (file.size > 100 * 1024 * 1024 || !file.size) {
-      setError('اختر ملفاً غير فارغ، لا يتجاوز 100 MB.');
+      setError(t('اختر ملفاً غير فارغ، لا يتجاوز 100 MB.'));
       return;
     }
     const abort = new AbortController();
@@ -91,10 +94,10 @@ export function MediaUpload({
       setCanRetry(!(e instanceof DOMException && e.name === 'AbortError'));
       setError(
         e instanceof DOMException && e.name === 'AbortError'
-          ? 'تم إلغاء الرفع. يمكنك اختيار الملف من جديد.'
+          ? t('تم إلغاء الرفع. يمكنك اختيار الملف من جديد.')
           : e instanceof Error
             ? e.message
-            : 'تعذّر رفع الملف. حاول مجدداً.',
+            : t('تعذّر رفع الملف. حاول مجدداً.'),
       );
     } finally {
       controller.current = null;
@@ -133,9 +136,11 @@ export function MediaUpload({
                 <FileText size={27} strokeWidth={1.5} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold">المستند مرفق بالدرس</p>
+                <p className="text-xs font-bold">{t('المستند مرفق بالدرس')}</p>
                 <p className="mt-2 text-[10px] text-muted">
-                  {lesson.pages} صفحات · {formatSize(lesson.sizeMb)}
+                  {lesson.pages}
+                  {t(' صفحات · ')}
+                  {formatSize(lesson.sizeMb)}
                 </p>
               </div>
               <a
@@ -144,7 +149,7 @@ export function MediaUpload({
                 rel="noreferrer"
                 className="btn btn-outline btn-sm"
               >
-                فتح PDF
+                {t('فتح PDF')}
               </a>
             </div>
           )}
@@ -153,7 +158,7 @@ export function MediaUpload({
               <Check size={13} className="text-brand" />
               {kind === 'video'
                 ? formatDuration(lesson.durationSec)
-                : `${lesson.pages} صفحات`}
+                : t('{0} صفحات', [lesson.pages])}
               <span className="text-line-strong">/</span>
               {formatSize(lesson.sizeMb)}
             </span>
@@ -162,7 +167,7 @@ export function MediaUpload({
               disabled={busy}
               onClick={() => input.current?.click()}
             >
-              استبدال الملف
+              {t('استبدال الملف')}
             </button>
           </div>
         </div>
@@ -187,12 +192,15 @@ export function MediaUpload({
             <UploadCloud size={28} strokeWidth={1.4} />
           </span>
           <span className="mt-4 block text-sm font-bold">
-            اسحب {kind === 'pdf' ? 'المستند' : 'الفيديو'} هنا، أو اختر ملفاً
+            {t('اسحب ')}
+            {kind === 'pdf' ? t('المستند') : t('الفيديو')}
+            {t(' هنا، أو اختر ملفاً')}
           </span>
           <span className="mt-2 block text-[10px] text-muted">
-            {kind === 'pdf' ? 'PDF' : 'MP4، WebM، MOV'} · حتى 100 MB
+            {kind === 'pdf' ? 'PDF' : t('MP4، WebM، MOV')}
+            {t(' · حتى 100 MB')}
           </span>
-          <span className="btn btn-primary btn-sm mt-5">اختيار ملف</span>
+          <span className="btn btn-primary btn-sm mt-5">{t('اختيار ملف')}</span>
         </button>
       ) : null}
       {busy ? (
@@ -204,14 +212,14 @@ export function MediaUpload({
             <LoaderCircle size={20} className="animate-spin text-brand" />
             <span className="flex-1 text-xs font-bold">
               {stage === 'reading'
-                ? 'جارٍ التحقق من الملف وقراءة بياناته…'
+                ? t('جارٍ التحقق من الملف وقراءة بياناته…')
                 : progress === 100
-                  ? 'اكتمل الإرسال، جارٍ حفظ الملف…'
-                  : 'جارٍ رفع الملف…'}
+                  ? t('اكتمل الإرسال، جارٍ حفظ الملف…')
+                  : t('جارٍ رفع الملف…')}
             </span>
             <button
               onClick={() => controller.current?.abort()}
-              aria-label="إلغاء رفع الملف"
+              aria-label={t('إلغاء رفع الملف')}
               className="btn btn-icon btn-ghost"
             >
               <X size={16} />
@@ -223,7 +231,7 @@ export function MediaUpload({
                 className="upload-progress mt-4"
                 max="100"
                 value={progress}
-                aria-label="تقدّم رفع الملف"
+                aria-label={t('تقدّم رفع الملف')}
               />
               <span className="num mt-2 block text-[10px] text-muted">
                 {progress}%
@@ -231,7 +239,7 @@ export function MediaUpload({
             </>
           ) : null}
           <p className="mt-2 text-[10px] text-muted">
-            يمكنك إلغاء العملية. لا تغلق هذه الصفحة قبل اكتمال الرفع.
+            {t('يمكنك إلغاء العملية. لا تغلق هذه الصفحة قبل اكتمال الرفع.')}
           </p>
         </div>
       ) : null}
@@ -241,7 +249,7 @@ export function MediaUpload({
           className="flex items-center gap-2 text-[11px] text-brand"
         >
           <Check size={14} />
-          الملف جاهز. احفظ الدرس لتثبيت التغيير.
+          {t('الملف جاهز. احفظ الدرس لتثبيت التغيير.')}
         </p>
       ) : null}
       {error ? (
@@ -249,23 +257,24 @@ export function MediaUpload({
           className="rounded-lg border border-brand/20 bg-accent/20 p-4"
           role="alert"
         >
-          <p className="text-xs leading-6">{error}</p>
+          <p className="text-xs leading-6">{t(error)}</p>
           {last.current && canRetry ? (
             <button
               className="mt-3 flex items-center gap-2 text-[11px] font-bold text-brand"
               onClick={() => choose(last.current ?? undefined)}
             >
               <RefreshCw size={13} />
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           ) : null}
         </div>
       ) : null}
       <input
+        dir="auto"
         ref={input}
         type="file"
         className="sr-only"
-        aria-label={kind === 'pdf' ? 'رفع ملف PDF' : 'رفع فيديو'}
+        aria-label={kind === 'pdf' ? t('رفع ملف PDF') : t('رفع فيديو')}
         accept={
           kind === 'pdf'
             ? '.pdf,application/pdf'
@@ -277,8 +286,8 @@ export function MediaUpload({
       <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted">
         <span>
           {kind === 'video'
-            ? 'MP4 / H.264 كيعطي أفضل توافق مع الهواتف.'
-            : 'المستند يظهر للتلميذ بالزوم والواترمارك.'}
+            ? t('MP4 / H.264 كيعطي أفضل توافق مع الهواتف.')
+            : t('المستند يظهر للتلميذ بالزوم والواترمارك.')}
         </span>
         <button
           className="btn btn-ghost btn-sm"
@@ -286,20 +295,20 @@ export function MediaUpload({
           onClick={() => void showLibrary()}
         >
           <FolderOpen size={14} />
-          اختيار من المكتبة
+          {t('اختيار من المكتبة')}
         </button>
       </div>
       {picker ? (
         <Modal
           open
           onClose={() => setPicker(false)}
-          title={kind === 'pdf' ? 'مكتبة المستندات' : 'مكتبة الفيديو'}
-          description="اختر ملفاً موجوداً لإضافته إلى هذا الدرس."
+          title={kind === 'pdf' ? t('مكتبة المستندات') : t('مكتبة الفيديو')}
+          description={t('اختر ملفاً موجوداً لإضافته إلى هذا الدرس.')}
           size="lg"
         >
           {pickerLoading ? (
             <p role="status" className="mb-4 text-sm text-muted">
-              جارٍ تحميل الملفات المرفوعة…
+              {t('جارٍ تحميل الملفات المرفوعة…')}
             </p>
           ) : null}
           {pickerError ? (
@@ -308,15 +317,16 @@ export function MediaUpload({
               className="mb-4 rounded-lg border border-line bg-accent/20 p-4 text-sm"
             >
               <p>
-                تعذّر تحميل الملفات المرفوعة. الملفات المرفقة بالنسخة تبقى متاحة
-                أدناه.
+                {t(
+                  'تعذّر تحميل الملفات المرفوعة. الملفات المرفقة بالنسخة تبقى متاحة أدناه.',
+                )}
               </p>
               <button
                 type="button"
                 className="btn btn-outline btn-sm mt-3"
                 onClick={() => void showLibrary()}
               >
-                إعادة تحميل المكتبة
+                {t('إعادة تحميل المكتبة')}
               </button>
             </div>
           ) : null}
@@ -338,7 +348,9 @@ export function MediaUpload({
                 )
                 .map((i) => ({
                   file: i.name,
-                  title: `ملف مرفوع · ${i.name.split('/').pop() ?? i.name}`,
+                  title: t('ملف مرفوع · {0}', [
+                    i.name.split('/').pop() ?? i.name,
+                  ]),
                   durationSec: i.durationSec,
                   pages: i.pages,
                   sizeMb: i.sizeMb,
@@ -371,7 +383,7 @@ export function MediaUpload({
                   <span className="mt-1 block text-[10px] text-muted">
                     {kind === 'video'
                       ? formatDuration(i.durationSec)
-                      : `${i.pages} صفحات`}{' '}
+                      : t('{0} صفحات', [i.pages])}{' '}
                     · {formatSize(i.sizeMb)}
                   </span>
                 </span>

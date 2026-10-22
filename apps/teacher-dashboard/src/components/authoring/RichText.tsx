@@ -1,9 +1,13 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import type { ReactNode } from 'react';
 export function RichText({ text }: { text: string }) {
-  if (!text.trim()) return <p className="text-sm text-muted">لا نص بعد.</p>;
+  useI18n();
+  if (!text.trim())
+    return <p className="text-sm text-muted">{t('لا نص بعد.')}</p>;
   const lines = text.split('\n');
   return (
-    <div className="space-y-2 text-sm leading-7 text-body">
+    <div dir="auto" className="space-y-2 text-sm leading-7 text-body">
       {lines.map((line, index) => {
         const trimmed = line.trim();
         if (!trimmed) return <div key={index} className="h-1" />;

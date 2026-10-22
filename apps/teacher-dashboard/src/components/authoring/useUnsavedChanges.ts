@@ -1,3 +1,4 @@
+import { translate as t } from '@/i18n/locale';
 import { useEffect } from 'react';
 /** Protect page closure and workspace links, while the parent guards tab/lesson buttons. */
 export function useUnsavedChanges(
@@ -43,7 +44,7 @@ export function useUnsavedChanges(
       )
         return;
       if (
-        !window.confirm('عندك تغييرات غير محفوظة. واش بغيتي تغادر بلا حفظ؟')
+        !window.confirm(t('عندك تغييرات غير محفوظة. واش بغيتي تغادر بلا حفظ؟'))
       ) {
         event.preventDefault();
         event.stopPropagation();

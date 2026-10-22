@@ -1,0 +1,2894 @@
+{
+  "مساحة العمل": {
+    "en": "Workspace",
+    "fr": "Espace de travail"
+  },
+  "نظرة عامة": {
+    "en": "Overview",
+    "fr": "Vue d’ensemble"
+  },
+  "الدورات": {
+    "en": "Courses",
+    "fr": "Cours"
+  },
+  "مكتبة المحتوى": {
+    "en": "Content library",
+    "fr": "Bibliothèque"
+  },
+  "الاختبارات": {
+    "en": "Quizzes",
+    "fr": "Quiz"
+  },
+  "التعلّم والتواصل": {
+    "en": "Learning & communication",
+    "fr": "Apprentissage et échanges"
+  },
+  "التلاميذ والاشتراكات": {
+    "en": "Students & subscriptions",
+    "fr": "Élèves et abonnements"
+  },
+  "الأسئلة والأجوبة": {
+    "en": "Questions & answers",
+    "fr": "Questions et réponses"
+  },
+  "التقدّم والنتائج": {
+    "en": "Progress & results",
+    "fr": "Progression et résultats"
+  },
+  "إدارة المركز": {
+    "en": "Centre administration",
+    "fr": "Gestion du centre"
+  },
+  "استقبال التلاميذ": {
+    "en": "Student reception",
+    "fr": "Accueil des élèves"
+  },
+  "النشر والمزامنة": {
+    "en": "Publish & sync",
+    "fr": "Publication et synchronisation"
+  },
+  "الإعدادات": {
+    "en": "Settings",
+    "fr": "Paramètres"
+  },
+  "oustadi plus — نظرة عامة": {
+    "en": "oustadi plus — Overview",
+    "fr": "oustadi plus — Vue d’ensemble"
+  },
+  "إغلاق القائمة": {
+    "en": "Close menu",
+    "fr": "Fermer le menu"
+  },
+  "مساحة الأستاذ": {
+    "en": "Teacher workspace",
+    "fr": "Espace enseignant"
+  },
+  "التنقل الرئيسي": {
+    "en": "Main navigation",
+    "fr": "Navigation principale"
+  },
+  "حساب الأستاذ": {
+    "en": "Teacher account",
+    "fr": "Compte enseignant"
+  },
+  "دورة ·": {
+    "en": "Course ·",
+    "fr": "Cours ·"
+  },
+  "البحث في مساحة العمل": {
+    "en": "Search workspace",
+    "fr": "Rechercher dans l’espace"
+  },
+  "البحث في الدورات والدروس": {
+    "en": "Search courses and lessons",
+    "fr": "Rechercher des cours et des leçons"
+  },
+  "ابحث عن دورة أو درس…": {
+    "en": "Search for a course or lesson…",
+    "fr": "Rechercher un cours ou une leçon…"
+  },
+  "{0} نتائج. اضغط Enter لفتح أول نتيجة أو Tab لاستعراض النتائج.": {
+    "en": "{0} results. Press Enter to open the first result or Tab to browse.",
+    "fr": "{0} résultats. Appuyez sur Entrée pour ouvrir le premier ou sur Tab pour parcourir les résultats."
+  },
+  "لا توجد نتائج مطابقة.": {
+    "en": "No matching results.",
+    "fr": "Aucun résultat correspondant."
+  },
+  "نتائج البحث": {
+    "en": "Search results",
+    "fr": "Résultats de recherche"
+  },
+  "ما لقيناش نتائج. جرّب كلمة أخرى.": {
+    "en": "No results found. Try another search.",
+    "fr": "Aucun résultat. Essayez une autre recherche."
+  },
+  "الانتقال إلى المحتوى": {
+    "en": "Skip to content",
+    "fr": "Aller au contenu"
+  },
+  "قائمة التنقل": {
+    "en": "Navigation menu",
+    "fr": "Menu de navigation"
+  },
+  "فتح القائمة": {
+    "en": "Open menu",
+    "fr": "Ouvrir le menu"
+  },
+  "فتح أسئلة التلاميذ": {
+    "en": "Open student questions",
+    "fr": "Ouvrir les questions des élèves"
+  },
+  "نشر التحديثات": {
+    "en": "Publish updates",
+    "fr": "Publier les modifications"
+  },
+  "مساحة للتعلّم، وأثر يدوم.": {
+    "en": "A space to learn. An impact that lasts.",
+    "fr": "Un espace pour apprendre. Un impact durable."
+  },
+  "منشورة": {
+    "en": "Published",
+    "fr": "Publié"
+  },
+  "مسودة": {
+    "en": "Draft",
+    "fr": "Brouillon"
+  },
+  "فصل": {
+    "en": "Chapter",
+    "fr": "Chapitre"
+  },
+  "درس": {
+    "en": "Lesson",
+    "fr": "Leçon"
+  },
+  "دقيقة": {
+    "en": "min",
+    "fr": "min"
+  },
+  "تلميذ": {
+    "en": "Student",
+    "fr": "Élève"
+  },
+  "لم تُضف فصول بعد — أضف فصلاً ثم دروسه لتظهر هنا.": {
+    "en": "No chapters yet. Add a chapter and its lessons to see them here.",
+    "fr": "Aucun chapitre. Ajoutez un chapitre et ses leçons pour les afficher ici."
+  },
+  "لا فصول في هذه الدورة بعد.": {
+    "en": "No chapters in this course yet.",
+    "fr": "Ce cours ne contient pas encore de chapitres."
+  },
+  "دروس": {
+    "en": "Lessons",
+    "fr": "Leçons"
+  },
+  "لا دروس في هذا الفصل بعد.": {
+    "en": "No lessons in this chapter yet.",
+    "fr": "Ce chapitre ne contient pas encore de leçons."
+  },
+  "منشور": {
+    "en": "Published",
+    "fr": "Publié"
+  },
+  "مخفي": {
+    "en": "Hidden",
+    "fr": "Masqué"
+  },
+  "هذه هي الصفحة التي يراها التلميذ في تطبيق Oustadi Plus.": {
+    "en": "This is the page students see in Oustadi Plus.",
+    "fr": "Voici la page visible par les élèves dans Oustadi Plus."
+  },
+  "إدارة الاشتراكات — {0}": {
+    "en": "Manage subscriptions — {0}",
+    "fr": "Gérer les abonnements — {0}"
+  },
+  "اختر الأستاذ والمقرر، ثم مدة الاشتراك أو الدورة الدراسية. انشر التحديثات لمزامنتها مع تطبيق التلميذ.": {
+    "en": "Choose the teacher and course, then the subscription period or semester. Publish updates to sync with the student app.",
+    "fr": "Choisissez l’enseignant et le cours, puis la durée ou le semestre. Publiez les modifications pour synchroniser l’application élève."
+  },
+  "اختر المقرر": {
+    "en": "Select a course",
+    "fr": "Choisir un cours"
+  },
+  "تم حفظ الاشتراك": {
+    "en": "Subscription saved",
+    "fr": "Abonnement enregistré"
+  },
+  "تعذر حفظ الاشتراك": {
+    "en": "Could not save the subscription",
+    "fr": "Impossible d’enregistrer l’abonnement"
+  },
+  "الأستاذ والمقرر": {
+    "en": "Teacher and course",
+    "fr": "Enseignant et cours"
+  },
+  "لا توجد مقررات بعد": {
+    "en": "No courses yet",
+    "fr": "Aucun cours pour le moment"
+  },
+  "لا يوجد مقرر لتخصيص اشتراك.": {
+    "en": "No course is available for a subscription.",
+    "fr": "Aucun cours disponible pour attribuer un abonnement."
+  },
+  "انتقل إلى الدورات لإضافة مقرر": {
+    "en": "Go to Courses to add a course",
+    "fr": "Accéder aux cours pour en ajouter un"
+  },
+  "الاشتراكات المسجلة": {
+    "en": "Saved subscriptions",
+    "fr": "Abonnements enregistrés"
+  },
+  "إضافة اشتراك": {
+    "en": "Add subscription",
+    "fr": "Ajouter un abonnement"
+  },
+  "لا يوجد اشتراك لهذا المقرر.": {
+    "en": "No subscription for this course.",
+    "fr": "Aucun abonnement pour ce cours."
+  },
+  "اشتراك سابق للمقرر كاملاً حتى": {
+    "en": "Previous full-course subscription until",
+    "fr": "Ancien abonnement au cours complet jusqu’au"
+  },
+  ". الحفظ الأول يستبدله بالاشتراك المحدد أدناه.": {
+    "en": ". The first save replaces it with the subscription below.",
+    "fr": ". Le premier enregistrement le remplace par l’abonnement défini ci-dessous."
+  },
+  "يبدأ لاحقاً": {
+    "en": "Starts later",
+    "fr": "À venir"
+  },
+  "منتهي": {
+    "en": "Expired",
+    "fr": "Expiré"
+  },
+  "ساري": {
+    "en": "Active",
+    "fr": "Actif"
+  },
+  "{0} شهر — المقرر كاملاً": {
+    "en": "{0} months — full course",
+    "fr": "{0} mois — cours complet"
+  },
+  "تعديل": {
+    "en": "Edit",
+    "fr": "Modifier"
+  },
+  "تعديل الاشتراك": {
+    "en": "Edit subscription",
+    "fr": "Modifier l’abonnement"
+  },
+  "اشتراك جديد": {
+    "en": "New subscription",
+    "fr": "Nouvel abonnement"
+  },
+  "شهر": {
+    "en": "One month",
+    "fr": "Un mois"
+  },
+  "شهران": {
+    "en": "Two months",
+    "fr": "Deux mois"
+  },
+  "ثلاثة أشهر": {
+    "en": "Three months",
+    "fr": "Trois mois"
+  },
+  "اشتراك بالشهور: جميع دروس المقرر خلال المدة المحددة.": {
+    "en": "Monthly subscription: all course lessons during the selected period.",
+    "fr": "Abonnement mensuel : toutes les leçons du cours pendant la période choisie."
+  },
+  "اشتراك دورة: دروس هذه الدورة فقط. تاريخ النهاية يحدده المركز.": {
+    "en": "Semester subscription: lessons in this semester only. The centre sets the end date.",
+    "fr": "Abonnement au semestre : uniquement ses leçons. Le centre fixe la date de fin."
+  },
+  "تاريخ البداية": {
+    "en": "Start date",
+    "fr": "Date de début"
+  },
+  "آخر يوم للوصول": {
+    "en": "Last day of access",
+    "fr": "Dernier jour d’accès"
+  },
+  "عدد الشهور (قابل للتخصيص)": {
+    "en": "Number of months (custom)",
+    "fr": "Nombre de mois (personnalisable)"
+  },
+  "عدد الشهور": {
+    "en": "Number of months",
+    "fr": "Nombre de mois"
+  },
+  "الوصول من": {
+    "en": "Access from",
+    "fr": "Accès du"
+  },
+  "إلى نهاية يوم": {
+    "en": "until the end of",
+    "fr": "jusqu’à la fin du"
+  },
+  "بتوقيت المغرب. يتوقف تلقائياً بعد النهاية.": {
+    "en": ", Morocco time. Access ends automatically.",
+    "fr": ", heure du Maroc. L’accès s’arrête automatiquement."
+  },
+  "تم حفظ الاشتراك. لإضافة مدة أخرى اختر «إضافة اشتراك»، ولتغيير الاشتراك الحالي اختر «تعديل» من القائمة. انشر التحديثات من صفحة المزامنة.": {
+    "en": "Subscription saved. Choose “Add subscription” for another period, or “Edit” to change this one. Publish updates from the sync page.",
+    "fr": "Abonnement enregistré. Choisissez « Ajouter un abonnement » pour une autre période ou « Modifier » pour changer celle-ci. Publiez les modifications depuis la page de synchronisation."
+  },
+  "حفظ الاشتراك": {
+    "en": "Save subscription",
+    "fr": "Enregistrer l’abonnement"
+  },
+  "إغلاق": {
+    "en": "Close",
+    "fr": "Fermer"
+  },
+  "2ème Bac — كل الشعب": {
+    "en": "2nd Bac — All tracks",
+    "fr": "2ème Bac — Toutes les filières"
+  },
+  "السنة الأولى ثانوي": {
+    "en": "First year of secondary school",
+    "fr": "Première année du secondaire"
+  },
+  "الرياضيات": {
+    "en": "Mathematics",
+    "fr": "Mathématiques"
+  },
+  "الفيزياء والكيمياء": {
+    "en": "Physics & chemistry",
+    "fr": "Physique-chimie"
+  },
+  "علوم الحياة والأرض": {
+    "en": "Life & earth sciences",
+    "fr": "Sciences de la vie et de la Terre"
+  },
+  "عنوان الدورة": {
+    "en": "Course title",
+    "fr": "Titre du cours"
+  },
+  "اكتب عنواناً من 4 أحرف على الأقل.": {
+    "en": "Enter a title with at least 4 characters.",
+    "fr": "Saisissez un titre d’au moins 4 caractères."
+  },
+  "المادة": {
+    "en": "Subject",
+    "fr": "Matière"
+  },
+  "المستوى": {
+    "en": "Level",
+    "fr": "Niveau"
+  },
+  "وصف مختصر": {
+    "en": "Short description",
+    "fr": "Description courte"
+  },
+  "غلاف الدورة": {
+    "en": "Course cover",
+    "fr": "Couverture du cours"
+  },
+  "غلاف {0}": {
+    "en": "Cover {0}",
+    "fr": "Couverture {0}"
+  },
+  "الغلاف يظهر لطالب في قائمة الدورات داخل التطبيق.": {
+    "en": "The cover appears in the student app’s course list.",
+    "fr": "La couverture apparaît dans la liste des cours de l’application élève."
+  },
+  "تراجع": {
+    "en": "Cancel",
+    "fr": "Annuler"
+  },
+  "تم حفظ معلومات الدورة": {
+    "en": "Course details saved",
+    "fr": "Informations du cours enregistrées"
+  },
+  "حفظ التعديلات": {
+    "en": "Save changes",
+    "fr": "Enregistrer les modifications"
+  },
+  "مدة الدورة الحالية:": {
+    "en": "Current course duration:",
+    "fr": "Durée actuelle du cours :"
+  },
+  "دقيقة.": {
+    "en": "min.",
+    "fr": "min."
+  },
+  "اكتب عنواناً من حرفين على الأقل.": {
+    "en": "Enter a title with at least two characters.",
+    "fr": "Saisissez un titre d’au moins deux caractères."
+  },
+  "تم حفظ الدرس ونشره. انشر التحديثات لتصل إلى التطبيق.": {
+    "en": "Lesson saved and published. Publish updates to send it to the app.",
+    "fr": "Leçon enregistrée et publiée. Publiez les modifications pour les transmettre à l’application."
+  },
+  "تم حفظ الدرس": {
+    "en": "Lesson saved",
+    "fr": "Leçon enregistrée"
+  },
+  "تحرير الدرس — {0}": {
+    "en": "Edit lesson — {0}",
+    "fr": "Modifier la leçon — {0}"
+  },
+  "جارٍ التجهيز…": {
+    "en": "Preparing…",
+    "fr": "Préparation…"
+  },
+  "غير محفوظ": {
+    "en": "Unsaved",
+    "fr": "Non enregistré"
+  },
+  "محفوظ": {
+    "en": "Saved",
+    "fr": "Enregistré"
+  },
+  "حفظ الدرس": {
+    "en": "Save lesson",
+    "fr": "Enregistrer la leçon"
+  },
+  "حفظ ونشر": {
+    "en": "Save & publish",
+    "fr": "Enregistrer et publier"
+  },
+  "محرر الدرس": {
+    "en": "Lesson editor",
+    "fr": "Éditeur de leçon"
+  },
+  "محتوى الدرس": {
+    "en": "Lesson content",
+    "fr": "Contenu de la leçon"
+  },
+  "معاينة": {
+    "en": "Preview",
+    "fr": "Aperçu"
+  },
+  "عنوان الدرس": {
+    "en": "Lesson title",
+    "fr": "Titre de la leçon"
+  },
+  "تفاصيل إضافية": {
+    "en": "Additional details",
+    "fr": "Détails supplémentaires"
+  },
+  "وصف الدرس": {
+    "en": "Lesson description",
+    "fr": "Description de la leçon"
+  },
+  "الصورة المصغّرة": {
+    "en": "Thumbnail",
+    "fr": "Miniature"
+  },
+  "إظهار الدرس للتلاميذ": {
+    "en": "Show lesson to students",
+    "fr": "Afficher la leçon aux élèves"
+  },
+  "نشر الدرس": {
+    "en": "Publish lesson",
+    "fr": "Publier la leçon"
+  },
+  "السماح بالمشاهدة دون إنترنت": {
+    "en": "Allow offline viewing",
+    "fr": "Autoriser le visionnage hors connexion"
+  },
+  "السماح بتنزيل الفيديو": {
+    "en": "Allow video downloads",
+    "fr": "Autoriser le téléchargement de la vidéo"
+  },
+  "الواترمارك مفعّل": {
+    "en": "Watermark enabled",
+    "fr": "Filigrane activé"
+  },
+  "حذف الدرس": {
+    "en": "Delete lesson",
+    "fr": "Supprimer la leçon"
+  },
+  "نص": {
+    "en": "Text",
+    "fr": "Texte"
+  },
+  "عريض": {
+    "en": "Bold",
+    "fr": "Gras"
+  },
+  "مائل": {
+    "en": "Italic",
+    "fr": "Italique"
+  },
+  "قائمة": {
+    "en": "List",
+    "fr": "Liste"
+  },
+  "اقتباس": {
+    "en": "Quote",
+    "fr": "Citation"
+  },
+  "رابط": {
+    "en": "Link",
+    "fr": "Lien"
+  },
+  "محتوى الدرس المكتوب": {
+    "en": "Written lesson content",
+    "fr": "Contenu écrit de la leçon"
+  },
+  "اكتب محتوى الدرس هنا…": {
+    "en": "Write your lesson here…",
+    "fr": "Rédigez votre leçon ici…"
+  },
+  "اختر صورة JPG أو PNG أو WebP حتى 8 MB.": {
+    "en": "Choose a JPG, PNG or WebP image up to 8 MB.",
+    "fr": "Choisissez une image JPG, PNG ou WebP de 8 Mo maximum."
+  },
+  "تعذّرت قراءة الصورة. اختر صورة أخرى.": {
+    "en": "Could not read the image. Choose another one.",
+    "fr": "Impossible de lire l’image. Choisissez-en une autre."
+  },
+  "معاينة الصورة المصغرة": {
+    "en": "Thumbnail preview",
+    "fr": "Aperçu de la miniature"
+  },
+  "جارٍ تجهيز الصورة…": {
+    "en": "Preparing image…",
+    "fr": "Préparation de l’image…"
+  },
+  "اختيار صورة مصغّرة": {
+    "en": "Choose thumbnail",
+    "fr": "Choisir une miniature"
+  },
+  "JPG، PNG، WebP · حتى 8 MB": {
+    "en": "JPG, PNG, WebP · Up to 8 MB",
+    "fr": "JPG, PNG, WebP · 8 Mo maximum"
+  },
+  "إزالة الصورة": {
+    "en": "Remove image",
+    "fr": "Retirer l’image"
+  },
+  "فتح المستند ·": {
+    "en": "Open document ·",
+    "fr": "Ouvrir le document ·"
+  },
+  "صفحات": {
+    "en": "pages",
+    "fr": "pages"
+  },
+  "أسئلة ·": {
+    "en": "questions ·",
+    "fr": "questions ·"
+  },
+  "{0} ثانية": {
+    "en": "{0} seconds",
+    "fr": "{0} secondes"
+  },
+  "دون توقيت": {
+    "en": "No time limit",
+    "fr": "Sans limite de temps"
+  },
+  "إعادة المعاينة": {
+    "en": "Preview again",
+    "fr": "Recommencer l’aperçu"
+  },
+  "إظهار التصحيح": {
+    "en": "Show answers",
+    "fr": "Afficher le corrigé"
+  },
+  "أضف أسئلة لمعاينتها هنا.": {
+    "en": "Add questions to preview them here.",
+    "fr": "Ajoutez des questions pour les prévisualiser ici."
+  },
+  "اختر ملف PDF صالحاً.": {
+    "en": "Choose a valid PDF file.",
+    "fr": "Choisissez un fichier PDF valide."
+  },
+  "اختر فيديو بصيغة MP4 أو WebM أو MOV.": {
+    "en": "Choose an MP4, WebM or MOV video.",
+    "fr": "Choisissez une vidéo MP4, WebM ou MOV."
+  },
+  "اختر ملفاً غير فارغ، لا يتجاوز 100 MB.": {
+    "en": "Choose a non-empty file no larger than 100 MB.",
+    "fr": "Choisissez un fichier non vide de 100 Mo maximum."
+  },
+  "تم إلغاء الرفع. يمكنك اختيار الملف من جديد.": {
+    "en": "Upload cancelled. You can choose the file again.",
+    "fr": "Envoi annulé. Vous pouvez sélectionner à nouveau le fichier."
+  },
+  "تعذّر رفع الملف. حاول مجدداً.": {
+    "en": "Upload failed. Try again.",
+    "fr": "Échec de l’envoi. Réessayez."
+  },
+  "المستند مرفق بالدرس": {
+    "en": "Document attached",
+    "fr": "Document joint"
+  },
+  "صفحات ·": {
+    "en": "pages ·",
+    "fr": "pages ·"
+  },
+  "فتح PDF": {
+    "en": "Open PDF",
+    "fr": "Ouvrir le PDF"
+  },
+  "{0} صفحات": {
+    "en": "{0} pages",
+    "fr": "{0} pages"
+  },
+  "استبدال الملف": {
+    "en": "Replace file",
+    "fr": "Remplacer le fichier"
+  },
+  "اسحب": {
+    "en": "Drop",
+    "fr": "Déposez"
+  },
+  "المستند": {
+    "en": "the document",
+    "fr": "le document"
+  },
+  "الفيديو": {
+    "en": "the video",
+    "fr": "la vidéo"
+  },
+  "هنا، أو اختر ملفاً": {
+    "en": "here, or choose a file",
+    "fr": "ici, ou choisissez un fichier"
+  },
+  "MP4، WebM، MOV": {
+    "en": "MP4, WebM, MOV",
+    "fr": "MP4, WebM, MOV"
+  },
+  "· حتى 100 MB": {
+    "en": "· Up to 100 MB",
+    "fr": "· 100 Mo maximum"
+  },
+  "اختيار ملف": {
+    "en": "Choose file",
+    "fr": "Choisir un fichier"
+  },
+  "جارٍ التحقق من الملف وقراءة بياناته…": {
+    "en": "Checking file and reading details…",
+    "fr": "Vérification du fichier et lecture des informations…"
+  },
+  "اكتمل الإرسال، جارٍ حفظ الملف…": {
+    "en": "Transfer complete. Saving file…",
+    "fr": "Transfert terminé. Enregistrement du fichier…"
+  },
+  "جارٍ رفع الملف…": {
+    "en": "Uploading file…",
+    "fr": "Envoi du fichier…"
+  },
+  "إلغاء رفع الملف": {
+    "en": "Cancel upload",
+    "fr": "Annuler l’envoi"
+  },
+  "تقدّم رفع الملف": {
+    "en": "Upload progress",
+    "fr": "Progression de l’envoi"
+  },
+  "يمكنك إلغاء العملية. لا تغلق هذه الصفحة قبل اكتمال الرفع.": {
+    "en": "You can cancel. Keep this page open until the upload finishes.",
+    "fr": "Vous pouvez annuler. Gardez cette page ouverte jusqu’à la fin de l’envoi."
+  },
+  "الملف جاهز. احفظ الدرس لتثبيت التغيير.": {
+    "en": "File ready. Save the lesson to keep the change.",
+    "fr": "Fichier prêt. Enregistrez la leçon pour conserver la modification."
+  },
+  "إعادة المحاولة": {
+    "en": "Retry",
+    "fr": "Réessayer"
+  },
+  "رفع ملف PDF": {
+    "en": "Upload PDF",
+    "fr": "Importer un PDF"
+  },
+  "رفع فيديو": {
+    "en": "Upload video",
+    "fr": "Importer une vidéo"
+  },
+  "MP4 / H.264 كيعطي أفضل توافق مع الهواتف.": {
+    "en": "MP4 / H.264 provides the best compatibility with phones.",
+    "fr": "MP4 / H.264 offre la meilleure compatibilité avec les téléphones."
+  },
+  "المستند يظهر للتلميذ بالزوم والواترمارك.": {
+    "en": "Students can zoom the document; a watermark is applied.",
+    "fr": "Les élèves peuvent zoomer sur le document ; un filigrane est appliqué."
+  },
+  "اختيار من المكتبة": {
+    "en": "Choose from library",
+    "fr": "Choisir dans la bibliothèque"
+  },
+  "مكتبة المستندات": {
+    "en": "Document library",
+    "fr": "Bibliothèque de documents"
+  },
+  "مكتبة الفيديو": {
+    "en": "Video library",
+    "fr": "Bibliothèque vidéo"
+  },
+  "اختر ملفاً موجوداً لإضافته إلى هذا الدرس.": {
+    "en": "Choose an existing file for this lesson.",
+    "fr": "Choisissez un fichier existant pour cette leçon."
+  },
+  "جارٍ تحميل الملفات المرفوعة…": {
+    "en": "Loading uploaded files…",
+    "fr": "Chargement des fichiers importés…"
+  },
+  "تعذّر تحميل الملفات المرفوعة. الملفات المرفقة بالنسخة تبقى متاحة أدناه.": {
+    "en": "Could not load uploaded files. Bundled files are still available below.",
+    "fr": "Impossible de charger les fichiers importés. Les fichiers fournis restent disponibles ci-dessous."
+  },
+  "إعادة تحميل المكتبة": {
+    "en": "Reload library",
+    "fr": "Recharger la bibliothèque"
+  },
+  "ملف مرفوع · {0}": {
+    "en": "Uploaded file · {0}",
+    "fr": "Fichier importé · {0}"
+  },
+  "فيديو": {
+    "en": "Video",
+    "fr": "Vidéo"
+  },
+  "شرح بالصوت والصورة": {
+    "en": "Audio and video lesson",
+    "fr": "Cours audiovisuel"
+  },
+  "ملف PDF": {
+    "en": "PDF document",
+    "fr": "Document PDF"
+  },
+  "ملخّص أو تمارين": {
+    "en": "Summary or exercises",
+    "fr": "Résumé ou exercices"
+  },
+  "اختبار": {
+    "en": "Quiz",
+    "fr": "Quiz"
+  },
+  "أسئلة وتقييم بالوقت": {
+    "en": "Timed questions and assessment",
+    "fr": "Questions et évaluation chronométrées"
+  },
+  "درس مكتوب": {
+    "en": "Written lesson",
+    "fr": "Cours écrit"
+  },
+  "نص وتنسيق": {
+    "en": "Formatted text",
+    "fr": "Texte mis en forme"
+  },
+  "تم إنشاء مسودة الدرس": {
+    "en": "Lesson draft created",
+    "fr": "Brouillon du cours créé"
+  },
+  "اختبار جديد": {
+    "en": "New quiz",
+    "fr": "Nouveau quiz"
+  },
+  "محتوى جديد": {
+    "en": "New content",
+    "fr": "Nouveau contenu"
+  },
+  "حدّد مكان الدرس ونوعه، ثم أضف المحتوى في المحرّر.": {
+    "en": "Choose the lesson location and type, then add its content in the editor.",
+    "fr": "Choisissez l’emplacement et le type du cours, puis ajoutez son contenu dans l’éditeur."
+  },
+  "إلغاء": {
+    "en": "Cancel",
+    "fr": "Annuler"
+  },
+  "متابعة إلى المحرّر": {
+    "en": "Continue to editor",
+    "fr": "Continuer vers l’éditeur"
+  },
+  "نوع المحتوى": {
+    "en": "Content type",
+    "fr": "Type de contenu"
+  },
+  "مثلاً: مدخل إلى النهايات": {
+    "en": "Example: Introduction to limits",
+    "fr": "Exemple : introduction aux limites"
+  },
+  "الدورة": {
+    "en": "Course",
+    "fr": "Cours"
+  },
+  "لا توجد دورات بعد": {
+    "en": "No courses yet",
+    "fr": "Aucun cours pour le moment"
+  },
+  "الفصل": {
+    "en": "Chapter",
+    "fr": "Chapitre"
+  },
+  "لا توجد فصول بعد": {
+    "en": "No chapters yet",
+    "fr": "Aucun chapitre pour le moment"
+  },
+  "أضف فصلاً إلى الدورة أولاً، ثم أضف محتواك.": {
+    "en": "Add a chapter to this course first, then add content.",
+    "fr": "Ajoutez d’abord un chapitre à ce cours, puis son contenu."
+  },
+  "أنشئ دورة وأضف إليها فصلاً قبل إضافة المحتوى.": {
+    "en": "Create a course and add a chapter before adding content.",
+    "fr": "Créez un cours et un chapitre avant d’ajouter du contenu."
+  },
+  "فتح الدورة لإضافة فصل": {
+    "en": "Open course to add a chapter",
+    "fr": "Ouvrir le cours pour ajouter un chapitre"
+  },
+  "إنشاء دورة": {
+    "en": "Create course",
+    "fr": "Créer un cours"
+  },
+  "الحد الأقصى لملف JSON هو 1 MB.": {
+    "en": "The JSON file limit is 1 MB.",
+    "fr": "La taille maximale du fichier JSON est de 1 Mo."
+  },
+  "تعذّر استيراد الاختبار.": {
+    "en": "Could not import the quiz.",
+    "fr": "Impossible d’importer le quiz."
+  },
+  "المدة بالثواني": {
+    "en": "Duration in seconds",
+    "fr": "Durée en secondes"
+  },
+  "مدة الاختبار بالثواني": {
+    "en": "Quiz duration in seconds",
+    "fr": "Durée du quiz en secondes"
+  },
+  "0 = دون توقيت": {
+    "en": "0 = no time limit",
+    "fr": "0 = sans limite de temps"
+  },
+  "استيراد JSON": {
+    "en": "Import JSON",
+    "fr": "Importer un fichier JSON"
+  },
+  "استيراد أسئلة JSON": {
+    "en": "Import JSON questions",
+    "fr": "Importer des questions JSON"
+  },
+  "الأسئلة": {
+    "en": "Questions",
+    "fr": "Questions"
+  },
+  "فتح السؤال {0}": {
+    "en": "Open question {0}",
+    "fr": "Ouvrir la question {0}"
+  },
+  "سؤال": {
+    "en": "Question",
+    "fr": "Question"
+  },
+  "السؤال": {
+    "en": "Question",
+    "fr": "Question"
+  },
+  "من": {
+    "en": "of",
+    "fr": "sur"
+  },
+  "نقل السؤال لأعلى": {
+    "en": "Move question up",
+    "fr": "Monter la question"
+  },
+  "نقل السؤال لأسفل": {
+    "en": "Move question down",
+    "fr": "Descendre la question"
+  },
+  "حذف السؤال": {
+    "en": "Delete question",
+    "fr": "Supprimer la question"
+  },
+  "نص السؤال": {
+    "en": "Question text",
+    "fr": "Texte de la question"
+  },
+  "اكتب السؤال هنا…": {
+    "en": "Write your question here…",
+    "fr": "Écrivez votre question ici…"
+  },
+  "اختيارات الإجابة": {
+    "en": "Answer options",
+    "fr": "Choix de réponse"
+  },
+  "علّم الإجابة الصحيحة، أو أكثر من إجابة": {
+    "en": "Select one or more correct answers",
+    "fr": "Sélectionnez une ou plusieurs bonnes réponses"
+  },
+  "الإجابة {0} صحيحة": {
+    "en": "Answer {0} is correct",
+    "fr": "La réponse {0} est correcte"
+  },
+  "نص الإجابة {0}": {
+    "en": "Answer {0} text",
+    "fr": "Texte de la réponse {0}"
+  },
+  "الاختيار {0}": {
+    "en": "Option {0}",
+    "fr": "Choix {0}"
+  },
+  "حذف الإجابة {0}": {
+    "en": "Delete answer {0}",
+    "fr": "Supprimer la réponse {0}"
+  },
+  "إضافة اختيار": {
+    "en": "Add option",
+    "fr": "Ajouter un choix"
+  },
+  "ابدأ بسؤالك الأول": {
+    "en": "Start with your first question",
+    "fr": "Commencez par votre première question"
+  },
+  "اختيار واحد أو عدة اختيارات صحيحة، مع توقيت اختياري.": {
+    "en": "One or more correct answers, with an optional time limit.",
+    "fr": "Une ou plusieurs bonnes réponses, avec un chronomètre facultatif."
+  },
+  "إضافة سؤال": {
+    "en": "Add question",
+    "fr": "Ajouter une question"
+  },
+  "الاختبار المحدّد بالوقت يُرسل تلقائياً عند انتهاء العدّاد. النتائج تظهر في «التقدّم والنتائج» بعد المزامنة.": {
+    "en": "Timed quizzes are submitted automatically when time runs out. Results appear in Progress & results after syncing.",
+    "fr": "Les quiz chronométrés sont envoyés automatiquement à la fin du temps imparti. Les résultats apparaissent dans Progression et résultats après synchronisation."
+  },
+  "لا نص بعد.": {
+    "en": "No text yet.",
+    "fr": "Aucun texte pour le moment."
+  },
+  "عندك تغييرات غير محفوظة. واش بغيتي تغادر بلا حفظ؟": {
+    "en": "You have unsaved changes. Leave without saving?",
+    "fr": "Vous avez des modifications non enregistrées. Quitter sans enregistrer ?"
+  },
+  "التقدّم": {
+    "en": "Progress",
+    "fr": "Progression"
+  },
+  "إغلاق النافذة": {
+    "en": "Close dialog",
+    "fr": "Fermer la fenêtre"
+  },
+  "تأكيد": {
+    "en": "Confirm",
+    "fr": "Confirmer"
+  },
+  "جدول البيانات": {
+    "en": "Data table",
+    "fr": "Tableau de données"
+  },
+  "حرّك الجدول أفقياً لعرض بقية الأعمدة والإجراءات.": {
+    "en": "Scroll horizontally to see the remaining columns and actions.",
+    "fr": "Faites défiler horizontalement pour voir les autres colonnes et actions."
+  },
+  "عنصر محدد": {
+    "en": "item selected",
+    "fr": "élément sélectionné"
+  },
+  "عنصر": {
+    "en": "item",
+    "fr": "élément"
+  },
+  "تحديد الكل": {
+    "en": "Select all",
+    "fr": "Tout sélectionner"
+  },
+  "لا توجد نتائج": {
+    "en": "No results",
+    "fr": "Aucun résultat"
+  },
+  "جرّب تعديل البحث أو التصفية.": {
+    "en": "Try changing your search or filters.",
+    "fr": "Essayez de modifier votre recherche ou vos filtres."
+  },
+  "تحديد {0}": {
+    "en": "Select {0}",
+    "fr": "Sélectionner {0}"
+  },
+  "عرض": {
+    "en": "Show",
+    "fr": "Afficher"
+  },
+  "عدد العناصر في الصفحة": {
+    "en": "Items per page",
+    "fr": "Nombre d’éléments par page"
+  },
+  "عناصر في الصفحة": {
+    "en": "items per page",
+    "fr": "éléments par page"
+  },
+  "الصفحة السابقة": {
+    "en": "Previous page",
+    "fr": "Page précédente"
+  },
+  "الصفحة التالية": {
+    "en": "Next page",
+    "fr": "Page suivante"
+  },
+  "اكتب نص السؤال.": {
+    "en": "Enter the question text.",
+    "fr": "Saisissez le texte de la question."
+  },
+  "أضف اختيارين على الأقل واملأ جميع الاختيارات.": {
+    "en": "Add at least two options and fill in every option.",
+    "fr": "Ajoutez au moins deux choix et renseignez chacun d’eux."
+  },
+  "معرّفات الاختيارات مكرّرة.": {
+    "en": "Option IDs must be unique.",
+    "fr": "Les identifiants des choix doivent être uniques."
+  },
+  "حدّد الإجابة أو الإجابات الصحيحة.": {
+    "en": "Select the correct answer or answers.",
+    "fr": "Sélectionnez la ou les bonnes réponses."
+  },
+  "المدة بين 0 و86400 ثانية، بدون كسور.": {
+    "en": "Duration must be a whole number between 0 and 86400 seconds.",
+    "fr": "La durée doit être un nombre entier compris entre 0 et 86400 secondes."
+  },
+  "الاختبار يحتاج بين سؤال واحد و100 سؤال.": {
+    "en": "A quiz must contain between 1 and 100 questions.",
+    "fr": "Un quiz doit contenir entre 1 et 100 questions."
+  },
+  "السؤال {0}: {1}": {
+    "en": "Question {0}: {1}",
+    "fr": "Question {0} : {1}"
+  },
+  "ملف الاختبار يحتاج قائمة أسئلة (حتى 100 سؤال).": {
+    "en": "The quiz file must contain a questions list (up to 100 questions).",
+    "fr": "Le fichier du quiz doit contenir une liste de questions (100 maximum)."
+  },
+  "بنية السؤال أو الاختيارات غير صالحة.": {
+    "en": "Invalid question or answer structure.",
+    "fr": "Structure de question ou de réponses incorrecte."
+  },
+  "أضف نص الدرس قبل النشر.": {
+    "en": "Add lesson text before publishing.",
+    "fr": "Ajoutez le texte du cours avant de publier."
+  },
+  "أرفق ملف الدرس قبل النشر.": {
+    "en": "Attach the lesson file before publishing.",
+    "fr": "Joignez le fichier du cours avant de publier."
+  },
+  "رابط الخادم غير صالح": {
+    "en": "Invalid server URL",
+    "fr": "Adresse du serveur incorrecte"
+  },
+  "تعذّر الاتصال بالخادم ({0})": {
+    "en": "Could not connect to the server ({0})",
+    "fr": "Impossible de contacter le serveur ({0})"
+  },
+  "الحد الأقصى للملف 100 MB": {
+    "en": "The file limit is 100 MB",
+    "fr": "La taille maximale du fichier est de 100 Mo"
+  },
+  "تعذّر رفع الملف ({0}). تحقق من خادم المركز.": {
+    "en": "Could not upload the file ({0}). Check the centre server.",
+    "fr": "Impossible d’importer le fichier ({0}). Vérifiez le serveur du centre."
+  },
+  "جواب الخادم غير صالح": {
+    "en": "Invalid server response",
+    "fr": "Réponse du serveur incorrecte"
+  },
+  "تعذّر الاتصال بخادم المركز. تحقق من الرابط في صفحة النشر والمزامنة.": {
+    "en": "Could not connect to the centre server. Check the URL on the Publish & sync page.",
+    "fr": "Impossible de contacter le serveur du centre. Vérifiez l’adresse dans Publication et synchronisation."
+  },
+  "انتهت مهلة الرفع. تحقق من الاتصال وحاول مجدداً.": {
+    "en": "Upload timed out. Check your connection and try again.",
+    "fr": "Le délai d’importation a expiré. Vérifiez votre connexion et réessayez."
+  },
+  "نص وصور": {
+    "en": "Text and images",
+    "fr": "Texte et images"
+  },
+  "صورة": {
+    "en": "Image",
+    "fr": "Image"
+  },
+  "تمرين": {
+    "en": "Exercise",
+    "fr": "Exercice"
+  },
+  "امتحان": {
+    "en": "Exam",
+    "fr": "Examen"
+  },
+  "{0} صفحات · {1}": {
+    "en": "{0} pages · {1}",
+    "fr": "{0} pages · {1}"
+  },
+  "{0} أسئلة": {
+    "en": "{0} questions",
+    "fr": "{0} questions"
+  },
+  "تعذّر حفظ الملف محلياً": {
+    "en": "Could not save the file locally",
+    "fr": "Impossible d’enregistrer le fichier localement"
+  },
+  "من المحتوى إلى الأثر": {
+    "en": "From content to impact",
+    "fr": "Du contenu à l’impact"
+  },
+  "شوف فين وصل كل تلميذ، وتابع نتائج الاختبارات المزامنة من التطبيق.": {
+    "en": "Follow each student’s progress and quiz results synced from the app.",
+    "fr": "Suivez la progression de chaque élève et les résultats des quiz synchronisés depuis l’application."
+  },
+  "تلاميذ لديهم وصول": {
+    "en": "Students with access",
+    "fr": "Élèves avec accès"
+  },
+  "دروس مكتملة": {
+    "en": "Completed lessons",
+    "fr": "Leçons terminées"
+  },
+  "مجموع مواضع المشاهدة (دقائق)": {
+    "en": "Total playback positions (minutes)",
+    "fr": "Total des positions de lecture (minutes)"
+  },
+  "محاولات الاختبار": {
+    "en": "Quiz attempts",
+    "fr": "Tentatives de quiz"
+  },
+  "متابعة التلاميذ": {
+    "en": "Student progress",
+    "fr": "Suivi des élèves"
+  },
+  "البحث في النتائج": {
+    "en": "Search results",
+    "fr": "Rechercher dans les résultats"
+  },
+  "اسم التلميذ أو رمزه…": {
+    "en": "Student name or code…",
+    "fr": "Nom ou code de l’élève…"
+  },
+  "تقدّم التلاميذ ونتائجهم": {
+    "en": "Student progress and results",
+    "fr": "Progression et résultats des élèves"
+  },
+  "التلميذ": {
+    "en": "Student",
+    "fr": "Élève"
+  },
+  "موضع المشاهدة": {
+    "en": "Playback position",
+    "fr": "Position de lecture"
+  },
+  "متوسط النتيجة": {
+    "en": "Average score",
+    "fr": "Note moyenne"
+  },
+  "تقدّم {0}": {
+    "en": "{0} progress",
+    "fr": "Progression de {0}"
+  },
+  "لا دروس متاحة": {
+    "en": "No lessons available",
+    "fr": "Aucune leçon disponible"
+  },
+  "د": {
+    "en": "min",
+    "fr": "min"
+  },
+  "لم يحاول بعد": {
+    "en": "No attempts yet",
+    "fr": "Aucune tentative"
+  },
+  "لا توجد نتائج مطابقة": {
+    "en": "No matching results",
+    "fr": "Aucun résultat correspondant"
+  },
+  "لا يوجد تلاميذ بعد": {
+    "en": "No students yet",
+    "fr": "Aucun élève pour le moment"
+  },
+  "جرّب اسماً أو رمزاً آخر، أو امسح البحث لعرض الجميع.": {
+    "en": "Try another name or code, or clear the search to see everyone.",
+    "fr": "Essayez un autre nom ou code, ou effacez la recherche pour afficher tous les élèves."
+  },
+  "اربط التلاميذ بالمركز لمتابعة تقدّمهم ونتائجهم هنا.": {
+    "en": "Link students to the centre to follow their progress and results here.",
+    "fr": "Rattachez des élèves au centre pour suivre ici leur progression et leurs résultats."
+  },
+  "مسح البحث": {
+    "en": "Clear search",
+    "fr": "Effacer la recherche"
+  },
+  "إدارة التلاميذ": {
+    "en": "Manage students",
+    "fr": "Gérer les élèves"
+  },
+  "موضع المشاهدة هو آخر موضع مسجّل في الدروس المتاحة، وليس الوقت الفعلي الذي قضاه التلميذ في المشاهدة.": {
+    "en": "Playback position is the last saved position in available lessons, not actual time spent watching.",
+    "fr": "La position de lecture est la dernière position enregistrée dans les leçons accessibles, et non le temps réel de visionnage."
+  },
+  "آخر محاولات الاختبار": {
+    "en": "Latest quiz attempts",
+    "fr": "Dernières tentatives de quiz"
+  },
+  "ستظهر النتائج بعد أن يحلّ التلميذ اختباراً ويزامن التطبيق.": {
+    "en": "Results appear after a student completes a quiz and syncs the app.",
+    "fr": "Les résultats apparaissent après qu’un élève a terminé un quiz et synchronisé l’application."
+  },
+  "تم {0} {1} من {2} عناصر. انشر التحديثات لتصل إلى التطبيق.": {
+    "en": "{0}: {1} of {2} items. Publish updates to send them to the app.",
+    "fr": "{0} : {1} éléments sur {2}. Publiez les mises à jour pour les envoyer à l’application."
+  },
+  "لم يتم نشر أي عنصر. أكمل المحتوى المطلوب أولاً.": {
+    "en": "No items were published. Complete the required content first.",
+    "fr": "Aucun élément n’a été publié. Complétez d’abord le contenu requis."
+  },
+  "التقييم والتعلّم": {
+    "en": "Assessment and learning",
+    "fr": "Évaluation et apprentissage"
+  },
+  "مكتبتك التعليمية": {
+    "en": "Your teaching library",
+    "fr": "Votre bibliothèque pédagogique"
+  },
+  "اختبارات تصنع الفهم": {
+    "en": "Quizzes that build understanding",
+    "fr": "Des quiz pour mieux comprendre"
+  },
+  "كل محتواك، في مكان واحد": {
+    "en": "All your content in one place",
+    "fr": "Tout votre contenu au même endroit"
+  },
+  "حضّر أسئلة واضحة، اضبط التوقيت، وتابع نتائج تلاميذك.": {
+    "en": "Prepare clear questions, set a time limit and track student results.",
+    "fr": "Préparez des questions claires, définissez la durée et suivez les résultats des élèves."
+  },
+  "الفيديوهات، الملخّصات والدروس المكتوبة، منظّمة عبر دوراتك.": {
+    "en": "Videos, summaries and written lessons, organised across your courses.",
+    "fr": "Vidéos, résumés et leçons écrites, organisés dans vos cours."
+  },
+  "إنشاء اختبار": {
+    "en": "Create quiz",
+    "fr": "Créer un quiz"
+  },
+  "إضافة محتوى": {
+    "en": "Add content",
+    "fr": "Ajouter du contenu"
+  },
+  "إجمالي الاختبارات": {
+    "en": "Total quizzes",
+    "fr": "Nombre total de quiz"
+  },
+  "الاختبارات المنشورة": {
+    "en": "Published quizzes",
+    "fr": "Quiz publiés"
+  },
+  "محاولات التلاميذ": {
+    "en": "Student attempts",
+    "fr": "Tentatives des élèves"
+  },
+  "نسبة الإجابات الصحيحة": {
+    "en": "Correct answer rate",
+    "fr": "Taux de bonnes réponses"
+  },
+  "بنك الاختبارات": {
+    "en": "Quiz bank",
+    "fr": "Banque de quiz"
+  },
+  "كل المحتوى": {
+    "en": "All content",
+    "fr": "Tout le contenu"
+  },
+  "نصوص": {
+    "en": "Text lessons",
+    "fr": "Leçons écrites"
+  },
+  "بحث في المحتوى": {
+    "en": "Search content",
+    "fr": "Rechercher du contenu"
+  },
+  "ابحث عن اختبار…": {
+    "en": "Search for a quiz…",
+    "fr": "Rechercher un quiz…"
+  },
+  "ابحث عن عنوان أو دورة…": {
+    "en": "Search by title or course…",
+    "fr": "Rechercher par titre ou cours…"
+  },
+  "تصفية المحتوى حسب الدورة": {
+    "en": "Filter content by course",
+    "fr": "Filtrer le contenu par cours"
+  },
+  "كل الدورات": {
+    "en": "All courses",
+    "fr": "Tous les cours"
+  },
+  "عناصر محددة": {
+    "en": "items selected",
+    "fr": "éléments sélectionnés"
+  },
+  "نشر المحدّد": {
+    "en": "Publish selected",
+    "fr": "Publier la sélection"
+  },
+  "إخفاء المحدّد": {
+    "en": "Hide selected",
+    "fr": "Masquer la sélection"
+  },
+  "إلغاء التحديد": {
+    "en": "Clear selection",
+    "fr": "Annuler la sélection"
+  },
+  "المحتوى التعليمي": {
+    "en": "Teaching content",
+    "fr": "Contenu pédagogique"
+  },
+  "تحديد كل المحتوى المعروض": {
+    "en": "Select all displayed content",
+    "fr": "Sélectionner tout le contenu affiché"
+  },
+  "الاختبار": {
+    "en": "Quiz",
+    "fr": "Quiz"
+  },
+  "المحتوى": {
+    "en": "Content",
+    "fr": "Contenu"
+  },
+  "الدورة والفصل": {
+    "en": "Course and chapter",
+    "fr": "Cours et chapitre"
+  },
+  "الأسئلة والتوقيت": {
+    "en": "Questions and timing",
+    "fr": "Questions et durée"
+  },
+  "النوع والحجم": {
+    "en": "Type and size",
+    "fr": "Type et taille"
+  },
+  "الحالة": {
+    "en": "Status",
+    "fr": "Statut"
+  },
+  "إجراءات المحتوى": {
+    "en": "Content actions",
+    "fr": "Actions sur le contenu"
+  },
+  "نص منسّق": {
+    "en": "Formatted text",
+    "fr": "Texte mis en forme"
+  },
+  "تحرير {0}": {
+    "en": "Edit {0}",
+    "fr": "Modifier {0}"
+  },
+  "معاينة {0}": {
+    "en": "Preview {0}",
+    "fr": "Aperçu de {0}"
+  },
+  "حذف {0}": {
+    "en": "Delete {0}",
+    "fr": "Supprimer {0}"
+  },
+  "لا توجد عناصر مطابقة": {
+    "en": "No matching items",
+    "fr": "Aucun élément correspondant"
+  },
+  "ابدأ بأول اختبار": {
+    "en": "Start with your first quiz",
+    "fr": "Commencez par votre premier quiz"
+  },
+  "أضف محتواك التعليمي": {
+    "en": "Add your teaching content",
+    "fr": "Ajoutez votre contenu pédagogique"
+  },
+  "لا توجد نتائج تطابق البحث والتصفية الحالية. اعرض كل المحتوى وحاول مجدداً.": {
+    "en": "No results match your search and filters. Show all content and try again.",
+    "fr": "Aucun résultat ne correspond à votre recherche et vos filtres. Affichez tout le contenu et réessayez."
+  },
+  "اختر الدورة والفصل، ثم أضف المحتوى في المحرّر.": {
+    "en": "Choose a course and chapter, then add content in the editor.",
+    "fr": "Choisissez un cours et un chapitre, puis ajoutez le contenu dans l’éditeur."
+  },
+  "مسح البحث والتصفية": {
+    "en": "Clear search and filters",
+    "fr": "Effacer la recherche et les filtres"
+  },
+  "عناصر": {
+    "en": "items",
+    "fr": "éléments"
+  },
+  "التعديل كيتمّ في محرّر الدورة": {
+    "en": "Edit content in the course editor",
+    "fr": "Modifiez le contenu dans l’éditeur du cours"
+  },
+  "فتح المستند": {
+    "en": "Open document",
+    "fr": "Ouvrir le document"
+  },
+  "الملف مازال ما تزادش. افتح المحرّر لإضافته.": {
+    "en": "No file attached yet. Open the editor to add one.",
+    "fr": "Aucun fichier joint. Ouvrez l’éditeur pour en ajouter un."
+  },
+  "حذف المحتوى؟": {
+    "en": "Delete content?",
+    "fr": "Supprimer le contenu ?"
+  },
+  "غادي يتحيد «{0}» من دورة {1}.": {
+    "en": "“{0}” will be removed from {1}.",
+    "fr": "« {0} » sera supprimé du cours {1}."
+  },
+  "تم حذف المحتوى": {
+    "en": "Content deleted",
+    "fr": "Contenu supprimé"
+  },
+  "عندك تغييرات غير محفوظة. واش بغيتي تواصل بلا حفظ؟": {
+    "en": "You have unsaved changes. Continue without saving?",
+    "fr": "Vous avez des modifications non enregistrées. Continuer sans enregistrer ?"
+  },
+  "حذف الدرس؟": {
+    "en": "Delete lesson?",
+    "fr": "Supprimer la leçon ?"
+  },
+  "غادي يتحيد «{0}» من المنهج. تأكد قبل المتابعة.": {
+    "en": "“{0}” will be removed from the curriculum. Check before continuing.",
+    "fr": "« {0} » sera supprimé du programme. Vérifiez avant de continuer."
+  },
+  "تم حذف الدرس": {
+    "en": "Lesson deleted",
+    "fr": "Leçon supprimée"
+  },
+  "إيقاف نشر الدورة؟": {
+    "en": "Unpublish course?",
+    "fr": "Dépublier le cours ?"
+  },
+  "الدورة ما غاتبقاش متاحة للتلاميذ بعد نشر التحديثات. المحتوى والاشتراكات كيبقاو محفوظين.": {
+    "en": "The course will no longer be available to students after publishing updates. Content and subscriptions will be kept.",
+    "fr": "Le cours ne sera plus accessible aux élèves après publication des mises à jour. Le contenu et les abonnements seront conservés."
+  },
+  "تم إيقاف نشر الدورة": {
+    "en": "Course unpublished",
+    "fr": "Cours dépublié"
+  },
+  "الدورات التعليمية": {
+    "en": "Teaching courses",
+    "fr": "Cours pédagogiques"
+  },
+  "معاينة التلميذ": {
+    "en": "Student preview",
+    "fr": "Aperçu élève"
+  },
+  "إيقاف النشر": {
+    "en": "Unpublish",
+    "fr": "Dépublier"
+  },
+  "نشر الدورة": {
+    "en": "Publish course",
+    "fr": "Publier le cours"
+  },
+  "إدارة الدورة": {
+    "en": "Manage course",
+    "fr": "Gérer le cours"
+  },
+  "محتوى الدورة": {
+    "en": "Course content",
+    "fr": "Contenu du cours"
+  },
+  "معلومات الدورة": {
+    "en": "Course information",
+    "fr": "Informations du cours"
+  },
+  "دروس الدورة": {
+    "en": "Course lessons",
+    "fr": "Leçons du cours"
+  },
+  "مخطط الدورة": {
+    "en": "Course outline",
+    "fr": "Plan du cours"
+  },
+  "إضافة محتوى للدورة": {
+    "en": "Add course content",
+    "fr": "Ajouter du contenu au cours"
+  },
+  "الدورات الدراسية": {
+    "en": "School terms",
+    "fr": "Semestres"
+  },
+  "بحث في مخطط الدورة": {
+    "en": "Search course outline",
+    "fr": "Rechercher dans le plan du cours"
+  },
+  "ابحث عن درس…": {
+    "en": "Search for a lesson…",
+    "fr": "Rechercher une leçon…"
+  },
+  "إجراءات الفصل {0}": {
+    "en": "Chapter {0} actions",
+    "fr": "Actions du chapitre {0}"
+  },
+  "إعادة تسمية الفصل": {
+    "en": "Rename chapter",
+    "fr": "Renommer le chapitre"
+  },
+  "نقل الفصل لأعلى": {
+    "en": "Move chapter up",
+    "fr": "Monter le chapitre"
+  },
+  "نقل الفصل لأسفل": {
+    "en": "Move chapter down",
+    "fr": "Descendre le chapitre"
+  },
+  "حذف الفصل": {
+    "en": "Delete chapter",
+    "fr": "Supprimer le chapitre"
+  },
+  "حذف الفصل؟": {
+    "en": "Delete chapter?",
+    "fr": "Supprimer le chapitre ?"
+  },
+  "الفصل «{0}» فيه {1} دروس. الحذف غادي يشمل جميع دروسه.": {
+    "en": "The chapter “{0}” contains {1} lessons. All its lessons will also be deleted.",
+    "fr": "Le chapitre « {0} » contient {1} leçons. Toutes ses leçons seront aussi supprimées."
+  },
+  "تم حذف الفصل": {
+    "en": "Chapter deleted",
+    "fr": "Chapitre supprimé"
+  },
+  "إجراءات درس {0}": {
+    "en": "Lesson {0} actions",
+    "fr": "Actions de la leçon {0}"
+  },
+  "نقل الدرس لأعلى": {
+    "en": "Move lesson up",
+    "fr": "Monter la leçon"
+  },
+  "نقل الدرس لأسفل": {
+    "en": "Move lesson down",
+    "fr": "Descendre la leçon"
+  },
+  "لا دروس بعد. أضف أول درس.": {
+    "en": "No lessons yet. Add your first lesson.",
+    "fr": "Aucune leçon pour le moment. Ajoutez la première."
+  },
+  "إضافة درس": {
+    "en": "Add lesson",
+    "fr": "Ajouter une leçon"
+  },
+  "إضافة فصل": {
+    "en": "Add chapter",
+    "fr": "Ajouter un chapitre"
+  },
+  "مساحة صناعة التعلّم": {
+    "en": "Your teaching workspace",
+    "fr": "Votre espace de création pédagogique"
+  },
+  "منهج واضح.": {
+    "en": "A clear curriculum.",
+    "fr": "Un programme clair."
+  },
+  "تجربة تعلّم أفضل.": {
+    "en": "A better learning experience.",
+    "fr": "Une meilleure expérience d’apprentissage."
+  },
+  "اختَر درساً من مخطط الدورة لتحريره، أو أضف محتوى جديداً. جميع الفصول والدروس كيبقاو قريبين منك وأنت كتخدم.": {
+    "en": "Choose a lesson from the outline to edit it, or add new content. Keep all your chapters and lessons within reach as you work.",
+    "fr": "Choisissez une leçon dans le plan pour la modifier, ou ajoutez du contenu. Gardez vos chapitres et leçons à portée de main pendant votre travail."
+  },
+  "فيديوهات": {
+    "en": "Videos",
+    "fr": "Vidéos"
+  },
+  "مستندات PDF": {
+    "en": "PDF documents",
+    "fr": "Documents PDF"
+  },
+  "اختبارات": {
+    "en": "Quizzes",
+    "fr": "Quiz"
+  },
+  "قبل نشر دورتك": {
+    "en": "Before publishing your course",
+    "fr": "Avant de publier votre cours"
+  },
+  "عنوان الدورة ومعلوماتها": {
+    "en": "Course title and information",
+    "fr": "Titre et informations du cours"
+  },
+  "إضافة محتوى تعليمي": {
+    "en": "Add teaching content",
+    "fr": "Ajouter du contenu pédagogique"
+  },
+  "نشر درس واحد على الأقل": {
+    "en": "Publish at least one lesson",
+    "fr": "Publier au moins une leçon"
+  },
+  "نشر التحديثات لتطبيق التلميذ": {
+    "en": "Publish updates to the student app",
+    "fr": "Publier les mises à jour vers l’application élève"
+  },
+  "تعديل اسم الفصل": {
+    "en": "Edit chapter name",
+    "fr": "Modifier le nom du chapitre"
+  },
+  "فصل جديد": {
+    "en": "New chapter",
+    "fr": "Nouveau chapitre"
+  },
+  "تم حفظ الفصل": {
+    "en": "Chapter saved",
+    "fr": "Chapitre enregistré"
+  },
+  "حفظ الفصل": {
+    "en": "Save chapter",
+    "fr": "Enregistrer le chapitre"
+  },
+  "عنوان الفصل": {
+    "en": "Chapter title",
+    "fr": "Titre du chapitre"
+  },
+  "داخل": {
+    "en": "Inside",
+    "fr": "Dans"
+  },
+  ". يمكنك ترتيب الفصول من قائمة الإجراءات.": {
+    "en": ". Reorder chapters using the actions menu.",
+    "fr": ". Réorganisez les chapitres via le menu d’actions."
+  },
+  "مراجعة ونشر الدورة": {
+    "en": "Review and publish course",
+    "fr": "Vérifier et publier le cours"
+  },
+  "تأكد أن المحتوى جاهز قبل إتاحته للتلاميذ.": {
+    "en": "Check that your content is ready before sharing it with students.",
+    "fr": "Vérifiez que le contenu est prêt avant de le proposer aux élèves."
+  },
+  "رجوع": {
+    "en": "Back",
+    "fr": "Retour"
+  },
+  "تم نشر الدورة. انشر التحديثات لتطبيق التلميذ.": {
+    "en": "Course published. Publish updates to the student app.",
+    "fr": "Cours publié. Publiez les mises à jour vers l’application élève."
+  },
+  "تأكيد نشر الدورة": {
+    "en": "Confirm publication",
+    "fr": "Confirmer la publication"
+  },
+  "دروس جاهزة ومنشورة": {
+    "en": "Ready, published lessons",
+    "fr": "Leçons prêtes et publiées"
+  },
+  "دروس تبقى مخفية": {
+    "en": "Lessons remaining hidden",
+    "fr": "Leçons restant masquées"
+  },
+  "احفظ تغييرات الدرس أولاً، ثم انشر الدورة.": {
+    "en": "Save your lesson changes before publishing the course.",
+    "fr": "Enregistrez vos modifications avant de publier le cours."
+  },
+  "خاصك درس واحد بمحتوى منشور على الأقل.": {
+    "en": "At least one published lesson with content is required.",
+    "fr": "Il faut au moins une leçon publiée avec du contenu."
+  },
+  "النشر كيجهّز الدورة للتلاميذ أصحاب الاشتراك المفعّل. من بعد انشر التحديثات من صفحة المزامنة.": {
+    "en": "Publishing prepares the course for students with active subscriptions. Then publish updates from the sync page.",
+    "fr": "La publication prépare le cours pour les élèves ayant un abonnement actif. Publiez ensuite les mises à jour depuis la page de synchronisation."
+  },
+  "صناعة المحتوى": {
+    "en": "Content creation",
+    "fr": "Création de contenu"
+  },
+  "دوراتك التعليمية": {
+    "en": "Your courses",
+    "fr": "Vos cours"
+  },
+  "من أول فكرة إلى درس منشور. رتّب محتواك وصمّم رحلة تعلّم متكاملة.": {
+    "en": "From your first idea to a published lesson. Organise your content and build a complete learning journey.",
+    "fr": "De la première idée à la leçon publiée. Organisez votre contenu et créez un parcours pédagogique complet."
+  },
+  "ملخص الدورات": {
+    "en": "Course summary",
+    "fr": "Résumé des cours"
+  },
+  "دورة تعليمية": {
+    "en": "course",
+    "fr": "cours"
+  },
+  "حالة الدورات": {
+    "en": "Course status",
+    "fr": "Statut des cours"
+  },
+  "مسودات": {
+    "en": "Drafts",
+    "fr": "Brouillons"
+  },
+  "بحث في الدورات": {
+    "en": "Search courses",
+    "fr": "Rechercher des cours"
+  },
+  "ابحث في دوراتك…": {
+    "en": "Search your courses…",
+    "fr": "Rechercher dans vos cours…"
+  },
+  "عرض قائمة": {
+    "en": "List view",
+    "fr": "Vue liste"
+  },
+  "عرض بطاقات": {
+    "en": "Card view",
+    "fr": "Vue cartes"
+  },
+  "الدورة التعليمية": {
+    "en": "Course",
+    "fr": "Cours"
+  },
+  "المنهج": {
+    "en": "Curriculum",
+    "fr": "Programme"
+  },
+  "التلاميذ": {
+    "en": "Students",
+    "fr": "Élèves"
+  },
+  "آخر تحديث": {
+    "en": "Last updated",
+    "fr": "Dernière modification"
+  },
+  "الإدارة": {
+    "en": "Management",
+    "fr": "Gestion"
+  },
+  "فصول": {
+    "en": "chapters",
+    "fr": "chapitres"
+  },
+  "نشط": {
+    "en": "Active",
+    "fr": "Actif"
+  },
+  "إدارة": {
+    "en": "Manage",
+    "fr": "Gérer"
+  },
+  "لا توجد دورات مطابقة": {
+    "en": "No matching courses",
+    "fr": "Aucun cours correspondant"
+  },
+  "ابدأ بأول دورة تعليمية": {
+    "en": "Start with your first course",
+    "fr": "Commencez par votre premier cours"
+  },
+  "لا توجد نتائج تطابق البحث والتصفية الحالية. يمكنك إعادة عرض كل دوراتك.": {
+    "en": "No results match your search and filters. You can show all your courses again.",
+    "fr": "Aucun résultat ne correspond à votre recherche et vos filtres. Vous pouvez réafficher tous vos cours."
+  },
+  "أنشئ دورتك الأولى، ثم أضف الفصول والدروس عندما تكون جاهزاً.": {
+    "en": "Create your first course, then add chapters and lessons when ready.",
+    "fr": "Créez votre premier cours, puis ajoutez des chapitres et des leçons quand vous le souhaitez."
+  },
+  "دورات": {
+    "en": "courses",
+    "fr": "cours"
+  },
+  "المحتوى محفوظ في مساحتك": {
+    "en": "Content saved in your workspace",
+    "fr": "Contenu enregistré dans votre espace"
+  },
+  "تم إنشاء الدورة كمسودة": {
+    "en": "Course created as a draft",
+    "fr": "Cours créé comme brouillon"
+  },
+  "إنشاء دورة جديدة": {
+    "en": "Create a new course",
+    "fr": "Créer un nouveau cours"
+  },
+  "تُحفظ كمسودة حتى تنشرها.": {
+    "en": "Saved as a draft until you publish it.",
+    "fr": "Enregistré comme brouillon jusqu’à sa publication."
+  },
+  "لم تُضف بعد وصف هذه الدورة.": {
+    "en": "No description added yet.",
+    "fr": "Aucune description ajoutée pour le moment."
+  },
+  "إنشاء الدورة": {
+    "en": "Create course",
+    "fr": "Créer le cours"
+  },
+  "مثال: الحساب التفاضلي — مدخل وتطبيقات": {
+    "en": "Example: Differential calculus — introduction and applications",
+    "fr": "Exemple : calcul différentiel — introduction et applications"
+  },
+  "عنوان واضح للتلاميذ": {
+    "en": "A clear title for students",
+    "fr": "Un titre clair pour les élèves"
+  },
+  "يظهر لطالب في صفحة الدورة.": {
+    "en": "Shown to students on the course page.",
+    "fr": "Visible par les élèves sur la page du cours."
+  },
+  "ماذا سيتعلم التلميذ في هذه الدورة؟": {
+    "en": "What will students learn in this course?",
+    "fr": "Que vont apprendre les élèves dans ce cours ?"
+  },
+  "الصفحة غير موجودة": {
+    "en": "Page not found",
+    "fr": "Page introuvable"
+  },
+  "هذه الصفحة غير موجودة": {
+    "en": "This page does not exist",
+    "fr": "Cette page n’existe pas"
+  },
+  "ربما حُذفت الصفحة أو كان الرابط غير صحيح.": {
+    "en": "The page may have been deleted or the link may be incorrect.",
+    "fr": "La page a peut-être été supprimée ou le lien est incorrect."
+  },
+  "العودة إلى الرئيسية": {
+    "en": "Back to overview",
+    "fr": "Retour à l’accueil"
+  },
+  "الدورات المنشورة": {
+    "en": "Published courses",
+    "fr": "Cours publiés"
+  },
+  "{0} دورات في مساحتك": {
+    "en": "{0} courses in your workspace",
+    "fr": "{0} cours dans votre espace"
+  },
+  "التلاميذ النشطون": {
+    "en": "Active students",
+    "fr": "Élèves actifs"
+  },
+  "باشتراك مفعّل": {
+    "en": "With an active subscription",
+    "fr": "Avec un abonnement actif"
+  },
+  "الدروس المنشورة": {
+    "en": "Published lessons",
+    "fr": "Leçons publiées"
+  },
+  "من أصل {0} درس": {
+    "en": "Out of {0} lessons",
+    "fr": "Sur {0} leçons"
+  },
+  "نتائج مزامنة من التطبيق": {
+    "en": "Results synced from the app",
+    "fr": "Résultats synchronisés depuis l’application"
+  },
+  "رفع محتوى": {
+    "en": "Upload content",
+    "fr": "Importer du contenu"
+  },
+  "أضف فيديو، ملخّص PDF أو درساً مكتوباً.": {
+    "en": "Add a video, PDF summary or written lesson.",
+    "fr": "Ajoutez une vidéo, un résumé PDF ou une leçon écrite."
+  },
+  "جهّز الأسئلة والمدة، وتابع نتائج التلاميذ.": {
+    "en": "Prepare questions and timing, then track student results.",
+    "fr": "Préparez les questions et la durée, puis suivez les résultats des élèves."
+  },
+  "إدارة الاشتراكات": {
+    "en": "Manage subscriptions",
+    "fr": "Gérer les abonnements"
+  },
+  "فعّل الوصول وحدّد مدة الاشتراك لكل تلميذ.": {
+    "en": "Activate access and set each student’s subscription duration.",
+    "fr": "Activez l’accès et définissez la durée de l’abonnement de chaque élève."
+  },
+  "ملفات PDF": {
+    "en": "PDF files",
+    "fr": "Fichiers PDF"
+  },
+  "دروس مكتوبة": {
+    "en": "Written lessons",
+    "fr": "Leçons écrites"
+  },
+  "فضاء الأستاذ": {
+    "en": "Teacher workspace",
+    "fr": "Espace enseignant"
+  },
+  "مرحباً،": {
+    "en": "Welcome,",
+    "fr": "Bienvenue,"
+  },
+  "كل ما تحتاجه للتدريس، في مساحة واحدة.": {
+    "en": "Everything you need to teach, in one place.",
+    "fr": "Tout ce qu’il vous faut pour enseigner, au même endroit."
+  },
+  "إحصائيات مساحة العمل": {
+    "en": "Workspace statistics",
+    "fr": "Statistiques de l’espace"
+  },
+  "ماذا تريد أن تنجز؟": {
+    "en": "What would you like to do?",
+    "fr": "Que souhaitez-vous faire ?"
+  },
+  "من الفكرة إلى التعلّم": {
+    "en": "From ideas to learning",
+    "fr": "Des idées à l’apprentissage"
+  },
+  "واصل العمل على دوراتك": {
+    "en": "Continue working on your courses",
+    "fr": "Continuez à préparer vos cours"
+  },
+  "آخر الدورات التي حدّثتها في مساحتك": {
+    "en": "Your most recently updated courses",
+    "fr": "Vos derniers cours mis à jour"
+  },
+  "فتح {0}": {
+    "en": "Open {0}",
+    "fr": "Ouvrir {0}"
+  },
+  "إدارة {0}": {
+    "en": "Manage {0}",
+    "fr": "Gérer {0}"
+  },
+  "ابدأ بأول دورة": {
+    "en": "Start your first course",
+    "fr": "Créez votre premier cours"
+  },
+  "أضف دورتك، ثم رتّب الفصول والدروس.": {
+    "en": "Add your course, then organise its chapters and lessons.",
+    "fr": "Ajoutez votre cours, puis organisez ses chapitres et leçons."
+  },
+  "محتواك التعليمي": {
+    "en": "Your teaching content",
+    "fr": "Votre contenu pédagogique"
+  },
+  "توزيع المحتوى في جميع دوراتك": {
+    "en": "Content across all your courses",
+    "fr": "Répartition du contenu dans tous vos cours"
+  },
+  "إدارة المحتوى": {
+    "en": "Manage content",
+    "fr": "Gérer le contenu"
+  },
+  "يحتاج اهتمامك": {
+    "en": "Needs your attention",
+    "fr": "À traiter"
+  },
+  "أسئلة التلاميذ": {
+    "en": "Student questions",
+    "fr": "Questions des élèves"
+  },
+  "{0} أسئلة تنتظر جوابك": {
+    "en": "{0} questions awaiting your reply",
+    "fr": "{0} questions attendent votre réponse"
+  },
+  "أجبت على كل الأسئلة": {
+    "en": "All questions answered",
+    "fr": "Vous avez répondu à toutes les questions"
+  },
+  "طلبات التفعيل": {
+    "en": "Activation requests",
+    "fr": "Demandes d’activation"
+  },
+  "{0} طلبات قيد المراجعة": {
+    "en": "{0} requests awaiting review",
+    "fr": "{0} demandes à examiner"
+  },
+  "لا طلبات جديدة": {
+    "en": "No new requests",
+    "fr": "Aucune nouvelle demande"
+  },
+  "جاهز لتشارك جديدك؟": {
+    "en": "Ready to share your updates?",
+    "fr": "Prêt à partager vos nouveautés ?"
+  },
+  "انشر التحديثات لتصل إلى تطبيق التلميذ.": {
+    "en": "Publish updates to send them to the student app.",
+    "fr": "Publiez les mises à jour pour les envoyer à l’application élève."
+  },
+  "آخر النشاط": {
+    "en": "Recent activity",
+    "fr": "Activité récente"
+  },
+  "سيظهر نشاطك هنا عند إضافة المحتوى أو تحديثه.": {
+    "en": "Your activity will appear here when you add or update content.",
+    "fr": "Votre activité apparaîtra ici lorsque vous ajouterez ou modifierez du contenu."
+  },
+  "تم حفظ الرد. انشر التحديثات لتصل إلى التلميذ.": {
+    "en": "Reply saved. Publish updates to send it to the student.",
+    "fr": "Réponse enregistrée. Publiez les mises à jour pour l’envoyer à l’élève."
+  },
+  "قريب من تلاميذك": {
+    "en": "Stay close to your students",
+    "fr": "Restez proche de vos élèves"
+  },
+  "كل سؤال، بداية للفهم": {
+    "en": "Every question starts understanding",
+    "fr": "Chaque question ouvre la voie à la compréhension"
+  },
+  "تابع نقاشات الدروس، وضّح الأفكار، وخلي كل تلميذ يلقى الجواب.": {
+    "en": "Follow lesson discussions, clarify ideas and help every student find answers.",
+    "fr": "Suivez les discussions, clarifiez les idées et aidez chaque élève à trouver des réponses."
+  },
+  "جلب الأسئلة ونشر الأجوبة": {
+    "en": "Fetch questions and publish answers",
+    "fr": "Récupérer les questions et publier les réponses"
+  },
+  "تم حفظ ردك على سؤال": {
+    "en": "Your reply was saved for the question",
+    "fr": "Votre réponse a été enregistrée à la question"
+  },
+  ". انشر التحديثات ليصل إلى التلميذ.": {
+    "en": ". Publish updates to send it to the student.",
+    "fr": ". Publiez les mises à jour pour l’envoyer à l’élève."
+  },
+  "نشر الأجوبة": {
+    "en": "Publish answers",
+    "fr": "Publier les réponses"
+  },
+  "تصفية الأسئلة": {
+    "en": "Filter questions",
+    "fr": "Filtrer les questions"
+  },
+  "كل الأسئلة": {
+    "en": "All questions",
+    "fr": "Toutes les questions"
+  },
+  "بانتظار جواب": {
+    "en": "Awaiting a reply",
+    "fr": "En attente de réponse"
+  },
+  "تصفية الأسئلة حسب الدورة": {
+    "en": "Filter questions by course",
+    "fr": "Filtrer les questions par cours"
+  },
+  "جميع الدورات": {
+    "en": "All courses",
+    "fr": "Tous les cours"
+  },
+  "البحث في الأسئلة": {
+    "en": "Search questions",
+    "fr": "Rechercher des questions"
+  },
+  "ابحث عن سؤال أو تلميذ…": {
+    "en": "Search by question or student…",
+    "fr": "Rechercher une question ou un élève…"
+  },
+  "أسئلة": {
+    "en": "questions",
+    "fr": "questions"
+  },
+  "تمت الإجابة": {
+    "en": "Answered",
+    "fr": "Répondu"
+  },
+  "مسودة رد": {
+    "en": "Reply draft",
+    "fr": "Brouillon de réponse"
+  },
+  "لا أسئلة تطابق التصفية الحالية.": {
+    "en": "No questions match the current filters.",
+    "fr": "Aucune question ne correspond aux filtres actuels."
+  },
+  "لا توجد أسئلة بعد.": {
+    "en": "No questions yet.",
+    "fr": "Aucune question pour le moment."
+  },
+  "نقاش الدورة": {
+    "en": "Course discussion",
+    "fr": "Discussion du cours"
+  },
+  "الأستاذ": {
+    "en": "Teacher",
+    "fr": "Enseignant"
+  },
+  "التلميذ كيتسنى توضيحك.": {
+    "en": "The student is waiting for your explanation.",
+    "fr": "L’élève attend votre explication."
+  },
+  "جوابك للتلميذ": {
+    "en": "Your answer to the student",
+    "fr": "Votre réponse à l’élève"
+  },
+  "اشرح الفكرة بمثال بسيط…": {
+    "en": "Explain the idea with a simple example…",
+    "fr": "Expliquez l’idée avec un exemple simple…"
+  },
+  "الجواب كيبان لمشتركي الدورة بعد نشر التحديثات.": {
+    "en": "Your answer is visible to course subscribers after publishing updates.",
+    "fr": "Votre réponse sera visible par les abonnés du cours après publication des mises à jour."
+  },
+  "اكتب جواباً لتفعيل الإرسال. سيظهر للتلميذ بعد نشر التحديثات.": {
+    "en": "Write an answer to enable sending. It will appear after publishing updates.",
+    "fr": "Rédigez une réponse pour activer l’envoi. Elle apparaîtra après publication des mises à jour."
+  },
+  "حرف": {
+    "en": "characters",
+    "fr": "caractères"
+  },
+  "إرسال الرد": {
+    "en": "Send reply",
+    "fr": "Envoyer la réponse"
+  },
+  "لا أسئلة بانتظار جواب": {
+    "en": "No questions awaiting a reply",
+    "fr": "Aucune question en attente de réponse"
+  },
+  "لا أسئلة مطابقة": {
+    "en": "No matching questions",
+    "fr": "Aucune question correspondante"
+  },
+  "مساحة للنقاش والتوضيح": {
+    "en": "A space for discussion and explanation",
+    "fr": "Un espace de discussion et d’explication"
+  },
+  "يمكنك إزالة البحث والتصفية للرجوع إلى جميع الأسئلة.": {
+    "en": "Clear the search and filters to return to all questions.",
+    "fr": "Effacez la recherche et les filtres pour retrouver toutes les questions."
+  },
+  "ستظهر أسئلة التلاميذ هنا بعد جلبها من صفحة المزامنة.": {
+    "en": "Student questions appear here after fetching them from the sync page.",
+    "fr": "Les questions des élèves apparaîtront ici après leur récupération depuis la page de synchronisation."
+  },
+  "عرض كل الأسئلة": {
+    "en": "Show all questions",
+    "fr": "Afficher toutes les questions"
+  },
+  "جلب الأسئلة": {
+    "en": "Fetch questions",
+    "fr": "Récupérer les questions"
+  },
+  "الكل": {
+    "en": "All",
+    "fr": "Tous"
+  },
+  "بدون اشتراك محدد": {
+    "en": "No subscription set",
+    "fr": "Aucun abonnement défini"
+  },
+  "موقوف": {
+    "en": "Suspended",
+    "fr": "Suspendu"
+  },
+  "طلب قيد المراجعة": {
+    "en": "Request under review",
+    "fr": "Demande en cours d’examen"
+  },
+  "تم رفض الطلب": {
+    "en": "Request rejected",
+    "fr": "Demande refusée"
+  },
+  "ملغي": {
+    "en": "Cancelled",
+    "fr": "Annulé"
+  },
+  "أدخل رمز الطالب أولاً.": {
+    "en": "Enter the student code first.",
+    "fr": "Saisissez d’abord le code de l’élève."
+  },
+  "لم يتم العثور على تلميذ بهذا الرمز.": {
+    "en": "No student found with this code.",
+    "fr": "Aucun élève trouvé avec ce code."
+  },
+  "تم العثور على {0} ({1}).": {
+    "en": "Found {0} ({1}).",
+    "fr": "Élève trouvé : {0} ({1})."
+  },
+  "المقرر": {
+    "en": "Course",
+    "fr": "Cours"
+  },
+  "تاريخ التسجيل": {
+    "en": "Enrolment date",
+    "fr": "Date d’inscription"
+  },
+  "تاريخ الانتهاء": {
+    "en": "Expiry date",
+    "fr": "Date d’expiration"
+  },
+  "منتهي الصلاحية": {
+    "en": "Expired",
+    "fr": "Expiré"
+  },
+  "الإجراء": {
+    "en": "Action",
+    "fr": "Action"
+  },
+  "إدارة الاشتراك": {
+    "en": "Manage subscription",
+    "fr": "Gérer l’abonnement"
+  },
+  "التلميذ مرتبط بهذا المركز بالفعل.": {
+    "en": "This student already belongs to this centre.",
+    "fr": "Cet élève est déjà rattaché à ce centre."
+  },
+  "يوجد طلب انضمام قيد الانتظار لهذا التلميذ بالفعل.": {
+    "en": "A pending join request already exists for this student.",
+    "fr": "Une demande d’adhésion est déjà en attente pour cet élève."
+  },
+  "لم يتم إعداد مركز.": {
+    "en": "No centre configured.",
+    "fr": "Aucun centre configuré."
+  },
+  "تم إرسال طلب انضمام إلى {0} — ينتظر موافقة التلميذ.": {
+    "en": "Join request sent to {0} — awaiting the student’s approval.",
+    "fr": "Demande d’adhésion envoyée à {0} — en attente de l’accord de l’élève."
+  },
+  "ابحث برمز التلميذ، راجع هويته، ثم خصّص اشتراكه مع الأستاذ والمقرر المناسبين.": {
+    "en": "Search by student code, verify their identity, then customise their subscription with the right teacher and course.",
+    "fr": "Recherchez par code élève, vérifiez son identité, puis personnalisez son abonnement avec l’enseignant et le cours appropriés."
+  },
+  "بحث برمز الطالب": {
+    "en": "Search by student code",
+    "fr": "Rechercher par code élève"
+  },
+  "رمز الطالب": {
+    "en": "Student code",
+    "fr": "Code élève"
+  },
+  "بحث": {
+    "en": "Search",
+    "fr": "Rechercher"
+  },
+  "مرتبط بالمركز": {
+    "en": "Linked to centre",
+    "fr": "Rattaché au centre"
+  },
+  "طلب قيد الانتظار": {
+    "en": "Request pending",
+    "fr": "Demande en attente"
+  },
+  "ربط بالمركز": {
+    "en": "Link to centre",
+    "fr": "Rattacher au centre"
+  },
+  "التلميذ مرتبط بـ {0}. الاشتراكات مخصّصة لكل مقرر على حدة.": {
+    "en": "The student belongs to {0}. Subscriptions are managed separately for each course.",
+    "fr": "L’élève est rattaché à {0}. Les abonnements sont gérés séparément pour chaque cours."
+  },
+  "تم إرسال الطلب؛ تبقى موافقة التلميذ مطلوبة في التطبيق.": {
+    "en": "Request sent; the student must still approve it in the app.",
+    "fr": "Demande envoyée ; l’élève doit encore l’accepter dans l’application."
+  },
+  "ابدأ ببطاقة التلميذ": {
+    "en": "Start with the student card",
+    "fr": "Commencez par la carte de l’élève"
+  },
+  "اطلب من التلميذ رمز UST الموجود في بطاقته داخل التطبيق، ثم أدخله في خانة البحث أعلاه.": {
+    "en": "Ask for the UST code on the student’s card in the app, then enter it in the search field above.",
+    "fr": "Demandez le code UST figurant sur la carte de l’élève dans l’application, puis saisissez-le dans la recherche ci-dessus."
+  },
+  "باك حر": {
+    "en": "Independent Bac candidate",
+    "fr": "Candidat libre au bac"
+  },
+  "متمدرس": {
+    "en": "Enrolled at school",
+    "fr": "Scolarisé"
+  },
+  "الرمز:": {
+    "en": "Code:",
+    "fr": "Code :"
+  },
+  "الهاتف:": {
+    "en": "Phone:",
+    "fr": "Téléphone :"
+  },
+  "المقررات المفعلة للتلميذ": {
+    "en": "Student’s active courses",
+    "fr": "Cours activés de l’élève"
+  },
+  "تصفية حسب حالة الاشتراك": {
+    "en": "Filter by subscription status",
+    "fr": "Filtrer par statut d’abonnement"
+  },
+  "لا اشتراكات نشطة": {
+    "en": "No active subscriptions",
+    "fr": "Aucun abonnement actif"
+  },
+  "لا اشتراكات منتهية": {
+    "en": "No expired subscriptions",
+    "fr": "Aucun abonnement expiré"
+  },
+  "لا اشتراكات مسجلة لهذا التلميذ": {
+    "en": "No subscriptions for this student",
+    "fr": "Aucun abonnement pour cet élève"
+  },
+  "تسجيل اشتراك مع أستاذ": {
+    "en": "Subscribe with a teacher",
+    "fr": "Inscrire auprès d’un enseignant"
+  },
+  "مسجل": {
+    "en": "Enrolled",
+    "fr": "Inscrit"
+  },
+  "تخصيص الاشتراك": {
+    "en": "Customise subscription",
+    "fr": "Personnaliser l’abonnement"
+  },
+  "طلبات الانضمام قيد الانتظار": {
+    "en": "Pending join requests",
+    "fr": "Demandes d’adhésion en attente"
+  },
+  "لا توجد طلبات انضمام قيد الانتظار.": {
+    "en": "No pending join requests.",
+    "fr": "Aucune demande d’adhésion en attente."
+  },
+  "بانتظار موافقة التلميذ": {
+    "en": "Awaiting student approval",
+    "fr": "En attente de l’accord de l’élève"
+  },
+  "بياناتك التي تظهر للطلاب وأدوات البيانات التجريبية.": {
+    "en": "Your student-facing profile and demo data tools.",
+    "fr": "Votre profil visible par les élèves et les outils de données de démonstration."
+  },
+  "تم حفظ الملف الشخصي": {
+    "en": "Profile saved",
+    "fr": "Profil enregistré"
+  },
+  "الملف الشخصي": {
+    "en": "Profile",
+    "fr": "Profil"
+  },
+  "الاسم": {
+    "en": "Name",
+    "fr": "Nom"
+  },
+  "اكتب اسماً صحيحاً.": {
+    "en": "Enter a valid name.",
+    "fr": "Saisissez un nom valide."
+  },
+  "الاسم اللاتيني": {
+    "en": "Latin-script name",
+    "fr": "Nom en caractères latins"
+  },
+  "اسم المركز": {
+    "en": "Centre name",
+    "fr": "Nom du centre"
+  },
+  "المدينة": {
+    "en": "City",
+    "fr": "Ville"
+  },
+  "البريد الإلكتروني": {
+    "en": "Email",
+    "fr": "E-mail"
+  },
+  "بريد غير صحيح.": {
+    "en": "Invalid email address.",
+    "fr": "Adresse e-mail incorrecte."
+  },
+  "الهاتف": {
+    "en": "Phone",
+    "fr": "Téléphone"
+  },
+  "نبذة": {
+    "en": "Bio",
+    "fr": "Présentation"
+  },
+  "سطر أو سطرين عن أسلوبك في التدريس.": {
+    "en": "A sentence or two about your teaching approach.",
+    "fr": "Une ou deux phrases sur votre approche pédagogique."
+  },
+  "تم حفظ تغييرات الملف الشخصي.": {
+    "en": "Profile changes saved.",
+    "fr": "Modifications du profil enregistrées."
+  },
+  "لديك تغييرات غير محفوظة.": {
+    "en": "You have unsaved changes.",
+    "fr": "Vous avez des modifications non enregistrées."
+  },
+  "البيانات محلية على هذا الجهاز فقط.": {
+    "en": "Data is stored locally on this device only.",
+    "fr": "Les données sont enregistrées uniquement sur cet appareil."
+  },
+  "حفظ": {
+    "en": "Save",
+    "fr": "Enregistrer"
+  },
+  "بيانات العرض التجريبي": {
+    "en": "Demo data",
+    "fr": "Données de démonstration"
+  },
+  "دورات ·": {
+    "en": "courses ·",
+    "fr": "cours ·"
+  },
+  "تلميذاً": {
+    "en": "students",
+    "fr": "élèves"
+  },
+  "· عُدّلت": {
+    "en": "· updated",
+    "fr": "· modifiées"
+  },
+  "نقل البيانات إلى تطبيق التلاميذ": {
+    "en": "Transfer data to the student app",
+    "fr": "Transférer les données vers l’application élève"
+  },
+  "انسخ رمز المزامنة والصقه في تطبيق التلاميذ.": {
+    "en": "Copy the sync code and paste it into the student app.",
+    "fr": "Copiez le code de synchronisation et collez-le dans l’application élève."
+  },
+  "تم نسخ رمز المزامنة — الصقه في تطبيق التلاميذ": {
+    "en": "Sync code copied — paste it into the student app",
+    "fr": "Code de synchronisation copié — collez-le dans l’application élève"
+  },
+  "تعذّر النسخ التلقائي. يمكنك تحديد الرمز أدناه ونسخه يدوياً.": {
+    "en": "Could not copy automatically. Select and copy the code below manually.",
+    "fr": "Copie automatique impossible. Sélectionnez et copiez manuellement le code ci-dessous."
+  },
+  "جارٍ النسخ…": {
+    "en": "Copying…",
+    "fr": "Copie en cours…"
+  },
+  "نسخ رمز المزامنة": {
+    "en": "Copy sync code",
+    "fr": "Copier le code de synchronisation"
+  },
+  "رمز المزامنة للنسخ اليدوي": {
+    "en": "Sync code for manual copying",
+    "fr": "Code de synchronisation à copier manuellement"
+  },
+  "حدّد الرمز كاملاً ثم انسخه والصقه في تطبيق التلميذ.": {
+    "en": "Select the entire code, then copy and paste it into the student app.",
+    "fr": "Sélectionnez le code complet, puis copiez-le dans l’application élève."
+  },
+  "إعادة ضبط العرض": {
+    "en": "Reset demo",
+    "fr": "Réinitialiser la démonstration"
+  },
+  "يحذف تعديلاتك ويعيد البيانات الأصلية.": {
+    "en": "Deletes your changes and restores the original data.",
+    "fr": "Supprime vos modifications et restaure les données initiales."
+  },
+  "إعادة الضبط": {
+    "en": "Reset",
+    "fr": "Réinitialiser"
+  },
+  "إعادة ضبط بيانات العرض؟": {
+    "en": "Reset demo data?",
+    "fr": "Réinitialiser les données de démonstration ?"
+  },
+  "سيُحذف كل ما عدّلته (دورات، تلاميذ، تقدّم) وتعود البيانات الأصلية.": {
+    "en": "All your changes (courses, students, progress) will be deleted and the original data restored.",
+    "fr": "Toutes vos modifications (cours, élèves, progression) seront supprimées et les données initiales restaurées."
+  },
+  "عادت بيانات العرض إلى حالتها الأصلية": {
+    "en": "Demo data restored",
+    "fr": "Données de démonstration restaurées"
+  },
+  "اشتراك منتهي": {
+    "en": "Expired subscription",
+    "fr": "Abonnement expiré"
+  },
+  "تاريخ الانضمام": {
+    "en": "Join date",
+    "fr": "Date d’adhésion"
+  },
+  "انضم": {
+    "en": "Joined",
+    "fr": "Inscrit"
+  },
+  "حالة الوصول": {
+    "en": "Access status",
+    "fr": "Statut d’accès"
+  },
+  "اشتراك سارٍ": {
+    "en": "Active subscription",
+    "fr": "Abonnement valide"
+  },
+  "بلا وصول نشط": {
+    "en": "No active access",
+    "fr": "Aucun accès actif"
+  },
+  "المقررات": {
+    "en": "Courses",
+    "fr": "Cours"
+  },
+  "لا مقررات": {
+    "en": "No courses",
+    "fr": "Aucun cours"
+  },
+  "{0} — {1}": {
+    "en": "{0} — {1}",
+    "fr": "{0} — {1}"
+  },
+  "إدارة الوصول": {
+    "en": "Manage access",
+    "fr": "Gérer l’accès"
+  },
+  "لم يتم العثور على تلميذ بهذا الرمز — تأكد من نسخ الرمز من بطاقة الطالب في التطبيق.": {
+    "en": "No student found with this code — copy the code from their card in the app.",
+    "fr": "Aucun élève trouvé avec ce code — copiez le code depuis sa carte dans l’application."
+  },
+  "تم التحقق من {0} ({1}) — راجع معلومات التلميذ ثم أرسل طلب الانضمام إلى المركز.": {
+    "en": "Verified {0} ({1}) — review their details, then send the centre join request.",
+    "fr": "Identité vérifiée : {0} ({1}) — vérifiez ses informations, puis envoyez la demande d’adhésion au centre."
+  },
+  "لم يتم إعداد مركز للمعلم.": {
+    "en": "No centre configured for this teacher.",
+    "fr": "Aucun centre configuré pour cet enseignant."
+  },
+  "تم إرسال طلب الانضمام إلى {0}. سيصل إشعار إلى تطبيق التلميذ للموافقة أو الرفض.": {
+    "en": "Join request sent to {0}. The student will receive a notification to accept or decline.",
+    "fr": "Demande d’adhésion envoyée à {0}. L’élève recevra une notification pour l’accepter ou la refuser."
+  },
+  "لا توجد بيانات تلاميذ لتجربة QR حالياً.": {
+    "en": "No students available for the QR demo.",
+    "fr": "Aucun élève disponible pour la démonstration QR."
+  },
+  "رمز تجريبي: {0} ({1}) — راجع المعلومات ثم أرسل طلب الانضمام.": {
+    "en": "Demo code: {0} ({1}) — review the details, then send the join request.",
+    "fr": "Code de démonstration : {0} ({1}) — vérifiez les informations, puis envoyez la demande d’adhésion."
+  },
+  "المرافقة والمتابعة": {
+    "en": "Guidance and support",
+    "fr": "Accompagnement et suivi"
+  },
+  "فعّل الوصول، تابع الاشتراكات، وخلي كل تلميذ مرتبط بمساره.": {
+    "en": "Activate access, track subscriptions and keep every student on their learning path.",
+    "fr": "Activez l’accès, suivez les abonnements et accompagnez chaque élève dans son parcours."
+  },
+  "إغلاق الربط": {
+    "en": "Close linking form",
+    "fr": "Fermer le formulaire de rattachement"
+  },
+  "ربط تلميذ بالمركز": {
+    "en": "Link a student to the centre",
+    "fr": "Rattacher un élève au centre"
+  },
+  "تجربة QR": {
+    "en": "Try QR demo",
+    "fr": "Tester le QR"
+  },
+  "المتصفح ما سمحش بقراءة الحافظة. لصق الرمز مباشرة في الخانة.": {
+    "en": "Your browser blocked clipboard access. Paste the code directly into the field.",
+    "fr": "Le navigateur a bloqué l’accès au presse-papiers. Collez le code directement dans le champ."
+  },
+  "لصق": {
+    "en": "Paste",
+    "fr": "Coller"
+  },
+  "تحقق": {
+    "en": "Verify",
+    "fr": "Vérifier"
+  },
+  "تجربة رمز من بيانات العرض": {
+    "en": "Try a code from the demo data",
+    "fr": "Tester un code des données de démonstration"
+  },
+  "المركز: {0}": {
+    "en": "Centre: {0}",
+    "fr": "Centre : {0}"
+  },
+  "طلب الانضمام ينتظر موافقة التلميذ في التطبيق.": {
+    "en": "The join request awaits student approval in the app.",
+    "fr": "La demande d’adhésion attend l’accord de l’élève dans l’application."
+  },
+  "إرسال الطلب لا يفعّل الاشتراكات تلقائياً؛ تبقى موافقة التلميذ مطلوبة.": {
+    "en": "Sending a request does not activate subscriptions; the student must still approve it.",
+    "fr": "L’envoi de la demande n’active pas les abonnements ; l’accord de l’élève reste nécessaire."
+  },
+  "إرسال طلب انضمام": {
+    "en": "Send join request",
+    "fr": "Envoyer une demande d’adhésion"
+  },
+  "في انتظار موافقة التلميذ": {
+    "en": "Awaiting student approval",
+    "fr": "En attente de l’accord de l’élève"
+  },
+  "تلاميذ مسجّلون": {
+    "en": "Enrolled students",
+    "fr": "Élèves inscrits"
+  },
+  "وصول نشط": {
+    "en": "Active access",
+    "fr": "Accès actif"
+  },
+  "لا تلاميذ بهذه الحالة": {
+    "en": "No students with this status",
+    "fr": "Aucun élève avec ce statut"
+  },
+  "لا تلاميذ بعد": {
+    "en": "No students yet",
+    "fr": "Aucun élève pour le moment"
+  },
+  "غيّر التصفية لعرض تلاميذ آخرين.": {
+    "en": "Change the filter to see other students.",
+    "fr": "Modifiez le filtre pour afficher d’autres élèves."
+  },
+  "لم يسجّل أي تلميذ في التطبيق بعد — سيظهر هنا تلقائياً بمجرد أن يُنشئ حساباً ويزور المركز.": {
+    "en": "No students have registered yet — they will appear here after creating an account and visiting the centre.",
+    "fr": "Aucun élève inscrit pour le moment — ils apparaîtront ici après avoir créé un compte et visité le centre."
+  },
+  "تلاميذ المركز": {
+    "en": "Centre students",
+    "fr": "Élèves du centre"
+  },
+  "بحث بالاسم أو الرمز…": {
+    "en": "Search by name or code…",
+    "fr": "Rechercher par nom ou code…"
+  },
+  "تصفية حسب حالة الوصول": {
+    "en": "Filter by access status",
+    "fr": "Filtrer par statut d’accès"
+  },
+  "ربط تلميذ": {
+    "en": "Link student",
+    "fr": "Rattacher un élève"
+  },
+  "عرض كل الحالات": {
+    "en": "Show all statuses",
+    "fr": "Afficher tous les statuts"
+  },
+  "أدخل رابطاً كاملاً يبدأ بـ http:// أو https://.": {
+    "en": "Enter a full URL starting with http:// or https://.",
+    "fr": "Saisissez une adresse complète commençant par http:// ou https://."
+  },
+  "تم نشر التحديثات لتطبيق التلميذ": {
+    "en": "Updates published to the student app",
+    "fr": "Mises à jour publiées vers l’application élève"
+  },
+  "تم جلب أسئلة التلاميذ وتقدّمهم": {
+    "en": "Student questions and progress fetched",
+    "fr": "Questions et progression des élèves récupérées"
+  },
+  "تعذّر الاتصال بخادم المركز. تحقق من الرابط وتشغيل الخادم، ثم حاول مجدداً.": {
+    "en": "Could not connect to the centre server. Check the URL and that the server is running, then try again.",
+    "fr": "Impossible de contacter le serveur du centre. Vérifiez l’adresse et que le serveur fonctionne, puis réessayez."
+  },
+  "انتهت مهلة الاتصال. تحقق من الشبكة وحاول مجدداً.": {
+    "en": "Connection timed out. Check your network and try again.",
+    "fr": "Le délai de connexion a expiré. Vérifiez votre réseau et réessayez."
+  },
+  "تعذّرت المزامنة. حاول مجدداً.": {
+    "en": "Sync failed. Try again.",
+    "fr": "La synchronisation a échoué. Réessayez."
+  },
+  "من مساحتك إلى تطبيق التلميذ": {
+    "en": "From your workspace to the student app",
+    "fr": "De votre espace à l’application élève"
+  },
+  "خلي الدروس والتفعيل والأجوبة محدّثة، واستقبل أسئلة التلاميذ ونتائجهم.": {
+    "en": "Keep lessons, access and answers up to date, and receive student questions and results.",
+    "fr": "Gardez les leçons, accès et réponses à jour, et recevez les questions et résultats des élèves."
+  },
+  "تلاميذ": {
+    "en": "students",
+    "fr": "élèves"
+  },
+  "تطبيق التلميذ": {
+    "en": "Student app",
+    "fr": "Application élève"
+  },
+  "دروس، أسئلة، تقدّم ونتائج": {
+    "en": "Lessons, questions, progress and results",
+    "fr": "Leçons, questions, progression et résultats"
+  },
+  "انشر ما حضّرته": {
+    "en": "Publish your work",
+    "fr": "Publiez votre travail"
+  },
+  "الدروس، الصور المصغّرة، الكويز، تفعيل الاشتراكات وردودك على الأسئلة كيمشيو لخادم المركز.": {
+    "en": "Lessons, thumbnails, quizzes, subscriptions and your answers are sent to the centre server.",
+    "fr": "Les leçons, miniatures, quiz, abonnements et vos réponses sont envoyés au serveur du centre."
+  },
+  "الدروس المنشورة ومعلومات الدورة": {
+    "en": "Published lessons and course information",
+    "fr": "Leçons publiées et informations du cours"
+  },
+  "إعدادات التفعيل والاشتراك": {
+    "en": "Access and subscription settings",
+    "fr": "Paramètres d’accès et d’abonnement"
+  },
+  "أجوبة الأستاذ على الأسئلة": {
+    "en": "Teacher answers to questions",
+    "fr": "Réponses de l’enseignant aux questions"
+  },
+  "جارٍ نشر التحديثات…": {
+    "en": "Publishing updates…",
+    "fr": "Publication des mises à jour…"
+  },
+  "نشر التحديثات للتطبيق": {
+    "en": "Publish updates to app",
+    "fr": "Publier les mises à jour vers l’application"
+  },
+  "استقبل آخر المستجدات": {
+    "en": "Get the latest updates",
+    "fr": "Récupérez les nouveautés"
+  },
+  "اجلب الأسئلة، التقدّم ومحاولات الاختبار اللي زامنها التلميذ من تطبيقه، وتابعها من مساحتك.": {
+    "en": "Fetch questions, progress and quiz attempts synced by students and follow them from your workspace.",
+    "fr": "Récupérez les questions, la progression et les tentatives de quiz synchronisées par les élèves, et suivez-les depuis votre espace."
+  },
+  "حسابات وطلبات التلاميذ الجديدة": {
+    "en": "New student accounts and requests",
+    "fr": "Nouveaux comptes et demandes d’élèves"
+  },
+  "الأسئلة وتقدّم مشاهدة الدروس": {
+    "en": "Questions and lesson playback progress",
+    "fr": "Questions et progression de lecture des leçons"
+  },
+  "الاختبارات المكتملة ونتائجها": {
+    "en": "Completed quizzes and results",
+    "fr": "Quiz terminés et résultats"
+  },
+  "جارٍ جلب التحديثات…": {
+    "en": "Fetching updates…",
+    "fr": "Récupération des mises à jour…"
+  },
+  "جلب تحديثات التلاميذ": {
+    "en": "Fetch student updates",
+    "fr": "Récupérer les mises à jour des élèves"
+  },
+  "الجلب يعوّض النسخة المحلية بنسخة الخادم كاملة. انشر تعديلاتك أولاً إذا أردت الاحتفاظ بها.": {
+    "en": "Fetching replaces local data with the full server copy. Publish your changes first to keep them.",
+    "fr": "La récupération remplace les données locales par la copie complète du serveur. Publiez d’abord vos modifications pour les conserver."
+  },
+  "تحقق من الرابط، ومن تشغيل خادم العرض بالأمر npm run demo.": {
+    "en": "Check the URL and start the demo server with npm run demo.",
+    "fr": "Vérifiez l’adresse et démarrez le serveur de démonstration avec npm run demo."
+  },
+  "آخر مزامنة:": {
+    "en": "Last sync:",
+    "fr": "Dernière synchronisation :"
+  },
+  "· في هذه الجلسة": {
+    "en": "· this session",
+    "fr": "· cette session"
+  },
+  "رابط المركز": {
+    "en": "Centre URL",
+    "fr": "Adresse du centre"
+  },
+  "إعداد الربط": {
+    "en": "Connection settings",
+    "fr": "Paramètres de connexion"
+  },
+  "رابط خادم العرض التجريبي": {
+    "en": "Demo server URL",
+    "fr": "Adresse du serveur de démonstration"
+  },
+  "يُحفظ رابط الخادم عند النشر أو الجلب. يُستعمل أصل الرابط دون مسار إضافي.": {
+    "en": "The server URL is saved when publishing or fetching. Only its origin is used, without extra paths.",
+    "fr": "L’adresse du serveur est enregistrée à la publication ou à la récupération. Seule son origine est utilisée, sans chemin supplémentaire."
+  },
+  "استعمل نفس الرابط في تطبيق التلميذ. على الهاتف، دخل عنوان IP ديال الحاسوب، وخليهم في نفس الشبكة.": {
+    "en": "Use the same URL in the student app. On a phone, enter the computer’s IP address and use the same network.",
+    "fr": "Utilisez la même adresse dans l’application élève. Sur téléphone, saisissez l’adresse IP de l’ordinateur et utilisez le même réseau."
+  },
+  "احفظ المحتوى، ثم اضغط «نشر التحديثات للتطبيق».": {
+    "en": "Save content, then click “Publish updates to app”.",
+    "fr": "Enregistrez le contenu, puis cliquez sur « Publier les mises à jour vers l’application »."
+  },
+  "التلميذ يفتح «مزامنة المركز» في ملفه الشخصي.": {
+    "en": "The student opens “Centre sync” in their profile.",
+    "fr": "L’élève ouvre « Synchronisation du centre » dans son profil."
+  },
+  "اجلب مستجداته، جاوب، ثم انشر الأجوبة.": {
+    "en": "Fetch updates, reply, then publish your answers.",
+    "fr": "Récupérez les mises à jour, répondez, puis publiez vos réponses."
+  },
+  "نسخة تجريبية محلية بالمزامنة اليدوية. الملفات والبيانات محفوظة على حاسوب الخادم؛ الربط ماشي خدمة cloud ديال الإنتاج.": {
+    "en": "Local demo with manual sync. Files and data are stored on the server computer; this is not a production cloud service.",
+    "fr": "Démonstration locale avec synchronisation manuelle. Les fichiers et données sont sur l’ordinateur serveur ; il ne s’agit pas d’un service cloud de production."
+  },
+  "جلب نسخة الخادم؟": {
+    "en": "Fetch server copy?",
+    "fr": "Récupérer la copie du serveur ?"
+  },
+  "سيتم تعويض بيانات هذه المساحة بنسخة الخادم كاملة. التعديلات المحلية التي لم تنشرها قد تضيع. انشرها أولاً إذا أردت الاحتفاظ بها.": {
+    "en": "This workspace will be replaced with the full server copy. Unpublished local changes may be lost. Publish them first to keep them.",
+    "fr": "Cet espace sera remplacé par la copie complète du serveur. Les modifications locales non publiées risquent d’être perdues. Publiez-les d’abord pour les conserver."
+  },
+  "جلب نسخة الخادم": {
+    "en": "Fetch server copy",
+    "fr": "Récupérer la copie du serveur"
+  },
+  "الدورة غير موجودة: {0}": {
+    "en": "Course not found: {0}",
+    "fr": "Cours introuvable : {0}"
+  },
+  "الفصل غير موجود": {
+    "en": "Chapter not found",
+    "fr": "Chapitre introuvable"
+  },
+  "الدورة الأولى": {
+    "en": "First term",
+    "fr": "Premier semestre"
+  },
+  "الدورة الثانية": {
+    "en": "Second term",
+    "fr": "Deuxième semestre"
+  },
+  "تم إنشاء دورة «{0}»": {
+    "en": "Created course “{0}”",
+    "fr": "Cours « {0} » créé"
+  },
+  "تم نشر دورة «{0}»": {
+    "en": "Published course “{0}”",
+    "fr": "Cours « {0} » publié"
+  },
+  "تم إيقاف نشر دورة «{0}»": {
+    "en": "Unpublished course “{0}”",
+    "fr": "Cours « {0} » dépublié"
+  },
+  "تم حذف دورة «{0}»": {
+    "en": "Deleted course “{0}”",
+    "fr": "Cours « {0} » supprimé"
+  },
+  "الدورة بلا دورات دراسية": {
+    "en": "This course has no school terms",
+    "fr": "Ce cours n’a pas de semestres"
+  },
+  "تمت إضافة درس «{0}» إلى {1}": {
+    "en": "Added lesson “{0}” to {1}",
+    "fr": "Leçon « {0} » ajoutée à {1}"
+  },
+  "الدرس غير موجود": {
+    "en": "Lesson not found",
+    "fr": "Leçon introuvable"
+  },
+  "تم نشر الدرس «{0}»": {
+    "en": "Published lesson “{0}”",
+    "fr": "Leçon « {0} » publiée"
+  },
+  "التلميذ غير موجود": {
+    "en": "Student not found",
+    "fr": "Élève introuvable"
+  },
+  "تم تخصيص اشتراك «{0}» إلى {1}": {
+    "en": "Assigned subscription “{0}” to {1}",
+    "fr": "Abonnement « {0} » attribué à {1}"
+  },
+  "تم تفعيل وصول": {
+    "en": "Access activated",
+    "fr": "Accès activé"
+  },
+  "تم إيقاف وصول": {
+    "en": "Access suspended",
+    "fr": "Accès suspendu"
+  },
+  "تم إرجاع الطلب": {
+    "en": "Request returned",
+    "fr": "Demande renvoyée"
+  },
+  "{0} «{1}» في دورة {2}": {
+    "en": "{0} “{1}” in course {2}",
+    "fr": "{0} « {1} » dans le cours {2}"
+  },
+  "تم تجديد اشتراك «{0}» في دورة {1}": {
+    "en": "Renewed subscription “{0}” in course {1}",
+    "fr": "Abonnement « {0} » renouvelé dans le cours {1}"
+  },
+  "ط": {
+    "en": "S",
+    "fr": "É"
+  },
+  "تمت إضافة التلميذ «{0}»{1}": {
+    "en": "Added student “{0}”{1}",
+    "fr": "Élève « {0} » ajouté{1}"
+  },
+  "مركزك": {
+    "en": "Your centre",
+    "fr": "Votre centre"
+  },
+  "تم إرسال طلب انضمام إلى مركز {0} للتلميذ «{1}»": {
+    "en": "Sent a request for student “{1}” to join centre {0}",
+    "fr": "Demande d’adhésion de l’élève « {1} » envoyée au centre {0}"
+  },
+  "اللغة": {
+    "en": "Language",
+    "fr": "Langue"
+  },
+  "أدخل تاريخاً صحيحاً": {
+    "en": "Enter a valid date",
+    "fr": "Saisissez une date valide"
+  },
+  "المدة من شهر إلى 24 شهراً": {
+    "en": "Duration must be between 1 and 24 months",
+    "fr": "La durée doit être comprise entre 1 et 24 mois"
+  },
+  "الدورة غير موجودة في هذا المقرر": {
+    "en": "This term does not exist in this course",
+    "fr": "Ce semestre n’existe pas dans ce cours"
+  },
+  "تاريخ النهاية يجب أن يكون بعد البداية": {
+    "en": "The end date must be after the start date",
+    "fr": "La date de fin doit être postérieure à la date de début"
+  },
+  "أضاف «{0}» درسين جديدين في «{1}»": {
+    "en": "“{0}” added two lessons to “{1}”",
+    "fr": "« {0} » a ajouté deux leçons à « {1} »"
+  },
+  "تم تحديث دورة «{0}»": {
+    "en": "Updated course “{0}”",
+    "fr": "Cours « {0} » mis à jour"
+  }
+}

@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useEffect, useState } from 'react';
 import { useUnsavedChanges } from './useUnsavedChanges';
 import {
@@ -22,6 +24,7 @@ export function CourseInfo({
   courseId: string;
   onDirty: (value: boolean) => void;
 }) {
+  useI18n();
   const { state } = useStore();
   const dispatch = useAction();
   const course = state.courses.find((c) => c.id === courseId);
@@ -56,12 +59,15 @@ export function CourseInfo({
     <div className="card max-w-2xl p-5">
       <div className="space-y-4">
         <Field
-          label="عنوان الدورة"
+          label={t('عنوان الدورة')}
           error={
-            touched && invalid ? 'اكتب عنواناً من 4 أحرف على الأقل.' : undefined
+            touched && invalid
+              ? t('اكتب عنواناً من 4 أحرف على الأقل.')
+              : undefined
           }
         >
           <input
+            dir="auto"
             className="input"
             value={form.title}
             onChange={(event) =>
@@ -71,7 +77,7 @@ export function CourseInfo({
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="المادة">
+          <Field label={t('المادة')}>
             <select
               className="input"
               value={form.subject}
@@ -80,11 +86,13 @@ export function CourseInfo({
               }
             >
               {SUBJECTS.map((item) => (
-                <option key={item}>{item}</option>
+                <option key={item} value={item}>
+                  {t(item)}
+                </option>
               ))}
             </select>
           </Field>
-          <Field label="المستوى">
+          <Field label={t('المستوى')}>
             <select
               className="input"
               value={form.level}
@@ -93,14 +101,17 @@ export function CourseInfo({
               }
             >
               {LEVELS.map((item) => (
-                <option key={item}>{item}</option>
+                <option key={item} value={item}>
+                  {t(item)}
+                </option>
               ))}
             </select>
           </Field>
         </div>
 
-        <Field label="وصف مختصر">
+        <Field label={t('وصف مختصر')}>
           <textarea
+            dir="auto"
             className="textarea"
             value={form.summary}
             maxLength={240}
@@ -111,7 +122,7 @@ export function CourseInfo({
         </Field>
 
         <div>
-          <span className="label">غلاف الدورة</span>
+          <span className="label">{t('غلاف الدورة')}</span>
           <div className="cover-choice-grid">
             {Object.keys(coverGradients).map((key) => {
               const selected = form.cover === key;
@@ -119,7 +130,7 @@ export function CourseInfo({
                 <button
                   key={key}
                   type="button"
-                  aria-label={`غلاف ${key}`}
+                  aria-label={t('غلاف {0}', [key])}
                   aria-pressed={selected}
                   onClick={() =>
                     setForm({ ...form, cover: key as NewCourse['cover'] })
@@ -145,11 +156,12 @@ export function CourseInfo({
             className="h-16 w-28"
           >
             <span className="mt-auto text-xs font-bold text-white">
-              <span className="num">{countLessons(course)}</span> درس
+              <span className="num">{countLessons(course)}</span>
+              {t(' درس')}
             </span>
           </CourseCover>
           <div className="text-xs text-muted">
-            الغلاف يظهر لطالب في قائمة الدورات داخل التطبيق.
+            {t('الغلاف يظهر لطالب في قائمة الدورات داخل التطبيق.')}
           </div>
         </div>
 
@@ -169,7 +181,7 @@ export function CourseInfo({
               setTouched(false);
             }}
           >
-            تراجع
+            {t('تراجع')}
           </button>
           <button
             type="button"
@@ -191,7 +203,7 @@ export function CourseInfo({
                     },
                   },
                 },
-                'تم حفظ معلومات الدورة',
+                t('تم حفظ معلومات الدورة'),
               );
               setForm({
                 ...form,
@@ -201,16 +213,16 @@ export function CourseInfo({
               setTouched(false);
             }}
           >
-            حفظ التعديلات
+            {t('حفظ التعديلات')}
           </button>
         </div>
       </div>
       <p className="mt-4 text-xs text-faint">
-        مدة الدورة الحالية:{' '}
+        {t('مدة الدورة الحالية:')}{' '}
         <span className="num">
           {Math.round(courseDurationSec(course) / 60)}
         </span>{' '}
-        دقيقة.
+        {t('دقيقة.')}
       </p>
     </div>
   );

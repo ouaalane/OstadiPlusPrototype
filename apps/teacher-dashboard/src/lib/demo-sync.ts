@@ -1,3 +1,4 @@
+import { translate as t } from '@/i18n/locale';
 import type { DemoState } from '@ostadiplus/shared';
 const KEY = 'ostadiplus.demo.endpoint';
 export function demoEndpoint() {
@@ -9,7 +10,7 @@ export function demoEndpoint() {
 export function saveDemoEndpoint(value: string) {
   const url = new URL(value.trim());
   if (!['http:', 'https:'].includes(url.protocol))
-    throw new Error('رابط الخادم غير صالح');
+    throw new Error(t('رابط الخادم غير صالح'));
   localStorage.setItem(KEY, url.origin);
   return url.origin;
 }
@@ -18,7 +19,7 @@ export function demoMediaUrl(file: string) {
 }
 async function responseJson(response: Response) {
   if (!response.ok)
-    throw new Error(`تعذّر الاتصال بالخادم (${response.status})`);
+    throw new Error(t('تعذّر الاتصال بالخادم ({0})', [response.status]));
   return response.json();
 }
 async function fetchState(path: string, init?: RequestInit) {
@@ -54,7 +55,7 @@ export async function uploadDemo(
   options: UploadOptions = {},
 ): Promise<{ file: string }> {
   if (file.size > 100 * 1024 * 1024)
-    throw new Error('الحد الأقصى للملف 100 MB');
+    throw new Error(t('الحد الأقصى للملف 100 MB'));
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const cleanup = () => options.signal?.removeEventListener('abort', abort);
@@ -78,27 +79,31 @@ export async function uploadDemo(
       cleanup();
       if (xhr.status < 200 || xhr.status >= 300) {
         reject(
-          new Error(`تعذّر رفع الملف (${xhr.status}). تحقق من خادم المركز.`),
+          new Error(
+            t('تعذّر رفع الملف ({0}). تحقق من خادم المركز.', [xhr.status]),
+          ),
         );
         return;
       }
       try {
         resolve(JSON.parse(xhr.responseText));
       } catch {
-        reject(new Error('جواب الخادم غير صالح'));
+        reject(new Error(t('جواب الخادم غير صالح')));
       }
     };
     xhr.onerror = () => {
       cleanup();
       reject(
         new Error(
-          'تعذّر الاتصال بخادم المركز. تحقق من الرابط في صفحة النشر والمزامنة.',
+          t(
+            'تعذّر الاتصال بخادم المركز. تحقق من الرابط في صفحة النشر والمزامنة.',
+          ),
         ),
       );
     };
     xhr.ontimeout = () => {
       cleanup();
-      reject(new Error('انتهت مهلة الرفع. تحقق من الاتصال وحاول مجدداً.'));
+      reject(new Error(t('انتهت مهلة الرفع. تحقق من الاتصال وحاول مجدداً.')));
     };
     xhr.onabort = () => {
       cleanup();

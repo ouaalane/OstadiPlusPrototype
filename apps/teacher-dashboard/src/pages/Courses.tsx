@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, relativeTime } from '@/i18n/locale';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -17,7 +19,6 @@ import {
   countLessons,
   courseDurationSec,
   coverGradients,
-  relativeTime,
 } from '@ostadiplus/shared';
 import {
   CourseCover,
@@ -38,6 +39,7 @@ const SUBJECTS = ['الرياضيات', 'الفيزياء والكيمياء', '
 const COVERS = Object.keys(coverGradients);
 type Filter = 'all' | 'published' | 'draft';
 export default function Courses() {
+  const { lang } = useI18n();
   const { state } = useStore();
   const dispatch = useAction();
   const navigate = useNavigate();
@@ -61,36 +63,39 @@ export default function Courses() {
             .toLowerCase()
             .includes(query.trim().toLowerCase()),
       ),
-    [state.courses, filter, query],
+    [state.courses, filter, query, lang],
   );
   return (
     <>
       <div className="dashboard-heading">
         <div>
-          <p className="section-kicker">صناعة المحتوى</p>
-          <h1 className="workspace-title">دوراتك التعليمية</h1>
+          <p className="section-kicker">{t('صناعة المحتوى')}</p>
+          <h1 className="workspace-title">{t('دوراتك التعليمية')}</h1>
           <p className="workspace-subtitle">
-            من أول فكرة إلى درس منشور. رتّب محتواك وصمّم رحلة تعلّم متكاملة.
+            {t(
+              'من أول فكرة إلى درس منشور. رتّب محتواك وصمّم رحلة تعلّم متكاملة.',
+            )}
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setCreating(true)}>
           <Plus size={17} />
-          إنشاء دورة
+          {t('إنشاء دورة')}
         </button>
       </div>
-      <div className="course-stat-strip" aria-label="ملخص الدورات">
+      <div className="course-stat-strip" aria-label={t('ملخص الدورات')}>
         <div>
           <BookOpen size={18} aria-hidden="true" />
-          <strong className="num">{state.courses.length}</strong> دورة تعليمية
+          <strong className="num">{state.courses.length}</strong>
+          {t(' دورة تعليمية')}
         </div>
         <div>
-          <span className="status-label">منشورة</span>
+          <span className="status-label">{t('منشورة')}</span>
           <strong className="num">
             {state.courses.filter((c) => c.status === 'published').length}
           </strong>
         </div>
         <div>
-          <span className="status-label is-draft">مسودة</span>
+          <span className="status-label is-draft">{t('مسودة')}</span>
           <strong className="num">
             {state.courses.filter((c) => c.status === 'draft').length}
           </strong>
@@ -101,13 +106,13 @@ export default function Courses() {
           <div
             className="workspace-tabs border-0"
             role="tablist"
-            aria-label="حالة الدورات"
+            aria-label={t('حالة الدورات')}
           >
             {(
               [
-                ['all', 'كل الدورات'],
-                ['published', 'منشورة'],
-                ['draft', 'مسودات'],
+                ['all', t('كل الدورات')],
+                ['published', t('منشورة')],
+                ['draft', t('مسودات')],
               ] as [Filter, string][]
             ).map(([key, label]) => (
               <button
@@ -117,7 +122,7 @@ export default function Courses() {
                 aria-selected={filter === key}
                 onClick={() => setFilter(key)}
               >
-                {label}
+                {t(label)}
                 <span className="num ms-2 rounded bg-brand-soft/60 px-1.5 py-0.5 text-[9px] text-muted">
                   {
                     state.courses.filter(
@@ -135,8 +140,9 @@ export default function Courses() {
                 className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
               />
               <input
-                aria-label="بحث في الدورات"
-                placeholder="ابحث في دوراتك…"
+                dir="auto"
+                aria-label={t('بحث في الدورات')}
+                placeholder={t('ابحث في دوراتك…')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="workspace-search max-w-56"
@@ -146,7 +152,7 @@ export default function Courses() {
               <button
                 className={`rounded p-1.5 ${view === 'list' ? 'bg-brand-soft text-brand' : 'text-muted'}`}
                 onClick={() => setView('list')}
-                aria-label="عرض قائمة"
+                aria-label={t('عرض قائمة')}
                 aria-pressed={view === 'list'}
               >
                 <List size={16} />
@@ -154,7 +160,7 @@ export default function Courses() {
               <button
                 className={`rounded p-1.5 ${view === 'grid' ? 'bg-brand-soft text-brand' : 'text-muted'}`}
                 onClick={() => setView('grid')}
-                aria-label="عرض بطاقات"
+                aria-label={t('عرض بطاقات')}
                 aria-pressed={view === 'grid'}
               >
                 <LayoutGrid size={16} />
@@ -164,17 +170,17 @@ export default function Courses() {
         </div>
         {courses.length ? (
           view === 'list' ? (
-            <TableScroll label="الدورات التعليمية">
+            <TableScroll label={t('الدورات التعليمية')}>
               <table className="workspace-table min-w-[780px]">
                 <thead>
                   <tr>
-                    <th>الدورة التعليمية</th>
-                    <th>المنهج</th>
-                    <th>التلاميذ</th>
-                    <th>الحالة</th>
-                    <th>آخر تحديث</th>
+                    <th>{t('الدورة التعليمية')}</th>
+                    <th>{t('المنهج')}</th>
+                    <th>{t('التلاميذ')}</th>
+                    <th>{t('الحالة')}</th>
+                    <th>{t('آخر تحديث')}</th>
                     <th>
-                      <span className="sr-only">الإدارة</span>
+                      <span className="sr-only">{t('الإدارة')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -194,35 +200,42 @@ export default function Courses() {
                           />
                           <span>
                             <span className="block max-w-72 break-words font-bold">
-                              {c.title}
+                              <bdi>{c.title}</bdi>
                             </span>
                             <span className="mt-1 block text-[10px] text-muted">
                               {c.level}
                             </span>
                             <span className="mt-2 inline-flex items-center gap-1 text-[9px] text-muted">
                               <Clock3 size={11} />
-                              {Math.round(courseDurationSec(c) / 60)} دقيقة
+                              {Math.round(courseDurationSec(c) / 60)}
+                              {t(' دقيقة')}
                             </span>
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <p>{countLessons(c)} دروس</p>
+                        <p>
+                          {countLessons(c)}
+                          {t(' دروس')}
+                        </p>
                         <p className="mt-1 text-[10px] text-muted">
-                          {countChapters(c)} فصول
+                          {countChapters(c)}
+                          {t(' فصول')}
                         </p>
                       </td>
                       <td>
                         <span className="num">
                           {activeStudentCount(state, c.id)}
                         </span>
-                        <span className="ms-1 text-[10px] text-muted">نشط</span>
+                        <span className="ms-1 text-[10px] text-muted">
+                          {t('نشط')}
+                        </span>
                       </td>
                       <td>
                         <span
                           className={`status-label ${c.status === 'draft' ? 'is-draft' : ''}`}
                         >
-                          {c.status === 'published' ? 'منشورة' : 'مسودة'}
+                          {c.status === 'published' ? t('منشورة') : t('مسودة')}
                         </span>
                       </td>
                       <td className="text-[10px] text-muted">
@@ -233,7 +246,7 @@ export default function Courses() {
                           to={`/courses/${c.id}`}
                           className="btn btn-outline btn-sm"
                         >
-                          إدارة
+                          {t('إدارة')}
                           <ArrowUpLeft size={14} />
                         </Link>
                       </td>
@@ -264,20 +277,22 @@ export default function Courses() {
                     <span
                       className={`status-label ${c.status === 'draft' ? 'is-draft' : ''}`}
                     >
-                      {c.status === 'published' ? 'منشورة' : 'مسودة'}
+                      {c.status === 'published' ? t('منشورة') : t('مسودة')}
                     </span>
                     <h2 className="break-words text-base font-bold">
-                      {c.title}
+                      <bdi>{c.title}</bdi>
                     </h2>
                     <p className="text-[10px] text-muted">{c.level}</p>
                     <div className="flex items-center justify-between border-t border-line pt-3 text-[10px] text-muted">
                       <span>
                         <Layers size={12} className="me-1 inline" />
-                        {countLessons(c)} درس
+                        {countLessons(c)}
+                        {t(' درس')}
                       </span>
                       <span>
                         <Users size={12} className="me-1 inline" />
-                        {activeStudentCount(state, c.id)} تلميذ
+                        {activeStudentCount(state, c.id)}
+                        {t(' تلميذ')}
                       </span>
                       <ArrowUpLeft size={15} />
                     </div>
@@ -292,13 +307,17 @@ export default function Courses() {
               icon={<BookOpen size={25} />}
               title={
                 state.courses.length
-                  ? 'لا توجد دورات مطابقة'
-                  : 'ابدأ بأول دورة تعليمية'
+                  ? t('لا توجد دورات مطابقة')
+                  : t('ابدأ بأول دورة تعليمية')
               }
               description={
                 state.courses.length
-                  ? 'لا توجد نتائج تطابق البحث والتصفية الحالية. يمكنك إعادة عرض كل دوراتك.'
-                  : 'أنشئ دورتك الأولى، ثم أضف الفصول والدروس عندما تكون جاهزاً.'
+                  ? t(
+                      'لا توجد نتائج تطابق البحث والتصفية الحالية. يمكنك إعادة عرض كل دوراتك.',
+                    )
+                  : t(
+                      'أنشئ دورتك الأولى، ثم أضف الفصول والدروس عندما تكون جاهزاً.',
+                    )
               }
               action={
                 <button
@@ -312,7 +331,9 @@ export default function Courses() {
                     }
                   }}
                 >
-                  {state.courses.length ? 'مسح البحث والتصفية' : 'إنشاء دورة'}
+                  {state.courses.length
+                    ? t('مسح البحث والتصفية')
+                    : t('إنشاء دورة')}
                 </button>
               }
             />
@@ -320,9 +341,13 @@ export default function Courses() {
         )}
         <footer className="flex items-center justify-between border-t border-line px-5 py-4 text-[10px] text-muted">
           <span>
-            عرض {courses.length} من {state.courses.length} دورات
+            {t('عرض ')}
+            {courses.length}
+            {t(' من ')}
+            {state.courses.length}
+            {t(' دورات')}
           </span>
-          <span>المحتوى محفوظ في مساحتك</span>
+          <span>{t('المحتوى محفوظ في مساحتك')}</span>
         </footer>
       </section>
       <CreateCourseModal
@@ -331,7 +356,7 @@ export default function Courses() {
         onCreate={(payload) => {
           dispatch(
             { type: 'course/create', payload },
-            'تم إنشاء الدورة كمسودة',
+            t('تم إنشاء الدورة كمسودة'),
           );
           setCreating(false);
           navigate(`/courses/${payload.id}`);
@@ -350,6 +375,7 @@ function CreateCourseModal({
   onClose: () => void;
   onCreate: (payload: NewCourse) => void;
 }) {
+  useI18n();
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState(SUBJECTS[0]);
   const [level, setLevel] = useState(LEVELS[0]);
@@ -374,12 +400,12 @@ function CreateCourseModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="إنشاء دورة جديدة"
-      description="تُحفظ كمسودة حتى تنشرها."
+      title={t('إنشاء دورة جديدة')}
+      description={t('تُحفظ كمسودة حتى تنشرها.')}
       footer={
         <>
           <button type="button" className="btn btn-outline" onClick={onClose}>
-            إلغاء
+            {t('إلغاء')}
           </button>
           <button
             type="button"
@@ -392,71 +418,79 @@ function CreateCourseModal({
                 title: title.trim(),
                 subject,
                 level,
-                summary: summary.trim() || 'لم تُضف بعد وصف هذه الدورة.',
+                summary: summary.trim() || t('لم تُضف بعد وصف هذه الدورة.'),
                 cover: cover as NewCourse['cover'],
               });
             }}
           >
-            إنشاء الدورة
+            {t('إنشاء الدورة')}
           </button>
         </>
       }
     >
       <div className="space-y-4">
         <Field
-          label="عنوان الدورة"
-          hint="مثال: الحساب التفاضلي — مدخل وتطبيقات"
+          label={t('عنوان الدورة')}
+          hint={t('مثال: الحساب التفاضلي — مدخل وتطبيقات')}
           error={
-            touched && invalid ? 'اكتب عنواناً من 4 أحرف على الأقل.' : undefined
+            touched && invalid
+              ? t('اكتب عنواناً من 4 أحرف على الأقل.')
+              : undefined
           }
         >
           <input
+            dir="auto"
             className="input"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="عنوان واضح للتلاميذ"
+            placeholder={t('عنوان واضح للتلاميذ')}
             maxLength={90}
           />
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="المادة">
+          <Field label={t('المادة')}>
             <select
               className="input"
               value={subject}
               onChange={(event) => setSubject(event.target.value)}
             >
               {SUBJECTS.map((item) => (
-                <option key={item}>{item}</option>
+                <option key={item} value={item}>
+                  {t(item)}
+                </option>
               ))}
             </select>
           </Field>
-          <Field label="المستوى">
+          <Field label={t('المستوى')}>
             <select
               className="input"
               value={level}
               onChange={(event) => setLevel(event.target.value)}
             >
               {LEVELS.map((item) => (
-                <option key={item}>{item}</option>
+                <option key={item} value={item}>
+                  {t(item)}
+                </option>
               ))}
             </select>
           </Field>
         </div>
 
-        <Field label="وصف مختصر" hint="يظهر لطالب في صفحة الدورة.">
+        <Field label={t('وصف مختصر')} hint={t('يظهر لطالب في صفحة الدورة.')}>
           <textarea
+            dir="auto"
             className="textarea"
             style={{ minHeight: 90 }}
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
-            placeholder="ماذا سيتعلم التلميذ في هذه الدورة؟"
+            placeholder={t('ماذا سيتعلم التلميذ في هذه الدورة؟')}
             maxLength={240}
           />
         </Field>
 
         <div>
-          <span className="label">غلاف الدورة</span>
+          <span className="label">{t('غلاف الدورة')}</span>
           <div className="cover-choice-grid">
             {COVERS.map((key) => {
               const selected = cover === key;
@@ -464,7 +498,7 @@ function CreateCourseModal({
                 <button
                   key={key}
                   type="button"
-                  aria-label={`غلاف ${key}`}
+                  aria-label={t('غلاف {0}', [key])}
                   aria-pressed={selected}
                   onClick={() => setCover(key)}
                   className="cover-choice"

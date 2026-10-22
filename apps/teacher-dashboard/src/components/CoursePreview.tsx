@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { Clock3, EyeOff, Film, Layers, Users } from 'lucide-react';
 import {
   activeStudentCount,
@@ -21,6 +23,7 @@ export function CoursePreview({
   state: DemoState;
   courseId: string;
 }) {
+  useI18n();
   const course = state.courses.find((c) => c.id === courseId);
   if (!course) return null;
 
@@ -30,12 +33,21 @@ export function CoursePreview({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="card overflow-hidden p-0">
-        <CourseCover cover={course.cover} subject={course.subject} className="h-40">
+        <CourseCover
+          cover={course.cover}
+          subject={course.subject}
+          className="h-40"
+        >
           <div className="mt-auto">
-            <Pill tone={course.status === 'published' ? 'success' : 'warning'} dot>
-              {course.status === 'published' ? 'منشورة' : 'مسودة'}
+            <Pill
+              tone={course.status === 'published' ? 'success' : 'warning'}
+              dot
+            >
+              {course.status === 'published' ? t('منشورة') : t('مسودة')}
             </Pill>
-            <h2 className="mt-2 text-2xl leading-snug text-white">{course.title}</h2>
+            <h2 className="mt-2 text-2xl leading-snug text-white">
+              <bdi>{course.title}</bdi>
+            </h2>
             <p className="mt-1 text-sm text-white/85">{course.level}</p>
           </div>
         </CourseCover>
@@ -46,25 +58,31 @@ export function CoursePreview({
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-y border-line py-3 text-xs text-muted">
             <span className="inline-flex items-center gap-1.5">
               <Layers size={14} />
-              <span className="num">{allChapters(course).length}</span> فصل
+              <span className="num">{allChapters(course).length}</span>
+              {t(' فصل')}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Film size={14} />
-              <span className="num">{lessons}</span> درس
+              <span className="num">{lessons}</span>
+              {t(' درس')}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Clock3 size={14} />
-              <span className="num">{minutes}</span> دقيقة
+              <span className="num">{minutes}</span>
+              {t(' دقيقة')}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Users size={14} />
-              <span className="num">{activeStudentCount(state, course.id)}</span> تلميذ
+              <span className="num">
+                {activeStudentCount(state, course.id)}
+              </span>
+              {t(' تلميذ')}
             </span>
           </div>
 
           {allChapters(course).length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">
-              لم تُضف فصول بعد — أضف فصلاً ثم دروسه لتظهر هنا.
+              {t('لم تُضف فصول بعد — أضف فصلاً ثم دروسه لتظهر هنا.')}
             </p>
           ) : (
             <div className="mt-4 space-y-6">
@@ -72,14 +90,17 @@ export function CoursePreview({
                 <section key={semester.id}>
                   <h2 className="mb-3 flex items-center gap-2 border-b border-line pb-2 text-[13px] font-bold text-brand-dark">
                     <Layers size={14} />
-                    {semester.title}
+                    {t(semester.title)}
                     <span className="text-xs font-normal text-faint">
-                      <span className="num">{semester.chapters.length}</span> فصل
+                      <span className="num">{semester.chapters.length}</span>
+                      {t(' فصل')}
                     </span>
                   </h2>
 
                   {semester.chapters.length === 0 ? (
-                    <p className="text-xs text-faint">لا فصول في هذه الدورة بعد.</p>
+                    <p className="text-xs text-faint">
+                      {t('لا فصول في هذه الدورة بعد.')}
+                    </p>
                   ) : (
                     <ol className="space-y-4">
                       {semester.chapters.map((chapter, ci) => (
@@ -88,14 +109,21 @@ export function CoursePreview({
                             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-soft text-[11px] font-bold text-brand-dark">
                               <span className="num">{ci + 1}</span>
                             </span>
-                            <h3 className="text-sm font-bold text-ink">{chapter.title}</h3>
+                            <h3 className="text-sm font-bold text-ink">
+                              <bdi>{chapter.title}</bdi>
+                            </h3>
                             <span className="text-xs text-faint">
-                              <span className="num">{chapter.lessons.length}</span> دروس
+                              <span className="num">
+                                {chapter.lessons.length}
+                              </span>
+                              {t(' دروس')}
                             </span>
                           </div>
 
                           {chapter.lessons.length === 0 ? (
-                            <p className="ps-8 text-xs text-faint">لا دروس في هذا الفصل بعد.</p>
+                            <p className="ps-8 text-xs text-faint">
+                              {t('لا دروس في هذا الفصل بعد.')}
+                            </p>
                           ) : (
                             <ul className="space-y-2">
                               {chapter.lessons.map((item, li) => (
@@ -114,7 +142,8 @@ export function CoursePreview({
                                     }}
                                   >
                                     {(() => {
-                                      const KindIcon = KIND_META[item.kind].icon;
+                                      const KindIcon =
+                                        KIND_META[item.kind].icon;
                                       return <KindIcon size={15} />;
                                     })()}
                                   </span>
@@ -123,17 +152,18 @@ export function CoursePreview({
                                       {item.title}
                                     </span>
                                     <span className="text-xs text-muted">
-                                      {lessonMeta(item) || KIND_META[item.kind].label}
+                                      {lessonMeta(item) ||
+                                        t(KIND_META[item.kind].label)}
                                       {' · '}
                                       {formatSize(item.sizeMb)}
                                     </span>
                                   </span>
                                   {item.published ? (
-                                    <Pill tone="success">منشور</Pill>
+                                    <Pill tone="success">{t('منشور')}</Pill>
                                   ) : (
                                     <Pill tone="neutral">
                                       <EyeOff size={12} />
-                                      مخفي
+                                      {t('مخفي')}
                                     </Pill>
                                   )}
                                 </li>
@@ -152,7 +182,7 @@ export function CoursePreview({
       </div>
 
       <p className="mt-3 text-center text-xs text-faint">
-        هذه هي الصفحة التي يراها التلميذ في تطبيق Oustadi Plus.
+        {t('هذه هي الصفحة التي يراها التلميذ في تطبيق Oustadi Plus.')}
       </p>
     </div>
   );

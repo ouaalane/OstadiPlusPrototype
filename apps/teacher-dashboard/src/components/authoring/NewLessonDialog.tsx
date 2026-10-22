@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, Film, ListChecks, Type } from 'lucide-react';
@@ -26,6 +28,7 @@ export function NewLessonDialog({
   kind?: LessonKind;
   close: () => void;
 }) {
+  useI18n();
   const { state, dispatch, notify } = useStore();
   const navigate = useNavigate();
   const [selectedCourse, setCourse] = useState(
@@ -62,7 +65,7 @@ export function NewLessonDialog({
         },
       },
     });
-    notify('تم إنشاء مسودة الدرس');
+    notify(t('تم إنشاء مسودة الدرس'));
     close();
     navigate(`/courses/${course.id}?lesson=${id}`);
   }
@@ -70,20 +73,20 @@ export function NewLessonDialog({
     <Modal
       open
       onClose={close}
-      title={initialKind === 'quiz' ? 'اختبار جديد' : 'محتوى جديد'}
-      description="حدّد مكان الدرس ونوعه، ثم أضف المحتوى في المحرّر."
+      title={initialKind === 'quiz' ? t('اختبار جديد') : t('محتوى جديد')}
+      description={t('حدّد مكان الدرس ونوعه، ثم أضف المحتوى في المحرّر.')}
       size="md"
       footer={
         <>
           <button className="btn btn-outline" onClick={close}>
-            إلغاء
+            {t('إلغاء')}
           </button>
           <button
             className="btn btn-primary"
             onClick={create}
             disabled={!course || !target}
           >
-            متابعة إلى المحرّر
+            {t('متابعة إلى المحرّر')}
             <ArrowLeft size={15} />
           </button>
         </>
@@ -91,7 +94,7 @@ export function NewLessonDialog({
     >
       <div className="space-y-5">
         <fieldset>
-          <legend className="mb-3 text-xs font-bold">نوع المحتوى</legend>
+          <legend className="mb-3 text-xs font-bold">{t('نوع المحتوى')}</legend>
           <div className="grid grid-cols-2 gap-3">
             {kinds.map((k) => (
               <button
@@ -102,32 +105,33 @@ export function NewLessonDialog({
                 onClick={() => setKind(k.kind)}
               >
                 <k.icon size={22} strokeWidth={1.5} />
-                <span className="block text-xs font-bold">{k.label}</span>
-                <span className="text-[10px] text-muted">{k.detail}</span>
+                <span className="block text-xs font-bold">{t(k.label)}</span>
+                <span className="text-[10px] text-muted">{t(k.detail)}</span>
               </button>
             ))}
           </div>
         </fieldset>
         <Field
-          label="عنوان الدرس"
+          label={t('عنوان الدرس')}
           error={
             touched && title.trim().length < 2
-              ? 'اكتب عنواناً من حرفين على الأقل.'
+              ? t('اكتب عنواناً من حرفين على الأقل.')
               : undefined
           }
         >
           <input
+            dir="auto"
             required
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="مثلاً: مدخل إلى النهايات"
+            placeholder={t('مثلاً: مدخل إلى النهايات')}
             maxLength={100}
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <label>
-            <span className="label">الدورة</span>
+            <span className="label">{t('الدورة')}</span>
             <select
               className="input"
               value={selectedCourse}
@@ -138,29 +142,31 @@ export function NewLessonDialog({
               }}
             >
               {!state.courses.length ? (
-                <option value="">لا توجد دورات بعد</option>
+                <option value="">{t('لا توجد دورات بعد')}</option>
               ) : null}
               {state.courses.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title}
+                  <bdi>{c.title}</bdi>
                 </option>
               ))}
             </select>
           </label>
           <label>
-            <span className="label">الفصل</span>
+            <span className="label">{t('الفصل')}</span>
             <select
               className="input"
               value={target}
               disabled={!target}
               onChange={(e) => setChapter(e.target.value)}
             >
-              {!target ? <option value="">لا توجد فصول بعد</option> : null}
+              {!target ? (
+                <option value="">{t('لا توجد فصول بعد')}</option>
+              ) : null}
               {course?.semesters.map((s) => (
-                <optgroup key={s.id} label={s.title}>
+                <optgroup key={s.id} label={t(s.title)}>
                   {s.chapters.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.title}
+                      <bdi>{c.title}</bdi>
                     </option>
                   ))}
                 </optgroup>
@@ -172,15 +178,15 @@ export function NewLessonDialog({
           <div className="rounded-lg bg-brand-soft p-4 text-sm text-brand">
             <p>
               {course
-                ? 'أضف فصلاً إلى الدورة أولاً، ثم أضف محتواك.'
-                : 'أنشئ دورة وأضف إليها فصلاً قبل إضافة المحتوى.'}
+                ? t('أضف فصلاً إلى الدورة أولاً، ثم أضف محتواك.')
+                : t('أنشئ دورة وأضف إليها فصلاً قبل إضافة المحتوى.')}
             </p>
             <Link
               className="mt-3 inline-flex font-bold underline underline-offset-4"
               to={course ? `/courses/${course.id}` : '/courses?action=new'}
               onClick={close}
             >
-              {course ? 'فتح الدورة لإضافة فصل' : 'إنشاء دورة'}
+              {course ? t('فتح الدورة لإضافة فصل') : t('إنشاء دورة')}
             </Link>
           </div>
         ) : null}

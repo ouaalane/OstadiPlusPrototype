@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -22,6 +24,7 @@ import { libraryItemByFile } from '@/lib/library';
 import { bundledMediaUrl } from '@/lib/media';
 import { useStore } from '@/store/DemoStore';
 export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
+  const { lang } = useI18n();
   const { state, dispatch, notify } = useStore();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState('');
@@ -64,7 +67,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
             ? r.lesson.kind === 'quiz'
             : ['video', 'pdf', 'text'].includes(r.lesson.kind),
         ),
-    [state.courses, quiz],
+    [state.courses, quiz, lang],
   );
   const rows = all.filter(
     (r) =>
@@ -107,8 +110,12 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
         error: lessonPublishError(r.lesson)!,
       }));
     const message = valid.length
-      ? `تم ${value ? 'نشر' : 'إخفاء'} ${valid.length} من ${targets.length} عناصر. انشر التحديثات لتصل إلى التطبيق.`
-      : 'لم يتم نشر أي عنصر. أكمل المحتوى المطلوب أولاً.';
+      ? t('تم {0} {1} من {2} عناصر. انشر التحديثات لتصل إلى التطبيق.', [
+          value ? 'نشر' : 'إخفاء',
+          valid.length,
+          targets.length,
+        ])
+      : t('لم يتم نشر أي عنصر. أكمل المحتوى المطلوب أولاً.');
     setSelected(new Set(blocked.map((item) => item.id)));
     setPublishFeedback({ message, blocked });
     notify(message, blocked.length ? 'error' : 'success');
@@ -118,34 +125,42 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="section-kicker">
-            {quiz ? 'التقييم والتعلّم' : 'مكتبتك التعليمية'}
+            {quiz ? t('التقييم والتعلّم') : t('مكتبتك التعليمية')}
           </p>
           <h1 className="workspace-title">
-            {quiz ? 'اختبارات تصنع الفهم' : 'كل محتواك، في مكان واحد'}
+            {quiz ? t('اختبارات تصنع الفهم') : t('كل محتواك، في مكان واحد')}
           </h1>
           <p className="workspace-subtitle">
             {quiz
-              ? 'حضّر أسئلة واضحة، اضبط التوقيت، وتابع نتائج تلاميذك.'
-              : 'الفيديوهات، الملخّصات والدروس المكتوبة، منظّمة عبر دوراتك.'}
+              ? t('حضّر أسئلة واضحة، اضبط التوقيت، وتابع نتائج تلاميذك.')
+              : t('الفيديوهات، الملخّصات والدروس المكتوبة، منظّمة عبر دوراتك.')}
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setCreating(true)}>
           {quiz ? <Plus size={16} /> : <Upload size={16} />}{' '}
-          {quiz ? 'إنشاء اختبار' : 'إضافة محتوى'}
+          {quiz ? t('إنشاء اختبار') : t('إضافة محتوى')}
         </button>
       </div>
       {quiz ? (
         <div className="workspace-panel mb-6 grid grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'إجمالي الاختبارات', value: all.length, icon: ListChecks },
             {
-              label: 'الاختبارات المنشورة',
+              label: t('إجمالي الاختبارات'),
+              value: all.length,
+              icon: ListChecks,
+            },
+            {
+              label: t('الاختبارات المنشورة'),
               value: all.filter((r) => r.lesson.published).length,
               icon: Check,
             },
-            { label: 'محاولات التلاميذ', value: attempts.length, icon: Clock3 },
             {
-              label: 'نسبة الإجابات الصحيحة',
+              label: t('محاولات التلاميذ'),
+              value: attempts.length,
+              icon: Clock3,
+            },
+            {
+              label: t('نسبة الإجابات الصحيحة'),
               value: totalAnswers
                 ? `${Math.round((answered / totalAnswers) * 100)}%`
                 : '—',
@@ -166,20 +181,20 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5">
           {quiz ? (
             <h2 className="py-4 text-xs font-bold">
-              بنك الاختبارات{' '}
+              {t('بنك الاختبارات')}{' '}
               <span className="num ms-2 text-muted">{all.length}</span>
             </h2>
           ) : (
             <div
               className="workspace-tabs border-0"
               role="group"
-              aria-label="نوع المحتوى"
+              aria-label={t('نوع المحتوى')}
             >
               {[
-                ['all', 'كل المحتوى'],
-                ['video', 'فيديو'],
+                ['all', t('كل المحتوى')],
+                ['video', t('فيديو')],
                 ['pdf', 'PDF'],
-                ['text', 'نصوص'],
+                ['text', t('نصوص')],
               ].map(([k, label]) => (
                 <button
                   type="button"
@@ -192,7 +207,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                     setPublishFeedback(null);
                   }}
                 >
-                  {label}
+                  {t(label)}
                 </button>
               ))}
             </div>
@@ -205,7 +220,8 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
               className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
             />
             <input
-              aria-label="بحث في المحتوى"
+              dir="auto"
+              aria-label={t('بحث في المحتوى')}
               className="workspace-search"
               value={query}
               onChange={(e) => {
@@ -213,12 +229,14 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                 setSelected(new Set());
                 setPublishFeedback(null);
               }}
-              placeholder={quiz ? 'ابحث عن اختبار…' : 'ابحث عن عنوان أو دورة…'}
+              placeholder={
+                quiz ? t('ابحث عن اختبار…') : t('ابحث عن عنوان أو دورة…')
+              }
             />
           </div>
           <select
             className="input h-10 w-auto max-w-60 text-[11px]"
-            aria-label="تصفية المحتوى حسب الدورة"
+            aria-label={t('تصفية المحتوى حسب الدورة')}
             value={courseFilter}
             onChange={(e) => {
               setCourseFilter(e.target.value);
@@ -226,10 +244,10 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
               setPublishFeedback(null);
             }}
           >
-            <option value="all">كل الدورات</option>
+            <option value="all">{t('كل الدورات')}</option>
             {state.courses.map((c) => (
               <option value={c.id} key={c.id}>
-                {c.title}
+                <bdi>{c.title}</bdi>
               </option>
             ))}
           </select>
@@ -240,25 +258,26 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
             role="status"
           >
             <span className="flex-1 font-bold">
-              {selected.size} عناصر محددة
+              {selected.size}
+              {t(' عناصر محددة')}
             </span>
             <button
               className="font-bold text-brand"
               onClick={() => publish(true)}
             >
-              نشر المحدّد
+              {t('نشر المحدّد')}
             </button>
             <button
               className="font-bold text-brand"
               onClick={() => publish(false)}
             >
-              إخفاء المحدّد
+              {t('إخفاء المحدّد')}
             </button>
             <button
               className="text-muted"
               onClick={() => setSelected(new Set())}
             >
-              إلغاء التحديد
+              {t('إلغاء التحديد')}
             </button>
           </div>
         ) : null}
@@ -267,7 +286,9 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
             className="border-b border-line bg-brand-soft/40 p-5"
             role={publishFeedback.blocked.length ? 'alert' : 'status'}
           >
-            <p className="text-sm font-semibold">{publishFeedback.message}</p>
+            <p className="text-sm font-semibold">
+              {t(publishFeedback.message)}
+            </p>
             {publishFeedback.blocked.length ? (
               <ul className="mt-3 space-y-2 text-sm">
                 {publishFeedback.blocked.map((item) => (
@@ -278,7 +299,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                     >
                       {item.title}
                     </Link>
-                    <span className="text-muted"> — {item.error}</span>
+                    <span className="text-muted"> — {t(item.error)}</span>
                   </li>
                 ))}
               </ul>
@@ -286,14 +307,15 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
           </div>
         ) : null}
         {rows.length ? (
-          <TableScroll label="المحتوى التعليمي">
+          <TableScroll label={t('المحتوى التعليمي')}>
             <table className="workspace-table min-w-[790px]">
               <thead>
                 <tr>
                   <th className="w-8">
                     <input
+                      dir="auto"
                       type="checkbox"
-                      aria-label="تحديد كل المحتوى المعروض"
+                      aria-label={t('تحديد كل المحتوى المعروض')}
                       checked={allSelected}
                       ref={(node) => {
                         if (node)
@@ -309,12 +331,12 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                       }
                     />
                   </th>
-                  <th>{quiz ? 'الاختبار' : 'المحتوى'}</th>
-                  <th>الدورة والفصل</th>
-                  <th>{quiz ? 'الأسئلة والتوقيت' : 'النوع والحجم'}</th>
-                  <th>الحالة</th>
+                  <th>{quiz ? t('الاختبار') : t('المحتوى')}</th>
+                  <th>{t('الدورة والفصل')}</th>
+                  <th>{quiz ? t('الأسئلة والتوقيت') : t('النوع والحجم')}</th>
+                  <th>{t('الحالة')}</th>
                   <th>
-                    <span className="sr-only">إجراءات المحتوى</span>
+                    <span className="sr-only">{t('إجراءات المحتوى')}</span>
                   </th>
                 </tr>
               </thead>
@@ -334,8 +356,9 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                     <tr key={lesson.id}>
                       <td>
                         <input
+                          dir="auto"
                           type="checkbox"
-                          aria-label={`تحديد ${lesson.title}`}
+                          aria-label={t('تحديد {0}', [lesson.title])}
                           checked={selected.has(lesson.id)}
                           onChange={(e) =>
                             setSelected((prev) => {
@@ -364,23 +387,23 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                             )}
                           </span>
                           <span className="block max-w-64 text-xs font-bold leading-6">
-                            {lesson.title}
+                            <bdi>{lesson.title}</bdi>
                           </span>
                         </Link>
                       </td>
                       <td>
                         <p className="max-w-48 truncate text-[10px]">
-                          {course.title}
+                          <bdi>{course.title}</bdi>
                         </p>
                         <p className="mt-1 max-w-48 truncate text-[9px] text-muted">
-                          {chapter.title}
+                          <bdi>{chapter.title}</bdi>
                         </p>
                       </td>
                       <td>
                         <p className="text-[10px]">
                           {quiz
-                            ? `${lesson.questions?.length ?? 0} أسئلة`
-                            : meta.label}
+                            ? t('{0} أسئلة', [lesson.questions?.length ?? 0])
+                            : t(meta.label)}
                         </p>
                         <p className="content-file-meta mt-1 text-[9px] text-muted">
                           {quiz ? (
@@ -389,7 +412,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                                 {lesson.timeLimitSec}s
                               </span>
                             ) : (
-                              'دون توقيت'
+                              t('دون توقيت')
                             )
                           ) : lesson.kind === 'video' ? (
                             <>
@@ -405,7 +428,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                             <>
                               <span>
                                 <span className="num">{lesson.pages}</span>{' '}
-                                صفحات
+                                {t('صفحات')}
                               </span>
                               <span aria-hidden="true">·</span>
                               <span className="num">
@@ -413,7 +436,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                               </span>
                             </>
                           ) : (
-                            'نص منسّق'
+                            t('نص منسّق')
                           )}
                         </p>
                       </td>
@@ -421,14 +444,14 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                         <span
                           className={`status-label ${lesson.published ? '' : 'is-draft'}`}
                         >
-                          {lesson.published ? 'منشور' : 'مسودة'}
+                          {lesson.published ? t('منشور') : t('مسودة')}
                         </span>
                       </td>
                       <td>
                         <div className="flex items-center gap-1">
                           <Link
                             className="btn btn-icon btn-ghost"
-                            aria-label={`تحرير ${lesson.title}`}
+                            aria-label={t('تحرير {0}', [lesson.title])}
                             to={`/courses/${course.id}?lesson=${lesson.id}`}
                           >
                             <ArrowUpLeft size={16} />
@@ -437,7 +460,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                             <button
                               className="btn btn-icon btn-ghost"
                               onClick={() => setPreview(lesson.id)}
-                              aria-label={`معاينة ${lesson.title}`}
+                              aria-label={t('معاينة {0}', [lesson.title])}
                             >
                               <Eye size={15} />
                             </button>
@@ -445,7 +468,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                           <button
                             className="btn btn-icon btn-ghost"
                             onClick={() => setDeleting(lesson.id)}
-                            aria-label={`حذف ${lesson.title}`}
+                            aria-label={t('حذف {0}', [lesson.title])}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -463,15 +486,17 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
               icon={quiz ? <ListChecks size={26} /> : <Film size={26} />}
               title={
                 all.length
-                  ? 'لا توجد عناصر مطابقة'
+                  ? t('لا توجد عناصر مطابقة')
                   : quiz
-                    ? 'ابدأ بأول اختبار'
-                    : 'أضف محتواك التعليمي'
+                    ? t('ابدأ بأول اختبار')
+                    : t('أضف محتواك التعليمي')
               }
               description={
                 all.length
-                  ? 'لا توجد نتائج تطابق البحث والتصفية الحالية. اعرض كل المحتوى وحاول مجدداً.'
-                  : 'اختر الدورة والفصل، ثم أضف المحتوى في المحرّر.'
+                  ? t(
+                      'لا توجد نتائج تطابق البحث والتصفية الحالية. اعرض كل المحتوى وحاول مجدداً.',
+                    )
+                  : t('اختر الدورة والفصل، ثم أضف المحتوى في المحرّر.')
               }
               action={
                 <button
@@ -488,10 +513,10 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                 >
                   <Plus size={15} aria-hidden="true" />
                   {all.length
-                    ? 'مسح البحث والتصفية'
+                    ? t('مسح البحث والتصفية')
                     : quiz
-                      ? 'إنشاء اختبار'
-                      : 'إضافة محتوى'}
+                      ? t('إنشاء اختبار')
+                      : t('إضافة محتوى')}
                 </button>
               }
             />
@@ -499,9 +524,13 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
         )}
         <footer className="flex flex-wrap justify-between gap-2 border-t border-line px-5 py-4 text-[10px] text-muted">
           <span>
-            عرض {rows.length} من {all.length} عناصر
+            {t('عرض ')}
+            {rows.length}
+            {t(' من ')}
+            {all.length}
+            {t(' عناصر')}
           </span>
-          <span>التعديل كيتمّ في محرّر الدورة</span>
+          <span>{t('التعديل كيتمّ في محرّر الدورة')}</span>
         </footer>
       </section>
       {creating ? (
@@ -542,12 +571,12 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
                 rel="noreferrer"
                 className="btn btn-outline w-full"
               >
-                فتح المستند
+                {t('فتح المستند')}
               </a>
             )
           ) : (
             <p className="p-5 text-xs text-muted">
-              الملف مازال ما تزادش. افتح المحرّر لإضافته.
+              {t('الملف مازال ما تزادش. افتح المحرّر لإضافته.')}
             </p>
           )}
         </Modal>
@@ -555,8 +584,11 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
       {toDelete ? (
         <Confirm
           open
-          title="حذف المحتوى؟"
-          message={`غادي يتحيد «${toDelete.lesson.title}» من دورة ${toDelete.course.title}.`}
+          title={t('حذف المحتوى؟')}
+          message={t('غادي يتحيد «{0}» من دورة {1}.', [
+            toDelete.lesson.title,
+            toDelete.course.title,
+          ])}
           onCancel={() => setDeleting(null)}
           onConfirm={() => {
             dispatch({
@@ -569,7 +601,7 @@ export default function ContentLibrary({ quiz = false }: { quiz?: boolean }) {
             });
             setDeleting(null);
             setSelected(new Set());
-            notify('تم حذف المحتوى');
+            notify(t('تم حذف المحتوى'));
           }}
         />
       ) : null}

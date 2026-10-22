@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, relativeTime } from '@/i18n/locale';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -20,12 +22,12 @@ import {
   allLessons,
   countLessons,
   isQuestionAnswered,
-  relativeTime,
 } from '@ostadiplus/shared';
 import { CourseCover, EmptyState } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 
 export default function Overview() {
+  useI18n();
   const { state } = useStore();
   const published = state.courses.filter((c) => c.status === 'published');
   const lessons = state.courses.flatMap((c) => allLessons(c));
@@ -40,80 +42,84 @@ export default function Overview() {
     .slice(0, 4);
   const metrics = [
     {
-      label: 'الدورات المنشورة',
+      label: t('الدورات المنشورة'),
       value: published.length,
-      detail: `${state.courses.length} دورات في مساحتك`,
+      detail: t('{0} دورات في مساحتك', [state.courses.length]),
       icon: BookOpen,
       to: '/courses',
     },
     {
-      label: 'التلاميذ النشطون',
+      label: t('التلاميذ النشطون'),
       value: activeStudentCount(state),
-      detail: 'باشتراك مفعّل',
+      detail: t('باشتراك مفعّل'),
       icon: Users,
       to: '/students',
     },
     {
-      label: 'الدروس المنشورة',
+      label: t('الدروس المنشورة'),
       value: lessons.filter((l) => l.published).length,
-      detail: `من أصل ${lessons.length} درس`,
+      detail: t('من أصل {0} درس', [lessons.length]),
       icon: Film,
       to: '/library',
     },
     {
-      label: 'محاولات الاختبار',
+      label: t('محاولات الاختبار'),
       value: (state.quizAttempts ?? []).length,
-      detail: 'نتائج مزامنة من التطبيق',
+      detail: t('نتائج مزامنة من التطبيق'),
       icon: ListChecks,
       to: '/analytics',
     },
   ];
   const actions = [
     {
-      title: 'رفع محتوى',
-      description: 'أضف فيديو، ملخّص PDF أو درساً مكتوباً.',
+      title: t('رفع محتوى'),
+      description: t('أضف فيديو، ملخّص PDF أو درساً مكتوباً.'),
       icon: Upload,
       to: '/library?action=upload',
     },
     {
-      title: 'إنشاء اختبار',
-      description: 'جهّز الأسئلة والمدة، وتابع نتائج التلاميذ.',
+      title: t('إنشاء اختبار'),
+      description: t('جهّز الأسئلة والمدة، وتابع نتائج التلاميذ.'),
       icon: ListChecks,
       to: '/quizzes?action=new',
     },
     {
-      title: 'إدارة الاشتراكات',
-      description: 'فعّل الوصول وحدّد مدة الاشتراك لكل تلميذ.',
+      title: t('إدارة الاشتراكات'),
+      description: t('فعّل الوصول وحدّد مدة الاشتراك لكل تلميذ.'),
       icon: Users,
       to: '/students',
     },
   ];
   const kinds = [
-    { kind: 'video', label: 'فيديوهات', icon: Film },
-    { kind: 'pdf', label: 'ملفات PDF', icon: FileText },
-    { kind: 'quiz', label: 'اختبارات', icon: ListChecks },
-    { kind: 'text', label: 'دروس مكتوبة', icon: BookOpen },
+    { kind: 'video', label: t('فيديوهات'), icon: Film },
+    { kind: 'pdf', label: t('ملفات PDF'), icon: FileText },
+    { kind: 'quiz', label: t('اختبارات'), icon: ListChecks },
+    { kind: 'text', label: t('دروس مكتوبة'), icon: BookOpen },
   ];
   return (
     <div className="overview-page">
       <header className="dashboard-heading">
         <div>
-          <p className="section-kicker">فضاء الأستاذ</p>
+          <p className="section-kicker">{t('فضاء الأستاذ')}</p>
           <h1 className="workspace-title">
-            مرحباً، {state.teacher.name.replace(/^أ\.\s*/, '')}
+            {t('مرحباً، ')}
+            {state.teacher.name.replace(/^أ\.\s*/, '')}
             <span className="text-brand">.</span>
           </h1>
           <p className="workspace-subtitle">
-            كل ما تحتاجه للتدريس، في مساحة واحدة.
+            {t('كل ما تحتاجه للتدريس، في مساحة واحدة.')}
           </p>
         </div>
         <Link to="/courses?action=new" className="btn btn-primary">
           <Plus size={18} aria-hidden="true" />
-          إنشاء دورة
+          {t('إنشاء دورة')}
         </Link>
       </header>
 
-      <section className="overview-metrics" aria-label="إحصائيات مساحة العمل">
+      <section
+        className="overview-metrics"
+        aria-label={t('إحصائيات مساحة العمل')}
+      >
         {metrics.map((m) => (
           <Link key={m.label} to={m.to} className="overview-metric">
             <div className="metric-topline">
@@ -140,8 +146,8 @@ export default function Overview() {
         className="overview-actions-section"
       >
         <div className="overview-section-heading">
-          <h2 id="quick-actions-title">ماذا تريد أن تنجز؟</h2>
-          <span>من الفكرة إلى التعلّم</span>
+          <h2 id="quick-actions-title">{t('ماذا تريد أن تنجز؟')}</h2>
+          <span>{t('من الفكرة إلى التعلّم')}</span>
         </div>
         <div className="overview-actions">
           {actions.map((a) => (
@@ -171,13 +177,14 @@ export default function Overview() {
           >
             <header className="panel-heading">
               <div>
-                <h2 id="recent-courses-title">واصل العمل على دوراتك</h2>
+                <h2 id="recent-courses-title">{t('واصل العمل على دوراتك')}</h2>
                 <p className="panel-description">
-                  آخر الدورات التي حدّثتها في مساحتك
+                  {t('آخر الدورات التي حدّثتها في مساحتك')}
                 </p>
               </div>
               <Link to="/courses" className="text-link">
-                كل الدورات <ArrowLeft size={15} aria-hidden="true" />
+                {t('كل الدورات ')}
+                <ArrowLeft size={15} aria-hidden="true" />
               </Link>
             </header>
             {recent.length ? (
@@ -187,7 +194,7 @@ export default function Overview() {
                     <Link
                       to={`/courses/${c.id}`}
                       className="recent-course-cover"
-                      aria-label={`فتح ${c.title}`}
+                      aria-label={t('فتح {0}', [c.title])}
                     >
                       <CourseCover
                         cover={c.cover}
@@ -203,7 +210,7 @@ export default function Overview() {
                           className="status-label"
                           data-draft={c.status === 'draft'}
                         >
-                          {c.status === 'published' ? 'منشورة' : 'مسودة'}
+                          {c.status === 'published' ? t('منشورة') : t('مسودة')}
                         </span>
                         <span className="course-updated">
                           <Clock3 size={13} aria-hidden="true" />
@@ -211,20 +218,23 @@ export default function Overview() {
                         </span>
                       </div>
                       <h3>
-                        <Link to={`/courses/${c.id}`}>{c.title}</Link>
+                        <Link to={`/courses/${c.id}`}>
+                          <bdi>{c.title}</bdi>
+                        </Link>
                       </h3>
                       <p className="course-level">{c.level}</p>
                       <div className="recent-course-footer">
                         <span>
                           <BookOpen size={15} aria-hidden="true" />
-                          <span className="num">{countLessons(c)}</span> درس
+                          <span className="num">{countLessons(c)}</span>
+                          {t(' درس')}
                         </span>
                         <Link
                           to={`/courses/${c.id}`}
                           className="text-link"
-                          aria-label={`إدارة ${c.title}`}
+                          aria-label={t('إدارة {0}', [c.title])}
                         >
-                          إدارة الدورة{' '}
+                          {t('إدارة الدورة')}{' '}
                           <ArrowUpLeft size={15} aria-hidden="true" />
                         </Link>
                       </div>
@@ -236,11 +246,11 @@ export default function Overview() {
               <div className="p-6">
                 <EmptyState
                   icon={<BookOpen size={26} />}
-                  title="ابدأ بأول دورة"
-                  description="أضف دورتك، ثم رتّب الفصول والدروس."
+                  title={t('ابدأ بأول دورة')}
+                  description={t('أضف دورتك، ثم رتّب الفصول والدروس.')}
                   action={
                     <Link to="/courses?action=new" className="btn btn-primary">
-                      إنشاء دورة
+                      {t('إنشاء دورة')}
                     </Link>
                   }
                 />
@@ -254,13 +264,14 @@ export default function Overview() {
           >
             <header className="panel-heading">
               <div>
-                <h2 id="content-summary-title">محتواك التعليمي</h2>
+                <h2 id="content-summary-title">{t('محتواك التعليمي')}</h2>
                 <p className="panel-description">
-                  توزيع المحتوى في جميع دوراتك
+                  {t('توزيع المحتوى في جميع دوراتك')}
                 </p>
               </div>
               <Link to="/library" className="text-link">
-                إدارة المحتوى <ArrowLeft size={15} aria-hidden="true" />
+                {t('إدارة المحتوى ')}
+                <ArrowLeft size={15} aria-hidden="true" />
               </Link>
             </header>
             <div className="content-summary">
@@ -304,7 +315,7 @@ export default function Overview() {
             aria-labelledby="attention-title"
           >
             <header className="panel-heading">
-              <h2 id="attention-title">يحتاج اهتمامك</h2>
+              <h2 id="attention-title">{t('يحتاج اهتمامك')}</h2>
               <span className="attention-count num">
                 {questions.length + pending.length}
               </span>
@@ -315,11 +326,11 @@ export default function Overview() {
                   <MessageCircle size={20} aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="action-title">أسئلة التلاميذ</span>
+                  <span className="action-title">{t('أسئلة التلاميذ')}</span>
                   <span className="action-description">
                     {questions.length
-                      ? `${questions.length} أسئلة تنتظر جوابك`
-                      : 'أجبت على كل الأسئلة'}
+                      ? t('{0} أسئلة تنتظر جوابك', [questions.length])
+                      : t('أجبت على كل الأسئلة')}
                   </span>
                 </span>
                 <ChevronLeft size={16} aria-hidden="true" />
@@ -329,11 +340,11 @@ export default function Overview() {
                   <Users size={20} aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="action-title">طلبات التفعيل</span>
+                  <span className="action-title">{t('طلبات التفعيل')}</span>
                   <span className="action-description">
                     {pending.length
-                      ? `${pending.length} طلبات قيد المراجعة`
-                      : 'لا طلبات جديدة'}
+                      ? t('{0} طلبات قيد المراجعة', [pending.length])
+                      : t('لا طلبات جديدة')}
                   </span>
                 </span>
                 <ChevronLeft size={16} aria-hidden="true" />
@@ -342,15 +353,15 @@ export default function Overview() {
             <Link to="/sync" className="publish-reminder">
               <RefreshCw size={19} aria-hidden="true" />
               <span>
-                <strong>جاهز لتشارك جديدك؟</strong>
-                <span>انشر التحديثات لتصل إلى تطبيق التلميذ.</span>
+                <strong>{t('جاهز لتشارك جديدك؟')}</strong>
+                <span>{t('انشر التحديثات لتصل إلى تطبيق التلميذ.')}</span>
               </span>
               <ArrowUpLeft size={16} aria-hidden="true" />
             </Link>
           </section>
           <section className="workspace-panel" aria-labelledby="activity-title">
             <header className="panel-heading">
-              <h2 id="activity-title">آخر النشاط</h2>
+              <h2 id="activity-title">{t('آخر النشاط')}</h2>
               <Clock3 size={17} className="text-muted" aria-hidden="true" />
             </header>
             <ol className="activity-timeline">
@@ -360,7 +371,7 @@ export default function Overview() {
                     <Check size={12} aria-hidden="true" />
                   </span>
                   <div>
-                    <p>{e.text}</p>
+                    <p>{t(e.text)}</p>
                     <time>{relativeTime(e.at)}</time>
                   </div>
                 </li>
@@ -368,7 +379,7 @@ export default function Overview() {
             </ol>
             {!state.activity.length ? (
               <p className="p-6 text-sm text-muted">
-                سيظهر نشاطك هنا عند إضافة المحتوى أو تحديثه.
+                {t('سيظهر نشاطك هنا عند إضافة المحتوى أو تحديثه.')}
               </p>
             ) : null}
           </section>

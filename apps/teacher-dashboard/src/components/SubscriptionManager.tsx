@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -18,6 +20,7 @@ export default function SubscriptionManager({
   initialCourseId?: string;
   onClose: () => void;
 }) {
+  useI18n();
   const { state } = useStore();
   const formId = useId();
   const action = useAction();
@@ -58,8 +61,10 @@ export default function SubscriptionManager({
     <Modal
       open
       onClose={onClose}
-      title={`إدارة الاشتراكات — ${student?.fullName ?? ''}`}
-      description="اختر الأستاذ والمقرر، ثم مدة الاشتراك أو الدورة الدراسية. انشر التحديثات لمزامنتها مع تطبيق التلميذ."
+      title={t('إدارة الاشتراكات — {0}', [student?.fullName ?? ''])}
+      description={t(
+        'اختر الأستاذ والمقرر، ثم مدة الاشتراك أو الدورة الدراسية. انشر التحديثات لمزامنتها مع تطبيق التلميذ.',
+      )}
       size="lg"
     >
       <form
@@ -68,28 +73,28 @@ export default function SubscriptionManager({
           e.preventDefault();
           setError('');
           try {
-            if (!course) throw new Error('اختر المقرر');
+            if (!course) throw new Error(t('اختر المقرر'));
             createAccessPeriod(plan, course, 'validate');
             action(
               {
                 type: 'enrollment/grant',
                 payload: { studentId, courseId, plan, periodId },
               },
-              'تم حفظ الاشتراك',
+              t('تم حفظ الاشتراك'),
             );
             setSaved(true);
             setPeriodId(undefined);
           } catch (reason) {
             setError(
-              reason instanceof Error ? reason.message : 'تعذر حفظ الاشتراك',
+              reason instanceof Error ? reason.message : t('تعذر حفظ الاشتراك'),
             );
           }
         }}
       >
         <label className="block text-sm font-semibold">
-          الأستاذ والمقرر
+          {t('الأستاذ والمقرر')}
           <select
-            aria-label="الأستاذ والمقرر"
+            aria-label={t('الأستاذ والمقرر')}
             disabled={!state.courses.length}
             className="input w-full mt-2"
             value={courseId}
@@ -99,55 +104,59 @@ export default function SubscriptionManager({
             }}
           >
             {!state.courses.length ? (
-              <option value="">لا توجد مقررات بعد</option>
+              <option value="">{t('لا توجد مقررات بعد')}</option>
             ) : null}
             {state.courses.map((c) => (
               <option key={c.id} value={c.id}>
-                {courseTeacher(state, c).name} — {c.title} · {c.level}
+                {courseTeacher(state, c).name} — <bdi>{c.title}</bdi> ·{' '}
+                {c.level}
               </option>
             ))}
           </select>
         </label>
         {!course ? (
           <p className="rounded-lg bg-brand-soft p-3 text-sm">
-            لا يوجد مقرر لتخصيص اشتراك.{' '}
+            {t('لا يوجد مقرر لتخصيص اشتراك.')}{' '}
             <Link
               to="/courses"
               className="text-brand underline"
               onClick={onClose}
             >
-              انتقل إلى الدورات لإضافة مقرر
+              {t('انتقل إلى الدورات لإضافة مقرر')}
             </Link>
             .
           </p>
         ) : null}
         <section className="rounded-xl border border-line p-4 space-y-3">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-sm">الاشتراكات المسجلة</h3>
+            <h3 className="font-bold text-sm">{t('الاشتراكات المسجلة')}</h3>
             <button
               type="button"
               className="btn btn-outline btn-sm"
               onClick={reset}
             >
-              إضافة اشتراك
+              {t('إضافة اشتراك')}
             </button>
           </div>
           {!enrollment || enrollment.accessPeriods?.length === 0 ? (
-            <p className="text-sm text-muted">لا يوجد اشتراك لهذا المقرر.</p>
+            <p className="text-sm text-muted">
+              {t('لا يوجد اشتراك لهذا المقرر.')}
+            </p>
           ) : !enrollment.accessPeriods ? (
             <p className="text-sm text-muted">
-              اشتراك سابق للمقرر كاملاً حتى {enrollment.expiresAt.slice(0, 10)}.
-              الحفظ الأول يستبدله بالاشتراك المحدد أدناه.
+              {t('اشتراك سابق للمقرر كاملاً حتى ')}
+              {enrollment.expiresAt.slice(0, 10)}
+              {t('. الحفظ الأول يستبدله بالاشتراك المحدد أدناه.')}
             </p>
           ) : (
             <ul className="space-y-2">
               {enrollment.accessPeriods.map((p) => {
                 const status =
                   Date.now() < +new Date(p.startsAt)
-                    ? 'يبدأ لاحقاً'
+                    ? t('يبدأ لاحقاً')
                     : Date.now() >= +new Date(p.expiresAt)
-                      ? 'منتهي'
-                      : 'ساري';
+                      ? t('منتهي')
+                      : t('ساري');
                 return (
                   <li
                     key={p.id}
@@ -156,7 +165,7 @@ export default function SubscriptionManager({
                     <div>
                       <strong>
                         {p.kind === 'months'
-                          ? `${p.durationMonths} شهر — المقرر كاملاً`
+                          ? t('{0} شهر — المقرر كاملاً', [p.durationMonths])
                           : course?.semesters.find((s) => s.id === p.semesterId)
                               ?.title}
                       </strong>
@@ -181,7 +190,7 @@ export default function SubscriptionManager({
                         setError('');
                       }}
                     >
-                      تعديل
+                      {t('تعديل')}
                     </button>
                   </li>
                 );
@@ -196,10 +205,10 @@ export default function SubscriptionManager({
         >
           <legend className="text-sm font-bold mb-3">
             {saved
-              ? 'تم حفظ الاشتراك'
+              ? t('تم حفظ الاشتراك')
               : periodId
-                ? 'تعديل الاشتراك'
-                : 'اشتراك جديد'}
+                ? t('تعديل الاشتراك')
+                : t('اشتراك جديد')}
           </legend>
           <div className="subscription-plan-grid">
             {[1, 2, 3].map((n) => (
@@ -216,7 +225,7 @@ export default function SubscriptionManager({
                   setError('');
                 }}
               >
-                {n === 1 ? 'شهر' : n === 2 ? 'شهران' : 'ثلاثة أشهر'}
+                {n === 1 ? t('شهر') : n === 2 ? t('شهران') : t('ثلاثة أشهر')}
               </button>
             ))}
             {course?.semesters.map((s) => (
@@ -232,20 +241,23 @@ export default function SubscriptionManager({
                   setError('');
                 }}
               >
-                {s.title}
+                {t(s.title)}
               </button>
             ))}
           </div>
           <p className="text-xs text-muted">
             {plan.kind === 'months'
-              ? 'اشتراك بالشهور: جميع دروس المقرر خلال المدة المحددة.'
-              : 'اشتراك دورة: دروس هذه الدورة فقط. تاريخ النهاية يحدده المركز.'}
+              ? t('اشتراك بالشهور: جميع دروس المقرر خلال المدة المحددة.')
+              : t(
+                  'اشتراك دورة: دروس هذه الدورة فقط. تاريخ النهاية يحدده المركز.',
+                )}
           </p>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-sm">
-              تاريخ البداية
+              {t('تاريخ البداية')}
               <input
-                aria-label="تاريخ البداية"
+                dir="auto"
+                aria-label={t('تاريخ البداية')}
                 required
                 type="date"
                 className="input w-full mt-2"
@@ -259,9 +271,10 @@ export default function SubscriptionManager({
             </label>
             {plan.kind === 'semester' ? (
               <label className="text-sm">
-                آخر يوم للوصول
+                {t('آخر يوم للوصول')}
                 <input
-                  aria-label="آخر يوم للوصول"
+                  dir="auto"
+                  aria-label={t('آخر يوم للوصول')}
                   required
                   type="date"
                   min={startsOn}
@@ -276,9 +289,10 @@ export default function SubscriptionManager({
               </label>
             ) : (
               <label className="text-sm">
-                عدد الشهور (قابل للتخصيص)
+                {t('عدد الشهور (قابل للتخصيص)')}
                 <input
-                  aria-label="عدد الشهور"
+                  dir="auto"
+                  aria-label={t('عدد الشهور')}
                   type="number"
                   min={1}
                   max={24}
@@ -298,8 +312,11 @@ export default function SubscriptionManager({
         </fieldset>
         {preview && (
           <p className="rounded-lg bg-surface p-3 text-sm">
-            الوصول من {startsOn} إلى نهاية يوم {preview} بتوقيت المغرب. يتوقف
-            تلقائياً بعد النهاية.
+            {t('الوصول من ')}
+            {startsOn}
+            {t(' إلى نهاية يوم ')}
+            {preview}
+            {t(' بتوقيت المغرب. يتوقف تلقائياً بعد النهاية.')}
           </p>
         )}
         {error && (
@@ -308,14 +325,14 @@ export default function SubscriptionManager({
             role="alert"
             className="text-sm text-danger"
           >
-            {error}
+            {t(error)}
           </p>
         )}
         {saved && (
           <p role="status" className="text-sm text-brand">
-            تم حفظ الاشتراك. لإضافة مدة أخرى اختر «إضافة اشتراك»، ولتغيير
-            الاشتراك الحالي اختر «تعديل» من القائمة. انشر التحديثات من صفحة
-            المزامنة.
+            {t(
+              'تم حفظ الاشتراك. لإضافة مدة أخرى اختر «إضافة اشتراك»، ولتغيير الاشتراك الحالي اختر «تعديل» من القائمة. انشر التحديثات من صفحة المزامنة.',
+            )}
           </p>
         )}
         <div className="flex gap-2">
@@ -324,10 +341,10 @@ export default function SubscriptionManager({
             disabled={saved || !course}
             className="btn btn-primary"
           >
-            حفظ الاشتراك
+            {t('حفظ الاشتراك')}
           </button>
           <button type="button" className="btn btn-outline" onClick={onClose}>
-            إغلاق
+            {t('إغلاق')}
           </button>
         </div>
       </form>

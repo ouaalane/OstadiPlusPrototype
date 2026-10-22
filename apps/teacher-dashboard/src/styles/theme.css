@@ -2015,3 +2015,21 @@ a:focus-visible {
     min-height: 280px;
   }
 }
+
+/* Dashboard-only language control; preference is independent of synced content. */
+.dashboard-language {
+  width: 112px;
+  min-width: 94px;
+  flex-shrink: 0;
+  min-height: 38px;
+  padding-block: 6px;
+  padding-inline: 10px;
+  font-size: 13px;
+}
+[dir='ltr'] :is(.lucide-arrow-left, .lucide-arrow-up-left, .lucide-chevron-left, .lucide-chevron-right) {
+  transform: scaleX(-1);
+}
+@media (max-width: 639px) {
+  .dashboard-language { width: 94px; }
+  .workspace-topbar > form { min-width: 0; flex: 1; }
+}

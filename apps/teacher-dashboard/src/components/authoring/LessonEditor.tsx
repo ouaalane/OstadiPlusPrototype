@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useRef, useState } from 'react';
 import {
   Bold,
@@ -39,6 +41,7 @@ export function LessonEditor({
   onDirty: (dirty: boolean) => void;
   onDelete: () => void;
 }) {
+  useI18n();
   const { dispatch, notify } = useStore();
   const [draft, setDraft] = useState<Lesson>(() => structuredClone(lesson));
   const [tab, setTab] = useState<'content' | 'settings' | 'preview'>('content');
@@ -57,7 +60,7 @@ export function LessonEditor({
     if (draft.title.trim().length < 2 || (willPublish && validation)) {
       setTouched(true);
       setTab('content');
-      notify(validation ?? 'اكتب عنواناً من حرفين على الأقل.', 'error');
+      notify(validation ?? t('اكتب عنواناً من حرفين على الأقل.'), 'error');
       return;
     }
     if (busy) return;
@@ -75,29 +78,31 @@ export function LessonEditor({
     onDirty(false);
     notify(
       publish
-        ? 'تم حفظ الدرس ونشره. انشر التحديثات لتصل إلى التطبيق.'
-        : 'تم حفظ الدرس',
+        ? t('تم حفظ الدرس ونشره. انشر التحديثات لتصل إلى التطبيق.')
+        : t('تم حفظ الدرس'),
     );
   }
   return (
     <section
       className="lesson-editor"
-      aria-label={`تحرير الدرس — ${chapterTitle}`}
+      aria-label={t('تحرير الدرس — {0}', [chapterTitle])}
     >
-      <h2 className="sr-only">{lesson.title}</h2>
+      <h2 className="sr-only">
+        <bdi>{lesson.title}</bdi>
+      </h2>
       <header className="lesson-editor-heading">
         <div className="lesson-editor-identity">
           <span className="lesson-kind-icon">
             <meta.icon size={18} aria-hidden="true" />
           </span>
-          <span className="text-sm font-bold">{meta.label}</span>
+          <span className="text-sm font-bold">{t(meta.label)}</span>
           <span className="status-label" data-draft={!lesson.published}>
-            {lesson.published ? 'منشور' : 'مسودة'}
+            {lesson.published ? t('منشور') : t('مسودة')}
           </span>
         </div>
         <div className="lesson-save-actions">
           <span role="status" className="lesson-save-status">
-            {busy ? 'جارٍ التجهيز…' : dirty ? 'غير محفوظ' : 'محفوظ'}
+            {busy ? t('جارٍ التجهيز…') : dirty ? t('غير محفوظ') : t('محفوظ')}
           </span>
           <button
             className={`btn btn-sm ${draft.published ? 'btn-primary' : 'btn-outline'}`}
@@ -105,7 +110,7 @@ export function LessonEditor({
             onClick={() => save()}
           >
             <Save size={15} aria-hidden="true" />
-            حفظ الدرس
+            {t('حفظ الدرس')}
           </button>
           {!draft.published ? (
             <button
@@ -113,7 +118,7 @@ export function LessonEditor({
               disabled={busy}
               onClick={() => save(true)}
             >
-              حفظ ونشر
+              {t('حفظ ونشر')}
             </button>
           ) : null}
         </div>
@@ -122,13 +127,13 @@ export function LessonEditor({
         <div
           className="workspace-tabs border-0"
           role="tablist"
-          aria-label="محرر الدرس"
+          aria-label={t('محرر الدرس')}
         >
           {(
             [
-              { key: 'content', label: 'محتوى الدرس', icon: meta.icon },
-              { key: 'settings', label: 'الإعدادات', icon: Settings2 },
-              { key: 'preview', label: 'معاينة', icon: Eye },
+              { key: 'content', label: t('محتوى الدرس'), icon: meta.icon },
+              { key: 'settings', label: t('الإعدادات'), icon: Settings2 },
+              { key: 'preview', label: t('معاينة'), icon: Eye },
             ] as const
           ).map((t) => (
             <button
@@ -149,23 +154,24 @@ export function LessonEditor({
         {tab === 'content' ? (
           <div className="lesson-content-fields">
             <Field
-              label="عنوان الدرس"
+              label={t('عنوان الدرس')}
               error={
                 touched && draft.title.trim().length < 2
-                  ? 'اكتب عنواناً من حرفين على الأقل.'
+                  ? t('اكتب عنواناً من حرفين على الأقل.')
                   : undefined
               }
             >
               <input
+                dir="auto"
                 required
-                aria-label="عنوان الدرس"
+                aria-label={t('عنوان الدرس')}
                 className="input lesson-title-input"
                 value={draft.title}
                 onChange={(e) => patch({ title: e.target.value })}
                 maxLength={100}
               />
             </Field>
-            <section className="lesson-main-content" aria-label={meta.label}>
+            <section className="lesson-main-content" aria-label={t(meta.label)}>
               {draft.kind === 'video' || draft.kind === 'pdf' ? (
                 <MediaUpload
                   lesson={draft}
@@ -188,10 +194,11 @@ export function LessonEditor({
               )}
             </section>
             <details className="lesson-optional-details">
-              <summary>تفاصيل إضافية</summary>
+              <summary>{t('تفاصيل إضافية')}</summary>
               <div className="lesson-optional-fields">
-                <Field label="وصف الدرس">
+                <Field label={t('وصف الدرس')}>
                   <textarea
+                    dir="auto"
                     className="textarea"
                     value={draft.description ?? ''}
                     onChange={(e) => patch({ description: e.target.value })}
@@ -200,7 +207,9 @@ export function LessonEditor({
                 </Field>
                 {draft.kind === 'video' ? (
                   <div>
-                    <h3 className="text-sm font-bold">الصورة المصغّرة</h3>
+                    <h3 className="text-sm font-bold">
+                      {t('الصورة المصغّرة')}
+                    </h3>
                     <Thumbnail
                       value={draft.thumbnailUrl}
                       onChange={(thumbnailUrl) => patch({ thumbnailUrl })}
@@ -214,23 +223,23 @@ export function LessonEditor({
         ) : tab === 'settings' ? (
           <div className="lesson-settings-fields">
             <div className="setting-line">
-              <p className="text-sm font-bold">إظهار الدرس للتلاميذ</p>
+              <p className="text-sm font-bold">{t('إظهار الدرس للتلاميذ')}</p>
               <Toggle
                 checked={draft.published}
                 onChange={(published) => patch({ published })}
-                label="نشر الدرس"
+                label={t('نشر الدرس')}
               />
             </div>
             {draft.kind === 'video' ? (
               <div className="setting-line">
                 <p className="flex items-center gap-2 text-sm font-bold">
                   <Download size={16} aria-hidden="true" />
-                  السماح بالمشاهدة دون إنترنت
+                  {t('السماح بالمشاهدة دون إنترنت')}
                 </p>
                 <Toggle
                   checked={draft.allowDownload !== false}
                   onChange={(allowDownload) => patch({ allowDownload })}
-                  label="السماح بتنزيل الفيديو"
+                  label={t('السماح بتنزيل الفيديو')}
                 />
               </div>
             ) : null}
@@ -241,7 +250,7 @@ export function LessonEditor({
                   className="text-brand"
                   aria-hidden="true"
                 />
-                الواترمارك مفعّل
+                {t('الواترمارك مفعّل')}
               </p>
             ) : null}
             <div className="lesson-delete-action">
@@ -251,7 +260,7 @@ export function LessonEditor({
                 disabled={busy}
               >
                 <Trash2 size={15} aria-hidden="true" />
-                حذف الدرس
+                {t('حذف الدرس')}
               </button>
             </div>
           </div>
@@ -263,7 +272,7 @@ export function LessonEditor({
             role="alert"
             className="mt-5 rounded-lg bg-accent/30 p-3 text-xs leading-6"
           >
-            {validation}
+            {t(validation)}
           </p>
         ) : null}
       </div>
@@ -277,12 +286,13 @@ function TextEditor({
   value: string;
   onChange: (value: string) => void;
 }) {
+  useI18n();
   const area = useRef<HTMLTextAreaElement>(null);
   const wrap = (before: string, after: string) => {
     const el = area.current;
     if (!el) return;
     const { selectionStart: start, selectionEnd: end } = el;
-    const selected = value.slice(start, end) || 'نص';
+    const selected = value.slice(start, end) || t('نص');
     onChange(
       value.slice(0, start) + before + selected + after + value.slice(end),
     );
@@ -298,11 +308,11 @@ function TextEditor({
     <div className="overflow-hidden rounded-lg border border-line">
       <div className="flex gap-1 border-b border-line bg-surface-alt/30 p-2">
         {[
-          { icon: Bold, label: 'عريض', before: '**', after: '**' },
-          { icon: Italic, label: 'مائل', before: '*', after: '*' },
-          { icon: List, label: 'قائمة', before: '\n- ', after: '' },
-          { icon: Quote, label: 'اقتباس', before: '\n> ', after: '' },
-          { icon: Link2, label: 'رابط', before: '[', after: '](https://)' },
+          { icon: Bold, label: t('عريض'), before: '**', after: '**' },
+          { icon: Italic, label: t('مائل'), before: '*', after: '*' },
+          { icon: List, label: t('قائمة'), before: '\n- ', after: '' },
+          { icon: Quote, label: t('اقتباس'), before: '\n> ', after: '' },
+          { icon: Link2, label: t('رابط'), before: '[', after: '](https://)' },
         ].map((t) => (
           <button
             key={t.label}
@@ -316,12 +326,13 @@ function TextEditor({
         ))}
       </div>
       <textarea
+        dir="auto"
         ref={area}
         className="lesson-text-area"
-        aria-label="محتوى الدرس المكتوب"
+        aria-label={t('محتوى الدرس المكتوب')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="اكتب محتوى الدرس هنا…"
+        placeholder={t('اكتب محتوى الدرس هنا…')}
       />
     </div>
   );
@@ -335,6 +346,7 @@ function Thumbnail({
   onChange: (value?: string) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  useI18n();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -345,7 +357,7 @@ function Thumbnail({
       !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
       file.size > 8 * 1024 * 1024
     ) {
-      setError('اختر صورة JPG أو PNG أو WebP حتى 8 MB.');
+      setError(t('اختر صورة JPG أو PNG أو WebP حتى 8 MB.'));
       return;
     }
     setBusy(true);
@@ -370,7 +382,7 @@ function Thumbnail({
       );
       onChange(canvas.toDataURL('image/jpeg', 0.82));
     } catch {
-      setError('تعذّرت قراءة الصورة. اختر صورة أخرى.');
+      setError(t('تعذّرت قراءة الصورة. اختر صورة أخرى.'));
     } finally {
       URL.revokeObjectURL(url);
       setBusy(false);
@@ -384,7 +396,7 @@ function Thumbnail({
         {value ? (
           <img
             src={value}
-            alt="معاينة الصورة المصغرة"
+            alt={t('معاينة الصورة المصغرة')}
             className="size-full object-cover"
           />
         ) : (
@@ -398,28 +410,31 @@ function Thumbnail({
           onClick={() => input.current?.click()}
         >
           <ImagePlus size={14} />
-          {busy ? 'جارٍ تجهيز الصورة…' : 'اختيار صورة مصغّرة'}
+          {busy ? t('جارٍ تجهيز الصورة…') : t('اختيار صورة مصغّرة')}
         </button>
-        <p className="mt-2 text-[9px] text-muted">JPG، PNG، WebP · حتى 8 MB</p>
+        <p className="mt-2 text-[9px] text-muted">
+          {t('JPG، PNG، WebP · حتى 8 MB')}
+        </p>
         {value ? (
           <button
             className="mt-3 text-[10px] font-bold text-brand"
             disabled={busy}
             onClick={() => onChange(undefined)}
           >
-            إزالة الصورة
+            {t('إزالة الصورة')}
           </button>
         ) : null}
         {error ? (
           <p className="mt-2 text-[10px] text-brand" role="alert">
-            {error}
+            {t(error)}
           </p>
         ) : null}
         <input
+          dir="auto"
           ref={input}
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          aria-label="اختيار صورة مصغّرة"
+          aria-label={t('اختيار صورة مصغّرة')}
           className="sr-only"
           onChange={(e) => void choose(e.target.files?.[0])}
         />
@@ -428,6 +443,7 @@ function Thumbnail({
   );
 }
 function LessonPreview({ lesson }: { lesson: Lesson }) {
+  useI18n();
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [result, setResult] = useState(false);
   return (
@@ -435,9 +451,11 @@ function LessonPreview({ lesson }: { lesson: Lesson }) {
       <div className="mx-auto max-w-xl overflow-hidden rounded-xl border border-line">
         <div className="border-b border-line p-5">
           <span className="text-[10px] text-brand">
-            {KIND_META[lesson.kind].label}
+            {t(KIND_META[lesson.kind].label)}
           </span>
-          <h3 className="mt-2 text-lg font-bold">{lesson.title}</h3>
+          <h3 className="mt-2 text-lg font-bold">
+            <bdi>{lesson.title}</bdi>
+          </h3>
           {lesson.description ? (
             <p className="mt-3 text-xs leading-7 text-muted">
               {lesson.description}
@@ -460,15 +478,18 @@ function LessonPreview({ lesson }: { lesson: Lesson }) {
               rel="noreferrer"
               className="btn btn-outline w-full"
             >
-              فتح المستند · {lesson.pages} صفحات
+              {t('فتح المستند · ')}
+              {lesson.pages}
+              {t(' صفحات')}
             </a>
           ) : lesson.kind === 'quiz' ? (
             <div className="space-y-5">
               <p className="text-[10px] text-muted">
-                {lesson.questions?.length ?? 0} أسئلة ·{' '}
+                {lesson.questions?.length ?? 0}
+                {t(' أسئلة ·')}{' '}
                 {lesson.timeLimitSec
-                  ? `${lesson.timeLimitSec} ثانية`
-                  : 'دون توقيت'}
+                  ? t('{0} ثانية', [lesson.timeLimitSec])
+                  : t('دون توقيت')}
               </p>
               {lesson.questions?.map((q, i) => (
                 <fieldset key={q.id}>
@@ -482,6 +503,7 @@ function LessonPreview({ lesson }: { lesson: Lesson }) {
                         className={`flex items-center gap-3 rounded-lg border p-3 text-xs ${result && q.correctIds.includes(o.id) ? 'border-brand bg-brand-soft' : 'border-line'}`}
                       >
                         <input
+                          dir="auto"
                           type="checkbox"
                           checked={(answers[q.id] ?? []).includes(o.id)}
                           disabled={result}
@@ -508,10 +530,12 @@ function LessonPreview({ lesson }: { lesson: Lesson }) {
                     setResult(!result);
                   }}
                 >
-                  {result ? 'إعادة المعاينة' : 'إظهار التصحيح'}
+                  {result ? t('إعادة المعاينة') : t('إظهار التصحيح')}
                 </button>
               ) : (
-                <p className="text-xs text-muted">أضف أسئلة لمعاينتها هنا.</p>
+                <p className="text-xs text-muted">
+                  {t('أضف أسئلة لمعاينتها هنا.')}
+                </p>
               )}
             </div>
           ) : (

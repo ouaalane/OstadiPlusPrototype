@@ -1,3 +1,4 @@
+import { translate as t } from '@/i18n/locale';
 import {
   FileText,
   Film,
@@ -80,8 +81,10 @@ export function lessonMeta(lesson: Lesson): string {
   if (lesson.kind === 'video') {
     return `${formatDuration(lesson.durationSec)} · ${formatSize(lesson.sizeMb)}`;
   }
-  if (lesson.kind === 'pdf') return `${lesson.pages} صفحات · ${formatSize(lesson.sizeMb)}`;
-  if (lesson.kind === 'quiz') return `${lesson.questions?.length ?? 0} أسئلة`;
-  if (lesson.kind === 'text') return lesson.body?.trim() ? 'نص' : '';
+  if (lesson.kind === 'pdf')
+    return t('{0} صفحات · {1}', [lesson.pages, formatSize(lesson.sizeMb)]);
+  if (lesson.kind === 'quiz')
+    return t('{0} أسئلة', [lesson.questions?.length ?? 0]);
+  if (lesson.kind === 'text') return lesson.body?.trim() ? t('نص') : '';
   return '';
 }

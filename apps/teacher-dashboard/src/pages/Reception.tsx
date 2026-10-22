@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, getLocale } from '@/i18n/locale';
 import SubscriptionManager from '@/components/SubscriptionManager';
 /**
  * Reception desk («استقبال») — simplified interface for center staff.
@@ -54,6 +56,7 @@ const STATUS_META: Record<
 };
 
 export default function Reception() {
+  const { lang } = useI18n();
   const { state, pendingMemberships, findStudentByCode } = useStore();
   const action = useAction();
 
@@ -83,13 +86,16 @@ export default function Reception() {
     if (!code) {
       setSelectedStudent(null);
       setSubscriptionCourse(null);
-      setResult({ tone: 'error', text: 'أدخل رمز الطالب أولاً.' });
+      setResult({ tone: 'error', text: t('أدخل رمز الطالب أولاً.') });
       return;
     }
     const student = findStudentByCode(code);
     if (!student) {
       setSelectedStudent(null);
-      setResult({ tone: 'error', text: 'لم يتم العثور على تلميذ بهذا الرمز.' });
+      setResult({
+        tone: 'error',
+        text: t('لم يتم العثور على تلميذ بهذا الرمز.'),
+      });
       return;
     }
     setSelectedStudent(student);
@@ -97,14 +103,17 @@ export default function Reception() {
     setTab('all');
     setResult({
       tone: 'success',
-      text: `تم العثور على ${student.fullName} (${student.studentCode}).`,
+      text: t('تم العثور على {0} ({1}).', [
+        student.fullName,
+        student.studentCode,
+      ]),
     });
-  }, [searchCode, findStudentByCode]);
+  }, [searchCode, findStudentByCode, lang]);
 
   const enrollmentsOfStudent = useMemo(() => {
     if (!selectedStudent) return [];
     return state.enrollments.filter((e) => e.studentId === selectedStudent.id);
-  }, [selectedStudent, state.enrollments]);
+  }, [selectedStudent, state.enrollments, lang]);
 
   const filteredEnrollments = useMemo(() => {
     return enrollmentsOfStudent.filter((e) => {
@@ -114,16 +123,16 @@ export default function Reception() {
         return e.status === 'active' && isEnrollmentExpired(e);
       return true;
     });
-  }, [enrollmentsOfStudent, tab]);
+  }, [enrollmentsOfStudent, tab, lang]);
 
   const coursesMap = useMemo(
     () => new Map(state.courses.map((c) => [c.id, c])),
-    [state.courses],
+    [state.courses, lang],
   );
 
   const manageSubscription = useCallback(
     (courseId: string) => setSubscriptionCourse(courseId),
-    [],
+    [lang],
   );
 
   const enrollmentColumns: DataTableColumn<
@@ -132,7 +141,7 @@ export default function Reception() {
     () => [
       {
         key: 'course',
-        header: 'المقرر',
+        header: t('المقرر'),
         width: '300px',
         sortValue: (e) => coursesMap.get(e.courseId)?.title ?? '',
         render: (e) => {
@@ -156,39 +165,39 @@ export default function Reception() {
       },
       {
         key: 'status',
-        header: 'الحالة',
+        header: t('الحالة'),
         align: 'center',
         width: '130px',
         sortValue: (e) => e.status,
         render: (e) => {
           const expired = e.status === 'active' && isEnrollmentExpired(e);
           const meta = expired
-            ? { label: 'منتهي', tone: 'danger' as const }
+            ? { label: t('منتهي'), tone: 'danger' as const }
             : e.status === 'active' && !enrollmentHasAccess(e)
-              ? { label: 'يبدأ لاحقاً', tone: 'neutral' as const }
+              ? { label: t('يبدأ لاحقاً'), tone: 'neutral' as const }
               : STATUS_META[e.status];
           return (
             <Pill tone={meta.tone} dot>
-              {meta.label}
+              {t(meta.label)}
             </Pill>
           );
         },
       },
       {
         key: 'activated',
-        header: 'تاريخ التسجيل',
+        header: t('تاريخ التسجيل'),
         align: 'center',
         hideOnMobile: true,
         sortValue: (e) => e.authorizedAt,
         render: (e) => (
           <span className="num text-[13px] text-body">
-            {new Date(e.authorizedAt).toLocaleDateString('ar-MA')}
+            {new Date(e.authorizedAt).toLocaleDateString(getLocale())}
           </span>
         ),
       },
       {
         key: 'expires',
-        header: 'تاريخ الانتهاء',
+        header: t('تاريخ الانتهاء'),
         align: 'center',
         sortValue: (e) => e.expiresAt,
         render: (e) => {
@@ -206,11 +215,11 @@ export default function Reception() {
                       .map((p) => p.endsOn)
                       .sort()
                       .at(-1)
-                  : new Date(e.expiresAt).toLocaleDateString('ar-MA')}
+                  : new Date(e.expiresAt).toLocaleDateString(getLocale())}
               </span>
               {expired ? (
                 <p className="mt-0.5 text-[11px] font-semibold text-danger">
-                  منتهي الصلاحية
+                  {t('منتهي الصلاحية')}
                 </p>
               ) : null}
             </div>
@@ -219,7 +228,7 @@ export default function Reception() {
       },
       {
         key: 'action',
-        header: 'الإجراء',
+        header: t('الإجراء'),
         align: 'end',
         width: '120px',
         render: (e) => {
@@ -234,13 +243,13 @@ export default function Reception() {
               ].join(' ')}
               onClick={() => manageSubscription(e.courseId)}
             >
-              إدارة الاشتراك
+              {t('إدارة الاشتراك')}
             </button>
           );
         },
       },
     ],
-    [coursesMap, manageSubscription],
+    [coursesMap, manageSubscription, lang],
   );
 
   const handleRegisterLink = useCallback(() => {
@@ -256,13 +265,13 @@ export default function Reception() {
         tone: 'error',
         text:
           existing.status === 'active'
-            ? 'التلميذ مرتبط بهذا المركز بالفعل.'
-            : 'يوجد طلب انضمام قيد الانتظار لهذا التلميذ بالفعل.',
+            ? t('التلميذ مرتبط بهذا المركز بالفعل.')
+            : t('يوجد طلب انضمام قيد الانتظار لهذا التلميذ بالفعل.'),
       });
       return;
     }
     if (!center) {
-      setResult({ tone: 'error', text: 'لم يتم إعداد مركز.' });
+      setResult({ tone: 'error', text: t('لم يتم إعداد مركز.') });
       return;
     }
     action({
@@ -271,15 +280,19 @@ export default function Reception() {
     });
     setResult({
       tone: 'success',
-      text: `تم إرسال طلب انضمام إلى ${center.name} — ينتظر موافقة التلميذ.`,
+      text: t('تم إرسال طلب انضمام إلى {0} — ينتظر موافقة التلميذ.', [
+        center.name,
+      ]),
     });
-  }, [selectedStudent, state.memberships, center, action]);
+  }, [selectedStudent, state.memberships, center, action, lang]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="استقبال التلاميذ"
-        description="ابحث برمز التلميذ، راجع هويته، ثم خصّص اشتراكه مع الأستاذ والمقرر المناسبين."
+        title={t('استقبال التلاميذ')}
+        description={t(
+          'ابحث برمز التلميذ، راجع هويته، ثم خصّص اشتراكه مع الأستاذ والمقرر المناسبين.',
+        )}
       />
       {/* Result banner */}
       {result ? (
@@ -301,12 +314,14 @@ export default function Reception() {
       {/* ---- Search card ---- */}
       <div className="card overflow-hidden">
         <div className="border-b border-line bg-brand-softer px-5 py-4">
-          <h2 className="text-base font-bold text-ink">بحث برمز الطالب</h2>
+          <h2 className="text-base font-bold text-ink">
+            {t('بحث برمز الطالب')}
+          </h2>
         </div>
         <div className="px-5 py-4">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="min-w-[260px] flex-1">
-              <Field label="رمز الطالب">
+              <Field label={t('رمز الطالب')}>
                 <input
                   className="input"
                   dir="ltr"
@@ -329,7 +344,7 @@ export default function Reception() {
               className="btn btn-primary"
               onClick={searchStudent}
             >
-              بحث
+              {t('بحث')}
             </button>
             {selectedStudent && (
               <button
@@ -339,18 +354,21 @@ export default function Reception() {
                 disabled={!center || !!selectedMembership}
               >
                 {selectedMembership?.status === 'active'
-                  ? 'مرتبط بالمركز'
+                  ? t('مرتبط بالمركز')
                   : selectedMembership?.status === 'requested'
-                    ? 'طلب قيد الانتظار'
-                    : 'ربط بالمركز'}
+                    ? t('طلب قيد الانتظار')
+                    : t('ربط بالمركز')}
               </button>
             )}
           </div>
           {selectedStudent && selectedMembership ? (
             <p className="mt-3 text-xs text-muted">
               {selectedMembership.status === 'active'
-                ? `التلميذ مرتبط بـ ${center?.name}. الاشتراكات مخصّصة لكل مقرر على حدة.`
-                : 'تم إرسال الطلب؛ تبقى موافقة التلميذ مطلوبة في التطبيق.'}
+                ? t(
+                    'التلميذ مرتبط بـ {0}. الاشتراكات مخصّصة لكل مقرر على حدة.',
+                    [center?.name],
+                  )
+                : t('تم إرسال الطلب؛ تبقى موافقة التلميذ مطلوبة في التطبيق.')}
             </p>
           ) : null}
         </div>
@@ -359,8 +377,10 @@ export default function Reception() {
       {!selectedStudent && !result ? (
         <EmptyState
           icon={<Inbox size={26} aria-hidden="true" />}
-          title="ابدأ ببطاقة التلميذ"
-          description="اطلب من التلميذ رمز UST الموجود في بطاقته داخل التطبيق، ثم أدخله في خانة البحث أعلاه."
+          title={t('ابدأ ببطاقة التلميذ')}
+          description={t(
+            'اطلب من التلميذ رمز UST الموجود في بطاقته داخل التطبيق، ثم أدخله في خانة البحث أعلاه.',
+          )}
         />
       ) : null}
 
@@ -374,19 +394,19 @@ export default function Reception() {
               </h2>
               <p className="text-xs text-muted">
                 {selectedStudent.studentType === 'bac-libre'
-                  ? 'باك حر'
-                  : 'متمدرس'}{' '}
+                  ? t('باك حر')
+                  : t('متمدرس')}{' '}
                 · {selectedStudent.level}
               </p>
             </div>
             <span className="text-xs text-muted">
-              <span className="font-semibold">الرمز:</span>{' '}
+              <span className="font-semibold">{t('الرمز:')}</span>{' '}
               <span dir="ltr" className="num">
                 {selectedStudent.studentCode}
               </span>
             </span>
             <span className="text-xs text-muted">
-              <span className="font-semibold">الهاتف:</span>{' '}
+              <span className="font-semibold">{t('الهاتف:')}</span>{' '}
               <span dir="ltr" className="num">
                 {selectedStudent.phone}
               </span>
@@ -398,14 +418,14 @@ export default function Reception() {
             columns={enrollmentColumns}
             rows={filteredEnrollments}
             getRowId={(e) => e.id}
-            title="المقررات المفعلة للتلميذ"
+            title={t('المقررات المفعلة للتلميذ')}
             compact
             toolbar={
               <Segmented
                 value={tab}
                 onChange={setTab}
                 options={TABS}
-                ariaLabel="تصفية حسب حالة الاشتراك"
+                ariaLabel={t('تصفية حسب حالة الاشتراك')}
               />
             }
             emptyState={
@@ -413,10 +433,10 @@ export default function Reception() {
                 <Inbox size={26} className="text-faint" />
                 <p className="text-sm font-semibold">
                   {tab === 'active'
-                    ? 'لا اشتراكات نشطة'
+                    ? t('لا اشتراكات نشطة')
                     : tab === 'expired'
-                      ? 'لا اشتراكات منتهية'
-                      : 'لا اشتراكات مسجلة لهذا التلميذ'}
+                      ? t('لا اشتراكات منتهية')
+                      : t('لا اشتراكات مسجلة لهذا التلميذ')}
                 </p>
               </div>
             }
@@ -429,7 +449,7 @@ export default function Reception() {
           <div className="card overflow-hidden mt-6">
             <div className="px-5 py-4 border-b border-line bg-surface">
               <h3 className="text-sm font-bold text-ink">
-                تسجيل اشتراك مع أستاذ
+                {t('تسجيل اشتراك مع أستاذ')}
               </h3>
             </div>
             <div className="px-5 py-4">
@@ -452,12 +472,12 @@ export default function Reception() {
                         </div>
                         {hasAccess ? (
                           <span className="text-[10px] font-semibold text-muted bg-surface-alt rounded-full px-2 py-0.5">
-                            مسجل
+                            {t('مسجل')}
                           </span>
                         ) : null}
                       </div>
                       <p className="text-xs font-medium text-ink leading-tight mb-1">
-                        {course.title}
+                        <bdi>{course.title}</bdi>
                       </p>
                       <p className="text-[10px] text-muted mb-3">
                         {course.subject} • {course.level}
@@ -470,7 +490,7 @@ export default function Reception() {
                         ].join(' ')}
                         onClick={() => manageSubscription(course.id)}
                       >
-                        تخصيص الاشتراك
+                        {t('تخصيص الاشتراك')}
                       </button>
                     </div>
                   );
@@ -483,13 +503,13 @@ export default function Reception() {
           <div className="card overflow-hidden mt-6">
             <div className="px-5 py-4 border-b border-line bg-surface">
               <h3 className="text-sm font-bold text-ink">
-                طلبات الانضمام قيد الانتظار
+                {t('طلبات الانضمام قيد الانتظار')}
               </h3>
             </div>
             <div className="px-5 py-4">
               {pendingMemberships.length === 0 ? (
                 <p className="py-4 text-center text-sm text-muted">
-                  لا توجد طلبات انضمام قيد الانتظار.
+                  {t('لا توجد طلبات انضمام قيد الانتظار.')}
                 </p>
               ) : (
                 <ul className="divide-y divide-line/50">
@@ -505,14 +525,14 @@ export default function Reception() {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-ink truncate">
-                            {student.fullName}
+                            <bdi>{student.fullName}</bdi>
                           </p>
                           <p className="text-xs text-muted mt-0.5" dir="ltr">
                             <span className="num">{student.studentCode}</span>
                           </p>
                         </div>
                         <Pill tone="warning" dot>
-                          بانتظار موافقة التلميذ
+                          {t('بانتظار موافقة التلميذ')}
                         </Pill>
                       </li>
                     );

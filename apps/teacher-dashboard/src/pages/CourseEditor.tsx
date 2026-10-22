@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t } from '@/i18n/locale';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -37,6 +39,7 @@ import { useStore } from '@/store/DemoStore';
 
 type Confirmation = { title: string; message: string; action: () => void };
 export default function CourseEditor() {
+  const { lang } = useI18n();
   const { courseId } = useParams();
   const [params, setParams] = useSearchParams();
   const { state, dispatch, notify } = useStore();
@@ -47,7 +50,7 @@ export default function CourseEditor() {
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [dirty, setDirty] = useState(false);
-  const onDirty = useCallback((value: boolean) => setDirty(value), []);
+  const onDirty = useCallback((value: boolean) => setDirty(value), [lang]);
   const [adding, setAdding] = useState<{
     chapterId?: string;
     kind: LessonKind;
@@ -85,7 +88,7 @@ export default function CourseEditor() {
   const lessons = allLessons(course);
   const canLeave = () =>
     !dirty ||
-    window.confirm('عندك تغييرات غير محفوظة. واش بغيتي تواصل بلا حفظ؟');
+    window.confirm(t('عندك تغييرات غير محفوظة. واش بغيتي تواصل بلا حفظ؟'));
   function selectLesson(lessonId: string) {
     if (!canLeave()) return;
     setParams({ lesson: lessonId });
@@ -98,8 +101,10 @@ export default function CourseEditor() {
   }
   function removeLesson(lesson: Lesson, chapter: Chapter) {
     setConfirmation({
-      title: 'حذف الدرس؟',
-      message: `غادي يتحيد «${lesson.title}» من المنهج. تأكد قبل المتابعة.`,
+      title: t('حذف الدرس؟'),
+      message: t('غادي يتحيد «{0}» من المنهج. تأكد قبل المتابعة.', [
+        lesson.title,
+      ]),
       action: () => {
         dispatch({
           type: 'lesson/delete',
@@ -111,7 +116,7 @@ export default function CourseEditor() {
         });
         setParams({});
         setDirty(false);
-        notify('تم حذف الدرس');
+        notify(t('تم حذف الدرس'));
       },
     });
   }
@@ -123,15 +128,16 @@ export default function CourseEditor() {
   function publish() {
     if (course!.status === 'published') {
       setConfirmation({
-        title: 'إيقاف نشر الدورة؟',
-        message:
+        title: t('إيقاف نشر الدورة؟'),
+        message: t(
           'الدورة ما غاتبقاش متاحة للتلاميذ بعد نشر التحديثات. المحتوى والاشتراكات كيبقاو محفوظين.',
+        ),
         action: () => {
           dispatch({
             type: 'course/setStatus',
             payload: { id: course!.id, status: 'draft' },
           });
-          notify('تم إيقاف نشر الدورة');
+          notify(t('تم إيقاف نشر الدورة'));
         },
       });
     } else setPublishReview(true);
@@ -142,11 +148,13 @@ export default function CourseEditor() {
         <div className="course-editor-location">
           <Link to="/courses" className="course-back-link">
             <ArrowRight size={16} aria-hidden="true" />
-            <span className="sr-only">الدورات التعليمية</span>
+            <span className="sr-only">{t('الدورات التعليمية')}</span>
           </Link>
-          <h1 className="workspace-title">{course.title}</h1>
+          <h1 className="workspace-title">
+            <bdi>{course.title}</bdi>
+          </h1>
           <span className="status-label" data-draft={course.status === 'draft'}>
-            {course.status === 'published' ? 'منشورة' : 'مسودة'}
+            {course.status === 'published' ? t('منشورة') : t('مسودة')}
           </span>
         </div>
         <div className="flex gap-2">
@@ -155,10 +163,10 @@ export default function CourseEditor() {
             onClick={() => changeTab('preview')}
           >
             <Eye size={15} aria-hidden="true" />
-            معاينة التلميذ
+            {t('معاينة التلميذ')}
           </button>
           <button className="btn btn-outline btn-sm" onClick={publish}>
-            {course.status === 'published' ? 'إيقاف النشر' : 'نشر الدورة'}
+            {course.status === 'published' ? t('إيقاف النشر') : t('نشر الدورة')}
           </button>
         </div>
       </header>
@@ -166,13 +174,13 @@ export default function CourseEditor() {
         <div
           className="workspace-tabs border-0"
           role="tablist"
-          aria-label="إدارة الدورة"
+          aria-label={t('إدارة الدورة')}
         >
           {(
             [
-              { key: 'content', label: 'محتوى الدورة', icon: BookOpen },
-              { key: 'info', label: 'معلومات الدورة', icon: Settings2 },
-              { key: 'preview', label: 'معاينة', icon: Eye },
+              { key: 'content', label: t('محتوى الدورة'), icon: BookOpen },
+              { key: 'info', label: t('معلومات الدورة'), icon: Settings2 },
+              { key: 'preview', label: t('معاينة'), icon: Eye },
             ] as const
           ).map((t) => (
             <button
@@ -189,9 +197,10 @@ export default function CourseEditor() {
         </div>
         {!selection ? (
           <p className="pb-3 text-[10px] text-muted sm:pb-0">
-            <span className="num">{lessons.length}</span> درس{' '}
-            <span className="mx-2">·</span>{' '}
-            <span className="num">{published.length}</span> منشور
+            <span className="num">{lessons.length}</span>
+            {t(' درس')} <span className="mx-2">·</span>{' '}
+            <span className="num">{published.length}</span>
+            {t(' منشور')}
           </p>
         ) : null}
       </div>
@@ -208,7 +217,7 @@ export default function CourseEditor() {
             onClick={() => setOutlineOpen((value) => !value)}
           >
             <BookOpen size={17} aria-hidden="true" />
-            <span>دروس الدورة</span>
+            <span>{t('دروس الدورة')}</span>
             <ChevronDown size={16} aria-hidden="true" />
           </button>
           <aside
@@ -218,11 +227,11 @@ export default function CourseEditor() {
           >
             <div className="flex items-center justify-between border-b border-line px-4 py-4">
               <div>
-                <h2 className="text-xs font-bold">مخطط الدورة</h2>
+                <h2 className="text-xs font-bold">{t('مخطط الدورة')}</h2>
               </div>
               <button
                 className="btn btn-icon btn-outline"
-                aria-label="إضافة محتوى للدورة"
+                aria-label={t('إضافة محتوى للدورة')}
                 onClick={() => newLesson()}
               >
                 <Plus size={16} />
@@ -231,7 +240,7 @@ export default function CourseEditor() {
             <div className="border-b border-line p-3">
               <div
                 className="mb-3 flex gap-1 rounded-lg bg-surface-alt/60 p-1"
-                aria-label="الدورات الدراسية"
+                aria-label={t('الدورات الدراسية')}
               >
                 {course.semesters.map((s) => (
                   <button
@@ -240,7 +249,7 @@ export default function CourseEditor() {
                     aria-pressed={semester?.id === s.id}
                     onClick={() => setSemester(s.id)}
                   >
-                    {s.title}
+                    {t(s.title)}
                   </button>
                 ))}
               </div>
@@ -250,10 +259,11 @@ export default function CourseEditor() {
                   className="pointer-events-none absolute start-3 top-3 text-muted"
                 />
                 <input
-                  aria-label="بحث في مخطط الدورة"
+                  dir="auto"
+                  aria-label={t('بحث في مخطط الدورة')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="ابحث عن درس…"
+                  placeholder={t('ابحث عن درس…')}
                   className="workspace-search h-9"
                 />
               </div>
@@ -289,21 +299,24 @@ export default function CourseEditor() {
                         />
                         <span className="min-w-0">
                           <span className="block truncate text-[11px] font-bold">
-                            {ci + 1}. {chapter.title}
+                            {ci + 1}. <bdi>{chapter.title}</bdi>
                           </span>
                           <span className="mt-1 block text-[9px] text-muted">
-                            {chapter.lessons.length} دروس
+                            {chapter.lessons.length}
+                            {t(' دروس')}
                           </span>
                         </span>
                       </button>
                       <details className="outline-menu">
-                        <summary aria-label={`إجراءات الفصل ${chapter.title}`}>
+                        <summary
+                          aria-label={t('إجراءات الفصل {0}', [chapter.title])}
+                        >
                           <MoreHorizontal size={16} />
                         </summary>
                         <div>
                           {[
                             {
-                              label: 'إعادة تسمية الفصل',
+                              label: t('إعادة تسمية الفصل'),
                               icon: PenLine,
                               action: () =>
                                 setChapterForm({
@@ -312,7 +325,7 @@ export default function CourseEditor() {
                                 }),
                             },
                             {
-                              label: 'نقل الفصل لأعلى',
+                              label: t('نقل الفصل لأعلى'),
                               icon: ArrowUp,
                               disabled: ci === 0,
                               action: () =>
@@ -326,7 +339,7 @@ export default function CourseEditor() {
                                 }),
                             },
                             {
-                              label: 'نقل الفصل لأسفل',
+                              label: t('نقل الفصل لأسفل'),
                               icon: ArrowDown,
                               disabled:
                                 ci === (semester?.chapters.length ?? 0) - 1,
@@ -341,12 +354,15 @@ export default function CourseEditor() {
                                 }),
                             },
                             {
-                              label: 'حذف الفصل',
+                              label: t('حذف الفصل'),
                               icon: Trash2,
                               action: () =>
                                 setConfirmation({
-                                  title: 'حذف الفصل؟',
-                                  message: `الفصل «${chapter.title}» فيه ${chapter.lessons.length} دروس. الحذف غادي يشمل جميع دروسه.`,
+                                  title: t('حذف الفصل؟'),
+                                  message: t(
+                                    'الفصل «{0}» فيه {1} دروس. الحذف غادي يشمل جميع دروسه.',
+                                    [chapter.title, chapter.lessons.length],
+                                  ),
                                   action: () => {
                                     dispatch({
                                       type: 'chapter/delete',
@@ -357,7 +373,7 @@ export default function CourseEditor() {
                                     });
                                     if (selection?.chapter.id === chapter.id)
                                       setParams({});
-                                    notify('تم حذف الفصل');
+                                    notify(t('تم حذف الفصل'));
                                   },
                                 }),
                             },
@@ -391,7 +407,7 @@ export default function CourseEditor() {
                             >
                               <button
                                 className="flex min-w-0 flex-1 items-start gap-2.5 py-3 ps-3 text-start"
-                                aria-label={`${lesson.title} — ${KIND_META[lesson.kind].label}`}
+                                aria-label={`${lesson.title} — ${t(KIND_META[lesson.kind].label)}`}
                                 onClick={() => selectLesson(lesson.id)}
                                 aria-current={
                                   selectedId === lesson.id ? 'page' : undefined
@@ -404,26 +420,28 @@ export default function CourseEditor() {
                                 />
                                 <span className="min-w-0 flex-1">
                                   <span className="line-clamp-2 text-[10px] leading-5">
-                                    {lesson.title}
+                                    <bdi>{lesson.title}</bdi>
                                   </span>
                                   <span className="mt-1 flex items-center gap-1.5 text-[8px] text-muted">
                                     <span
                                       className={`size-1.5 rounded-full ${lesson.published ? 'bg-brand' : 'border border-line-strong'}`}
                                     />
-                                    {lesson.published ? 'منشور' : 'مسودة'}
+                                    {lesson.published ? t('منشور') : t('مسودة')}
                                   </span>
                                 </span>
                               </button>
                               <details className="outline-menu me-2">
                                 <summary
-                                  aria-label={`إجراءات درس ${lesson.title}`}
+                                  aria-label={t('إجراءات درس {0}', [
+                                    lesson.title,
+                                  ])}
                                 >
                                   <MoreHorizontal size={13} />
                                 </summary>
                                 <div>
                                   {[
                                     {
-                                      label: 'نقل الدرس لأعلى',
+                                      label: t('نقل الدرس لأعلى'),
                                       icon: ArrowUp,
                                       disabled: li === 0 || !!query,
                                       action: () =>
@@ -438,7 +456,7 @@ export default function CourseEditor() {
                                         }),
                                     },
                                     {
-                                      label: 'نقل الدرس لأسفل',
+                                      label: t('نقل الدرس لأسفل'),
                                       icon: ArrowDown,
                                       disabled:
                                         li === rows.length - 1 || !!query,
@@ -454,7 +472,7 @@ export default function CourseEditor() {
                                         }),
                                     },
                                     {
-                                      label: 'حذف الدرس',
+                                      label: t('حذف الدرس'),
                                       icon: Trash2,
                                       action: () =>
                                         removeLesson(lesson, chapter),
@@ -482,7 +500,7 @@ export default function CourseEditor() {
                         })}
                         {!rows.length ? (
                           <p className="px-5 py-4 text-[10px] text-muted">
-                            لا دروس بعد. أضف أول درس.
+                            {t('لا دروس بعد. أضف أول درس.')}
                           </p>
                         ) : null}
                         <button
@@ -490,7 +508,7 @@ export default function CourseEditor() {
                           onClick={() => newLesson(chapter.id)}
                         >
                           <Plus size={13} />
-                          إضافة درس
+                          {t('إضافة درس')}
                         </button>
                       </div>
                     ) : null}
@@ -506,7 +524,7 @@ export default function CourseEditor() {
               }}
             >
               <Plus size={14} />
-              إضافة فصل
+              {t('إضافة فصل')}
             </button>
           </aside>
           <div className="min-w-0">
@@ -529,16 +547,17 @@ export default function CourseEditor() {
                     <BookOpen size={26} strokeWidth={1.3} />
                   </span>
                   <p className="mb-3 text-[10px] font-bold text-brand">
-                    مساحة صناعة التعلّم
+                    {t('مساحة صناعة التعلّم')}
                   </p>
                   <h2 className="text-2xl font-bold leading-relaxed">
-                    منهج واضح.
+                    {t('منهج واضح.')}
                     <br />
-                    تجربة تعلّم أفضل.
+                    {t('تجربة تعلّم أفضل.')}
                   </h2>
                   <p className="mt-4 max-w-md text-xs leading-7 text-muted">
-                    اختَر درساً من مخطط الدورة لتحريره، أو أضف محتوى جديداً.
-                    جميع الفصول والدروس كيبقاو قريبين منك وأنت كتخدم.
+                    {t(
+                      'اختَر درساً من مخطط الدورة لتحريره، أو أضف محتوى جديداً. جميع الفصول والدروس كيبقاو قريبين منك وأنت كتخدم.',
+                    )}
                   </p>
                   <button
                     className="btn btn-primary mt-6"
@@ -546,23 +565,23 @@ export default function CourseEditor() {
                     disabled={!course.semesters.some((s) => s.chapters.length)}
                   >
                     <Plus size={16} />
-                    إضافة محتوى
+                    {t('إضافة محتوى')}
                   </button>
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-x-reverse divide-line border-y border-line">
                   {[
                     {
-                      label: 'فيديوهات',
+                      label: t('فيديوهات'),
                       icon: Film,
                       value: lessons.filter((l) => l.kind === 'video').length,
                     },
                     {
-                      label: 'مستندات PDF',
+                      label: t('مستندات PDF'),
                       icon: FileText,
                       value: lessons.filter((l) => l.kind === 'pdf').length,
                     },
                     {
-                      label: 'اختبارات',
+                      label: t('اختبارات'),
                       icon: ListChecks,
                       value: lessons.filter((l) => l.kind === 'quiz').length,
                     },
@@ -579,19 +598,19 @@ export default function CourseEditor() {
                   ))}
                 </div>
                 <div className="space-y-4 p-6">
-                  <h3 className="text-xs font-bold">قبل نشر دورتك</h3>
+                  <h3 className="text-xs font-bold">{t('قبل نشر دورتك')}</h3>
                   {[
                     {
                       done: course.title.trim().length >= 4,
-                      label: 'عنوان الدورة ومعلوماتها',
+                      label: t('عنوان الدورة ومعلوماتها'),
                     },
                     {
                       done: lessons.some(hasContent),
-                      label: 'إضافة محتوى تعليمي',
+                      label: t('إضافة محتوى تعليمي'),
                     },
                     {
                       done: published.length > 0,
-                      label: 'نشر درس واحد على الأقل',
+                      label: t('نشر درس واحد على الأقل'),
                     },
                   ].map((s) => (
                     <div
@@ -616,7 +635,7 @@ export default function CourseEditor() {
                     to="/sync"
                     className="mt-2 flex items-center gap-2 border-t border-line pt-4 text-[10px] font-bold text-brand"
                   >
-                    نشر التحديثات لتطبيق التلميذ
+                    {t('نشر التحديثات لتطبيق التلميذ')}
                     <ArrowLeft size={14} />
                   </Link>
                 </div>
@@ -637,14 +656,14 @@ export default function CourseEditor() {
         <Modal
           open
           onClose={() => setChapterForm(null)}
-          title={chapterForm.id ? 'تعديل اسم الفصل' : 'فصل جديد'}
+          title={chapterForm.id ? t('تعديل اسم الفصل') : t('فصل جديد')}
           footer={
             <>
               <button
                 className="btn btn-outline"
                 onClick={() => setChapterForm(null)}
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 className="btn btn-primary"
@@ -669,17 +688,18 @@ export default function CourseEditor() {
                       },
                     });
                   setChapterForm(null);
-                  notify('تم حفظ الفصل');
+                  notify(t('تم حفظ الفصل'));
                 }}
               >
-                حفظ الفصل
+                {t('حفظ الفصل')}
               </button>
             </>
           }
         >
           <label className="block">
-            <span className="label">عنوان الفصل</span>
+            <span className="label">{t('عنوان الفصل')}</span>
             <input
+              dir="auto"
               className="input"
               value={chapterForm.title}
               onChange={(e) =>
@@ -689,7 +709,9 @@ export default function CourseEditor() {
             />
           </label>
           <p className="mt-3 text-[10px] text-muted">
-            داخل {semester?.title}. يمكنك ترتيب الفصول من قائمة الإجراءات.
+            {t('داخل ')}
+            {semester?.title}
+            {t('. يمكنك ترتيب الفصول من قائمة الإجراءات.')}
           </p>
         </Modal>
       ) : null}
@@ -698,7 +720,7 @@ export default function CourseEditor() {
           open
           title={confirmation.title}
           message={confirmation.message}
-          confirmLabel="تأكيد"
+          confirmLabel={t('تأكيد')}
           onCancel={() => setConfirmation(null)}
           onConfirm={() => {
             confirmation.action();
@@ -710,15 +732,15 @@ export default function CourseEditor() {
         <Modal
           open
           onClose={() => setPublishReview(false)}
-          title="مراجعة ونشر الدورة"
-          description="تأكد أن المحتوى جاهز قبل إتاحته للتلاميذ."
+          title={t('مراجعة ونشر الدورة')}
+          description={t('تأكد أن المحتوى جاهز قبل إتاحته للتلاميذ.')}
           footer={
             <>
               <button
                 className="btn btn-outline"
                 onClick={() => setPublishReview(false)}
               >
-                رجوع
+                {t('رجوع')}
               </button>
               <button
                 className="btn btn-primary"
@@ -729,41 +751,46 @@ export default function CourseEditor() {
                     payload: { id: course.id, status: 'published' },
                   });
                   setPublishReview(false);
-                  notify('تم نشر الدورة. انشر التحديثات لتطبيق التلميذ.');
+                  notify(t('تم نشر الدورة. انشر التحديثات لتطبيق التلميذ.'));
                 }}
               >
-                تأكيد نشر الدورة
+                {t('تأكيد نشر الدورة')}
               </button>
             </>
           }
         >
           <div className="space-y-4">
-            <h3 className="text-base font-bold">{course.title}</h3>
+            <h3 className="text-base font-bold">
+              <bdi>{course.title}</bdi>
+            </h3>
             <div className="grid grid-cols-2 gap-3 rounded-xl bg-brand-soft/50 p-5">
               <div>
                 <p className="num text-2xl">{published.length}</p>
                 <p className="mt-1 text-[10px] text-muted">
-                  دروس جاهزة ومنشورة
+                  {t('دروس جاهزة ومنشورة')}
                 </p>
               </div>
               <div>
                 <p className="num text-2xl">
                   {lessons.length - published.length}
                 </p>
-                <p className="mt-1 text-[10px] text-muted">دروس تبقى مخفية</p>
+                <p className="mt-1 text-[10px] text-muted">
+                  {t('دروس تبقى مخفية')}
+                </p>
               </div>
             </div>
             {!published.length || dirty ? (
               <p role="alert" className="text-xs leading-7 text-brand">
                 {dirty
-                  ? 'احفظ تغييرات الدرس أولاً، ثم انشر الدورة.'
-                  : 'خاصك درس واحد بمحتوى منشور على الأقل.'}
+                  ? t('احفظ تغييرات الدرس أولاً، ثم انشر الدورة.')
+                  : t('خاصك درس واحد بمحتوى منشور على الأقل.')}
               </p>
             ) : null}
             <p className="flex gap-2 text-[11px] leading-7 text-muted">
               <CircleHelp size={15} className="mt-1 shrink-0" />
-              النشر كيجهّز الدورة للتلاميذ أصحاب الاشتراك المفعّل. من بعد انشر
-              التحديثات من صفحة المزامنة.
+              {t(
+                'النشر كيجهّز الدورة للتلاميذ أصحاب الاشتراك المفعّل. من بعد انشر التحديثات من صفحة المزامنة.',
+              )}
             </p>
           </div>
         </Modal>

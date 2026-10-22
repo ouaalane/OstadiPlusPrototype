@@ -1,3 +1,4 @@
+import { translate as t } from '@/i18n/locale';
 import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { demoMediaUrl, uploadDemo, type UploadOptions } from './demo-sync';
 /**
@@ -56,7 +57,7 @@ async function withStore<T>(
     };
     tx.onabort = () => {
       db.close();
-      reject(tx.error ?? new Error('تعذّر حفظ الملف محلياً'));
+      reject(tx.error ?? new Error(t('تعذّر حفظ الملف محلياً')));
     };
   });
 }

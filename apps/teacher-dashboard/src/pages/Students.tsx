@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, relativeTime } from '@/i18n/locale';
 import SubscriptionManager from '@/components/SubscriptionManager';
 import { useMemo, useState } from 'react';
 import {
@@ -10,7 +12,6 @@ import {
   Users,
 } from 'lucide-react';
 import {
-  relativeTime,
   enrollmentHasAccess,
   isEnrollmentExpired,
   type CenterMembership,
@@ -40,6 +41,7 @@ const FILTERS: [Filter, string][] = [
 ];
 
 export default function Students() {
+  const { lang } = useI18n();
   const { state, pendingMemberships, findStudentByCode } = useStore();
   const action = useAction();
 
@@ -104,7 +106,7 @@ export default function Students() {
             return false;
           return true;
         }),
-    [state.students, state.enrollments, filter],
+    [state.students, state.enrollments, filter, lang],
   );
 
   const counts = useMemo(() => {
@@ -124,14 +126,14 @@ export default function Students() {
       );
     }).length;
     return { total, active, pending };
-  }, [state.students, state.enrollments]);
+  }, [state.students, state.enrollments, lang]);
 
   /* ---- Table columns ---- */
   const columns: DataTableColumn<(typeof rows)[number]>[] = useMemo(
     () => [
       {
         key: 'student',
-        header: 'التلميذ',
+        header: t('التلميذ'),
         width: '280px',
         sortValue: ({ student }) => student.fullName,
         render: ({ student }, index) => (
@@ -139,7 +141,7 @@ export default function Students() {
             <Avatar label={student.monogram} seed={index} size={38} />
             <div className="min-w-0">
               <div className="student-name text-[14.5px] font-bold text-ink">
-                {student.fullName}
+                <bdi>{student.fullName}</bdi>
               </div>
               <div className="student-meta text-xs text-muted">
                 <span dir="ltr" className="num">
@@ -155,7 +157,7 @@ export default function Students() {
       },
       {
         key: 'level',
-        header: 'المستوى',
+        header: t('المستوى'),
         sortValue: ({ student }) => student.level,
         render: ({ student }) => (
           <span className="text-[13px] font-semibold text-body">
@@ -165,18 +167,19 @@ export default function Students() {
       },
       {
         key: 'joined',
-        header: 'تاريخ الانضمام',
+        header: t('تاريخ الانضمام'),
         hideOnMobile: true,
         sortValue: ({ student }) => student.joinedAt,
         render: ({ student }) => (
           <span className="text-xs text-muted">
-            انضم {relativeTime(student.joinedAt)}
+            {t('انضم ')}
+            {relativeTime(student.joinedAt)}
           </span>
         ),
       },
       {
         key: 'access',
-        header: 'حالة الوصول',
+        header: t('حالة الوصول'),
         align: 'center',
         width: '130px',
         sortValue: ({ enrollments }) =>
@@ -187,18 +190,19 @@ export default function Students() {
           ).length;
           return activeCount > 0 ? (
             <Pill tone="success" dot>
-              <span className="num">{activeCount}</span> اشتراك سارٍ
+              <span className="num">{activeCount}</span>
+              {t(' اشتراك سارٍ')}
             </Pill>
           ) : (
             <Pill tone="warning" dot>
-              بلا وصول نشط
+              {t('بلا وصول نشط')}
             </Pill>
           );
         },
       },
       {
         key: 'courses',
-        header: 'المقررات',
+        header: t('المقررات'),
         align: 'center',
         hideOnMobile: true,
         render: ({ enrollments }) => {
@@ -206,10 +210,10 @@ export default function Students() {
             enrollments.some((e) => e.courseId === c.id),
           );
           if (subscribed.length === 0) {
-            return <span className="text-xs text-faint">لا مقررات</span>;
+            return <span className="text-xs text-faint">{t('لا مقررات')}</span>;
           }
           return (
-            <div className="flex flex-wrap justify-center gap-1.5">
+            <div className="flex min-w-[160px] flex-wrap justify-center gap-1.5">
               {subscribed.map((course) => {
                 const enrollment = enrollments.find(
                   (e) => e.courseId === course.id,
@@ -218,7 +222,7 @@ export default function Students() {
                 return (
                   <span
                     key={course.id}
-                    title={`${course.title} — ${isEnrollmentExpired(enrollment) ? 'اشتراك منتهي' : enrollmentHasAccess(enrollment) ? 'اشتراك ساري' : 'بدون وصول حالياً'}`}
+                    title={`${course.title} — ${isEnrollmentExpired(enrollment) ? t('اشتراك منتهي') : enrollmentHasAccess(enrollment) ? t('اشتراك ساري') : t('بدون وصول حالياً')}`}
                     className={[
                       'student-course-label text-[11px] font-semibold',
                       enrollmentHasAccess(enrollment)
@@ -228,7 +232,7 @@ export default function Students() {
                           : 'bg-surface-alt text-muted',
                     ].join(' ')}
                   >
-                    {course.title}
+                    <bdi>{course.title}</bdi>
                   </span>
                 );
               })}
@@ -238,7 +242,7 @@ export default function Students() {
       },
       {
         key: 'actions',
-        header: 'الإجراء',
+        header: t('الإجراء'),
         align: 'end',
         width: '150px',
         render: (row) => (
@@ -252,12 +256,12 @@ export default function Students() {
               })
             }
           >
-            إدارة الوصول
+            {t('إدارة الوصول')}
           </button>
         ),
       },
     ],
-    [state.courses],
+    [state.courses, lang],
   );
 
   /* Resolve a student by their opaque code (UST-XXXXX). Security: lookup is
@@ -267,14 +271,16 @@ export default function Students() {
     setExpanded(null);
     setRequestResult(null);
     if (!needle) {
-      setActivation({ tone: 'error', text: 'أدخل رمز الطالب أولاً.' });
+      setActivation({ tone: 'error', text: t('أدخل رمز الطالب أولاً.') });
       return;
     }
     const found = findStudentByCode(needle);
     if (!found) {
       setActivation({
         tone: 'error',
-        text: 'لم يتم العثور على تلميذ بهذا الرمز — تأكد من نسخ الرمز من بطاقة الطالب في التطبيق.',
+        text: t(
+          'لم يتم العثور على تلميذ بهذا الرمز — تأكد من نسخ الرمز من بطاقة الطالب في التطبيق.',
+        ),
       });
       return;
     }
@@ -282,7 +288,10 @@ export default function Students() {
     setExpanded(found.id);
     setActivation({
       tone: 'ok',
-      text: `تم التحقق من ${found.fullName} (${found.studentCode}) — راجع معلومات التلميذ ثم أرسل طلب الانضمام إلى المركز.`,
+      text: t(
+        'تم التحقق من {0} ({1}) — راجع معلومات التلميذ ثم أرسل طلب الانضمام إلى المركز.',
+        [found.fullName, found.studentCode],
+      ),
     });
   };
 
@@ -293,7 +302,7 @@ export default function Students() {
   const sendRequest = () => {
     if (!verifiedStudent || existingMembership) return;
     if (!center) {
-      setRequestResult({ tone: 'error', text: 'لم يتم إعداد مركز للمعلم.' });
+      setRequestResult({ tone: 'error', text: t('لم يتم إعداد مركز للمعلم.') });
       return;
     }
     action({
@@ -302,7 +311,10 @@ export default function Students() {
     });
     setRequestResult({
       tone: 'ok',
-      text: `تم إرسال طلب الانضمام إلى ${center.name}. سيصل إشعار إلى تطبيق التلميذ للموافقة أو الرفض.`,
+      text: t(
+        'تم إرسال طلب الانضمام إلى {0}. سيصل إشعار إلى تطبيق التلميذ للموافقة أو الرفض.',
+        [center.name],
+      ),
     });
     setActivation(null);
   };
@@ -320,14 +332,17 @@ export default function Students() {
       setExpanded(null);
       setActivation({
         tone: 'error',
-        text: 'لا توجد بيانات تلاميذ لتجربة QR حالياً.',
+        text: t('لا توجد بيانات تلاميذ لتجربة QR حالياً.'),
       });
       return;
     }
     setCodeInput(target.studentCode);
     setActivation({
       tone: 'ok',
-      text: `رمز تجريبي: ${target.fullName} (${target.studentCode}) — راجع المعلومات ثم أرسل طلب الانضمام.`,
+      text: t('رمز تجريبي: {0} ({1}) — راجع المعلومات ثم أرسل طلب الانضمام.', [
+        target.fullName,
+        target.studentCode,
+      ]),
     });
     setExpanded(target.id);
   };
@@ -336,10 +351,10 @@ export default function Students() {
     <>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="section-kicker">المرافقة والمتابعة</p>
-          <h1 className="workspace-title">التلاميذ والاشتراكات</h1>
+          <p className="section-kicker">{t('المرافقة والمتابعة')}</p>
+          <h1 className="workspace-title">{t('التلاميذ والاشتراكات')}</h1>
           <p className="workspace-subtitle">
-            فعّل الوصول، تابع الاشتراكات، وخلي كل تلميذ مرتبط بمساره.
+            {t('فعّل الوصول، تابع الاشتراكات، وخلي كل تلميذ مرتبط بمساره.')}
           </p>
         </div>
         <button
@@ -349,7 +364,7 @@ export default function Students() {
           onClick={() => setActivationOpen((v) => !v)}
         >
           <UserPlus size={16} />
-          {activationOpen ? 'إغلاق الربط' : 'ربط تلميذ بالمركز'}
+          {activationOpen ? t('إغلاق الربط') : t('ربط تلميذ بالمركز')}
         </button>
       </div>
 
@@ -361,7 +376,7 @@ export default function Students() {
               <UserPlus size={19} />
             </div>
             <h2 className="min-w-0 flex-1 text-base font-bold text-ink">
-              ربط تلميذ بالمركز
+              {t('ربط تلميذ بالمركز')}
             </h2>
           </div>
 
@@ -378,7 +393,7 @@ export default function Students() {
                 }`}
               >
                 <Tag size={15} />
-                رمز الطالب
+                {t('رمز الطالب')}
               </button>
               <button
                 type="button"
@@ -391,18 +406,18 @@ export default function Students() {
                 }`}
               >
                 <QrCode size={15} />
-                تجربة QR
+                {t('تجربة QR')}
               </button>
             </div>
 
             {method === 'code' ? (
               <div className="flex flex-wrap items-end gap-2">
                 <div className="min-w-[220px] flex-1">
-                  <Field label="رمز الطالب">
+                  <Field label={t('رمز الطالب')}>
                     <div className="flex gap-2">
                       <input
                         className="input"
-                        aria-label="رمز الطالب"
+                        aria-label={t('رمز الطالب')}
                         aria-invalid={activation?.tone === 'error' || undefined}
                         aria-describedby={
                           activation ? 'student-code-result' : undefined
@@ -434,13 +449,15 @@ export default function Students() {
                           } catch {
                             setActivation({
                               tone: 'error',
-                              text: 'المتصفح ما سمحش بقراءة الحافظة. لصق الرمز مباشرة في الخانة.',
+                              text: t(
+                                'المتصفح ما سمحش بقراءة الحافظة. لصق الرمز مباشرة في الخانة.',
+                              ),
                             });
                           }
                         }}
                       >
                         <ClipboardPaste size={16} />
-                        لصق
+                        {t('لصق')}
                       </button>
                     </div>
                   </Field>
@@ -451,7 +468,7 @@ export default function Students() {
                   onClick={verifyStudent}
                 >
                   <ShieldCheck size={16} />
-                  تحقق
+                  {t('تحقق')}
                 </button>
               </div>
             ) : (
@@ -461,7 +478,7 @@ export default function Students() {
                 onClick={simulateScan}
               >
                 <ScanLine size={16} />
-                تجربة رمز من بيانات العرض
+                {t('تجربة رمز من بيانات العرض')}
               </button>
             )}
 
@@ -489,15 +506,17 @@ export default function Students() {
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     {center
-                      ? `المركز: ${center.name}`
-                      : 'لم يتم إعداد مركز للمعلم.'}
+                      ? t('المركز: {0}', [center.name])
+                      : t('لم يتم إعداد مركز للمعلم.')}
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     {existingMembership?.status === 'active'
-                      ? 'التلميذ مرتبط بهذا المركز بالفعل.'
+                      ? t('التلميذ مرتبط بهذا المركز بالفعل.')
                       : existingMembership?.status === 'requested'
-                        ? 'طلب الانضمام ينتظر موافقة التلميذ في التطبيق.'
-                        : 'إرسال الطلب لا يفعّل الاشتراكات تلقائياً؛ تبقى موافقة التلميذ مطلوبة.'}
+                        ? t('طلب الانضمام ينتظر موافقة التلميذ في التطبيق.')
+                        : t(
+                            'إرسال الطلب لا يفعّل الاشتراكات تلقائياً؛ تبقى موافقة التلميذ مطلوبة.',
+                          )}
                   </p>
                 </div>
                 <button
@@ -508,10 +527,10 @@ export default function Students() {
                 >
                   <UserPlus size={16} aria-hidden="true" />
                   {existingMembership?.status === 'active'
-                    ? 'مرتبط بالمركز'
+                    ? t('مرتبط بالمركز')
                     : existingMembership?.status === 'requested'
-                      ? 'طلب قيد الانتظار'
-                      : 'إرسال طلب انضمام'}
+                      ? t('طلب قيد الانتظار')
+                      : t('إرسال طلب انضمام')}
                 </button>
               </div>
             ) : null}
@@ -531,7 +550,7 @@ export default function Students() {
       {pendingMemberships.length > 0 ? (
         <div className="mb-4">
           <h3 className="text-xs font-bold text-muted mb-2">
-            طلبات الانضمام قيد الانتظار
+            {t('طلبات الانضمام قيد الانتظار')}
           </h3>
           <ul className="card divide-y divide-line overflow-hidden p-0">
             {pendingMemberships.map((membership: CenterMembership) => {
@@ -549,14 +568,14 @@ export default function Students() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-bold text-ink truncate">
-                      {student.fullName}
+                      <bdi>{student.fullName}</bdi>
                     </div>
                     <div className="text-xs text-muted">
                       {student.studentCode} · {center.name}
                     </div>
                   </div>
                   <Pill tone="warning" dot>
-                    في انتظار موافقة التلميذ
+                    {t('في انتظار موافقة التلميذ')}
                   </Pill>
                 </li>
               );
@@ -566,10 +585,14 @@ export default function Students() {
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <SummaryTile label="تلاميذ مسجّلون" value={counts.total} />
-        <SummaryTile label="وصول نشط" value={counts.active} tone="success" />
+        <SummaryTile label={t('تلاميذ مسجّلون')} value={counts.total} />
         <SummaryTile
-          label="بدون اشتراك محدد"
+          label={t('وصول نشط')}
+          value={counts.active}
+          tone="success"
+        />
+        <SummaryTile
+          label={t('بدون اشتراك محدد')}
           value={counts.pending}
           tone="warning"
         />
@@ -578,11 +601,15 @@ export default function Students() {
       {state.students.length === 0 ? (
         <EmptyState
           icon={<Users size={24} />}
-          title={filter !== 'all' ? 'لا تلاميذ بهذه الحالة' : 'لا تلاميذ بعد'}
+          title={
+            filter !== 'all' ? t('لا تلاميذ بهذه الحالة') : t('لا تلاميذ بعد')
+          }
           description={
             filter !== 'all'
-              ? 'غيّر التصفية لعرض تلاميذ آخرين.'
-              : 'لم يسجّل أي تلميذ في التطبيق بعد — سيظهر هنا تلقائياً بمجرد أن يُنشئ حساباً ويزور المركز.'
+              ? t('غيّر التصفية لعرض تلاميذ آخرين.')
+              : t(
+                  'لم يسجّل أي تلميذ في التطبيق بعد — سيظهر هنا تلقائياً بمجرد أن يُنشئ حساباً ويزور المركز.',
+                )
           }
         />
       ) : (
@@ -591,8 +618,8 @@ export default function Students() {
           rows={rows}
           getRowId={({ student }) => student.id}
           getRowLabel={({ student }) => student.fullName}
-          title="تلاميذ المركز"
-          searchPlaceholder="بحث بالاسم أو الرمز…"
+          title={t('تلاميذ المركز')}
+          searchPlaceholder={t('بحث بالاسم أو الرمز…')}
           selectedIds={selected}
           onSelectionChange={setSelected}
           toolbar={
@@ -601,7 +628,7 @@ export default function Students() {
                 value={filter}
                 onChange={setFilter}
                 options={FILTERS}
-                ariaLabel="تصفية حسب حالة الوصول"
+                ariaLabel={t('تصفية حسب حالة الوصول')}
               />
               <button
                 type="button"
@@ -609,22 +636,24 @@ export default function Students() {
                 onClick={() => setActivationOpen(true)}
               >
                 <QrCode size={15} />
-                ربط تلميذ
+                {t('ربط تلميذ')}
               </button>
             </div>
           }
           emptyState={
             <div className="flex flex-col items-center gap-2 text-muted">
               <Users size={28} className="text-faint" />
-              <p className="text-sm font-semibold">لا توجد نتائج مطابقة</p>
-              <p className="text-xs">جرّب تعديل البحث أو التصفية.</p>
+              <p className="text-sm font-semibold">
+                {t('لا توجد نتائج مطابقة')}
+              </p>
+              <p className="text-xs">{t('جرّب تعديل البحث أو التصفية.')}</p>
               {filter !== 'all' ? (
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
                   onClick={() => setFilter('all')}
                 >
-                  عرض كل الحالات
+                  {t('عرض كل الحالات')}
                 </button>
               ) : null}
             </div>
@@ -653,6 +682,7 @@ function SummaryTile({
   value: number;
   tone?: 'brand' | 'success' | 'warning';
 }) {
+  useI18n();
   const colors = {
     brand: { bg: 'var(--color-brand-soft)', fg: 'var(--color-brand-dark)' },
     success: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' },
@@ -666,7 +696,9 @@ function SummaryTile({
         style={{ background: style.fg }}
       />
       <div className="min-w-0">
-        <div className="truncate text-xs font-semibold text-muted">{label}</div>
+        <div className="truncate text-xs font-semibold text-muted">
+          {t(label)}
+        </div>
         <div className="num text-xl font-bold" style={{ color: style.fg }}>
           {value}
         </div>

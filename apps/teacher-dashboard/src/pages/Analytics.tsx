@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, getLocale } from '@/i18n/locale';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
@@ -5,6 +7,7 @@ import { accessibleCourses, allLessons } from '@ostadiplus/shared';
 import { EmptyState, ProgressBar, TableScroll } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 export default function Analytics() {
+  useI18n();
   const { state } = useStore();
   const [query, setQuery] = useState('');
   const attempts = state.quizAttempts ?? [];
@@ -47,31 +50,33 @@ export default function Analytics() {
   return (
     <>
       <div className="mb-8">
-        <p className="section-kicker">من المحتوى إلى الأثر</p>
-        <h1 className="workspace-title">التقدّم والنتائج</h1>
+        <p className="section-kicker">{t('من المحتوى إلى الأثر')}</p>
+        <h1 className="workspace-title">{t('التقدّم والنتائج')}</h1>
         <p className="workspace-subtitle">
-          شوف فين وصل كل تلميذ، وتابع نتائج الاختبارات المزامنة من التطبيق.
+          {t(
+            'شوف فين وصل كل تلميذ، وتابع نتائج الاختبارات المزامنة من التطبيق.',
+          )}
         </p>
       </div>
       <section className="workspace-panel mb-6 grid grid-cols-2 lg:grid-cols-4">
         {[
           {
-            label: 'تلاميذ لديهم وصول',
+            label: t('تلاميذ لديهم وصول'),
             value: rows.filter((r) => r.courses > 0).length,
             icon: Users,
           },
           {
-            label: 'دروس مكتملة',
+            label: t('دروس مكتملة'),
             value: rows.reduce((n, r) => n + r.completed, 0),
             icon: CheckCircle2,
           },
           {
-            label: 'مجموع مواضع المشاهدة (دقائق)',
+            label: t('مجموع مواضع المشاهدة (دقائق)'),
             value: rows.reduce((n, r) => n + r.minutes, 0),
             icon: Clock3,
           },
           {
-            label: 'محاولات الاختبار',
+            label: t('محاولات الاختبار'),
             value: attempts.length,
             icon: BarChart3,
           },
@@ -89,37 +94,38 @@ export default function Analytics() {
       </section>
       <section className="workspace-panel p-5">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-bold">متابعة التلاميذ</h2>
+          <h2 className="text-sm font-bold">{t('متابعة التلاميذ')}</h2>
           <input
+            dir="auto"
             className="input max-w-sm"
-            aria-label="البحث في النتائج"
+            aria-label={t('البحث في النتائج')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="اسم التلميذ أو رمزه…"
+            placeholder={t('اسم التلميذ أو رمزه…')}
           />
         </div>
         {visible.length ? (
-          <TableScroll label="تقدّم التلاميذ ونتائجهم">
+          <TableScroll label={t('تقدّم التلاميذ ونتائجهم')}>
             <table
               className="workspace-table analytics-table min-w-[650px]"
-              aria-label="تقدّم التلاميذ ونتائجهم"
+              aria-label={t('تقدّم التلاميذ ونتائجهم')}
             >
               <thead>
                 <tr>
                   {[
-                    'التلميذ',
-                    'الدورات',
-                    'التقدّم',
-                    'موضع المشاهدة',
-                    'الاختبارات',
-                    'متوسط النتيجة',
+                    t('التلميذ'),
+                    t('الدورات'),
+                    t('التقدّم'),
+                    t('موضع المشاهدة'),
+                    t('الاختبارات'),
+                    t('متوسط النتيجة'),
                   ].map((label) => (
                     <th
-                      key={label}
+                      key={t(label)}
                       scope="col"
                       className="px-4 py-3 text-start font-bold"
                     >
-                      {label}
+                      {t(label)}
                     </th>
                   ))}
                 </tr>
@@ -151,24 +157,27 @@ export default function Analytics() {
                           <ProgressBar
                             value={row.percent}
                             height={6}
-                            label={`تقدّم ${row.student.fullName}`}
+                            label={t('تقدّم {0}', [row.student.fullName])}
                           />
                         </>
                       ) : (
                         <span className="text-xs text-muted">
-                          لا دروس متاحة
+                          {t('لا دروس متاحة')}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="num">{row.minutes}</span> د
+                      <span className="num">{row.minutes}</span>
+                      {t(' د')}
                     </td>
                     <td className="px-4 py-4">
                       <span className="num">{row.attempts}</span>
                     </td>
                     <td className="px-4 py-4">
                       {row.score === null ? (
-                        <span className="text-xs text-muted">لم يحاول بعد</span>
+                        <span className="text-xs text-muted">
+                          {t('لم يحاول بعد')}
+                        </span>
                       ) : (
                         <span className="num">{row.score}%</span>
                       )}
@@ -181,11 +190,13 @@ export default function Analytics() {
         ) : (
           <EmptyState
             icon={<BarChart3 size={24} />}
-            title={query.trim() ? 'لا توجد نتائج مطابقة' : 'لا يوجد تلاميذ بعد'}
+            title={
+              query.trim() ? t('لا توجد نتائج مطابقة') : t('لا يوجد تلاميذ بعد')
+            }
             description={
               query.trim()
-                ? 'جرّب اسماً أو رمزاً آخر، أو امسح البحث لعرض الجميع.'
-                : 'اربط التلاميذ بالمركز لمتابعة تقدّمهم ونتائجهم هنا.'
+                ? t('جرّب اسماً أو رمزاً آخر، أو امسح البحث لعرض الجميع.')
+                : t('اربط التلاميذ بالمركز لمتابعة تقدّمهم ونتائجهم هنا.')
             }
             action={
               query.trim() ? (
@@ -193,11 +204,11 @@ export default function Analytics() {
                   className="btn btn-outline"
                   onClick={() => setQuery('')}
                 >
-                  مسح البحث
+                  {t('مسح البحث')}
                 </button>
               ) : (
                 <Link to="/students" className="btn btn-outline">
-                  إدارة التلاميذ
+                  {t('إدارة التلاميذ')}
                 </Link>
               )
             }
@@ -205,11 +216,12 @@ export default function Analytics() {
         )}
       </section>
       <p className="mt-3 text-xs leading-6 text-muted">
-        موضع المشاهدة هو آخر موضع مسجّل في الدروس المتاحة، وليس الوقت الفعلي
-        الذي قضاه التلميذ في المشاهدة.
+        {t(
+          'موضع المشاهدة هو آخر موضع مسجّل في الدروس المتاحة، وليس الوقت الفعلي الذي قضاه التلميذ في المشاهدة.',
+        )}
       </p>
       <section className="workspace-panel mt-5 p-5">
-        <h2 className="mb-4 text-sm font-bold">آخر محاولات الاختبار</h2>
+        <h2 className="mb-4 text-sm font-bold">{t('آخر محاولات الاختبار')}</h2>
         {attempts.length ? (
           <ul className="divide-y divide-line">
             {[...attempts]
@@ -233,7 +245,7 @@ export default function Analytics() {
                       dateTime={a.submittedAt}
                       className="text-xs text-muted"
                     >
-                      {new Date(a.submittedAt).toLocaleDateString('ar-MA')}
+                      {new Date(a.submittedAt).toLocaleDateString(getLocale())}
                     </time>
                     <span className="num font-bold text-brand">
                       {a.correct}/{a.total} · {a.elapsedSec}s
@@ -244,7 +256,7 @@ export default function Analytics() {
           </ul>
         ) : (
           <p className="text-sm text-muted">
-            ستظهر النتائج بعد أن يحلّ التلميذ اختباراً ويزامن التطبيق.
+            {t('ستظهر النتائج بعد أن يحلّ التلميذ اختباراً ويزامن التطبيق.')}
           </p>
         )}
       </section>

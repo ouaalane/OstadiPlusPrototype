@@ -1,3 +1,5 @@
+import { useI18n } from '@/i18n/useI18n';
+import { translate as t, relativeTime } from '@/i18n/locale';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -12,7 +14,6 @@ import {
   isQuestionAnswered,
   lessonTitleForQuestion,
   makeReply,
-  relativeTime,
 } from '@ostadiplus/shared';
 import { Avatar, EmptyState } from '@/components/ui';
 import { useUnsavedChanges } from '@/components/authoring/useUnsavedChanges';
@@ -20,6 +21,7 @@ import { useStore } from '@/store/DemoStore';
 const ignoreDirty = () => {};
 
 export default function Questions() {
+  const { lang } = useI18n();
   const { state, dispatch, notify } = useStore();
   const [filter, setFilter] = useState<'all' | 'unanswered'>('all');
   const [query, setQuery] = useState('');
@@ -36,7 +38,7 @@ export default function Questions() {
       [...(state.questions ?? [])].sort((a, b) =>
         b.createdAt.localeCompare(a.createdAt),
       ),
-    [state.questions],
+    [state.questions, lang],
   );
   const pending = questions.filter((q) => !isQuestionAnswered(q));
   const visible = questions.filter(
@@ -74,20 +76,20 @@ export default function Questions() {
     });
     setDrafts((d) => ({ ...d, [active.id]: '' }));
     setSavedReply(active.authorName);
-    notify('تم حفظ الرد. انشر التحديثات لتصل إلى التلميذ.');
+    notify(t('تم حفظ الرد. انشر التحديثات لتصل إلى التلميذ.'));
   }
   return (
     <>
       <div className="dashboard-heading">
         <div>
-          <p className="section-kicker">قريب من تلاميذك</p>
-          <h1 className="workspace-title">كل سؤال، بداية للفهم</h1>
+          <p className="section-kicker">{t('قريب من تلاميذك')}</p>
+          <h1 className="workspace-title">{t('كل سؤال، بداية للفهم')}</h1>
           <p className="workspace-subtitle">
-            تابع نقاشات الدروس، وضّح الأفكار، وخلي كل تلميذ يلقى الجواب.
+            {t('تابع نقاشات الدروس، وضّح الأفكار، وخلي كل تلميذ يلقى الجواب.')}
           </p>
         </div>
         <Link to="/sync" className="btn btn-outline btn-sm">
-          جلب الأسئلة ونشر الأجوبة
+          {t('جلب الأسئلة ونشر الأجوبة')}
           <ArrowUpLeft size={14} />
         </Link>
       </div>
@@ -97,10 +99,13 @@ export default function Questions() {
           role="status"
         >
           <p className="text-sm">
-            تم حفظ ردك على سؤال {savedReply}. انشر التحديثات ليصل إلى التلميذ.
+            {t('تم حفظ ردك على سؤال ')}
+            {savedReply}
+            {t('. انشر التحديثات ليصل إلى التلميذ.')}
           </p>
           <Link to="/sync" className="text-link">
-            نشر الأجوبة <ArrowUpLeft size={14} aria-hidden="true" />
+            {t('نشر الأجوبة ')}
+            <ArrowUpLeft size={14} aria-hidden="true" />
           </Link>
         </div>
       ) : null}
@@ -109,12 +114,12 @@ export default function Questions() {
           <div
             className="workspace-tabs border-0"
             role="group"
-            aria-label="تصفية الأسئلة"
+            aria-label={t('تصفية الأسئلة')}
           >
             {(
               [
-                ['all', 'كل الأسئلة', questions.length],
-                ['unanswered', 'بانتظار جواب', pending.length],
+                ['all', t('كل الأسئلة'), questions.length],
+                ['unanswered', t('بانتظار جواب'), pending.length],
               ] as const
             ).map(([key, label, count]) => (
               <button
@@ -124,7 +129,7 @@ export default function Questions() {
                 className="workspace-tab"
                 onClick={() => setFilter(key)}
               >
-                {label}
+                {t(label)}
                 <span className="num ms-2 rounded bg-brand-soft px-1.5 py-0.5 text-[9px]">
                   {count}
                 </span>
@@ -132,15 +137,15 @@ export default function Questions() {
             ))}
           </div>
           <select
-            aria-label="تصفية الأسئلة حسب الدورة"
+            aria-label={t('تصفية الأسئلة حسب الدورة')}
             className="input my-2 h-9 w-auto max-w-60 text-[10px]"
             value={courseId}
             onChange={(e) => setCourse(e.target.value)}
           >
-            <option value="all">جميع الدورات</option>
+            <option value="all">{t('جميع الدورات')}</option>
             {state.courses.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.title}
+                <bdi>{c.title}</bdi>
               </option>
             ))}
           </select>
@@ -154,16 +159,20 @@ export default function Questions() {
                 className="pointer-events-none absolute start-7 top-7 text-muted"
               />
               <input
+                dir="auto"
                 className="workspace-search"
-                aria-label="البحث في الأسئلة"
+                aria-label={t('البحث في الأسئلة')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="ابحث عن سؤال أو تلميذ…"
+                placeholder={t('ابحث عن سؤال أو تلميذ…')}
               />
             </div>
             <div className="inbox-threads">
               <p className="px-4 py-2 text-xs text-muted" role="status">
-                {visible.length} من {questions.length} أسئلة
+                {visible.length}
+                {t(' من ')}
+                {questions.length}
+                {t(' أسئلة')}
               </p>
               {visible.length ? (
                 visible.map((q) => (
@@ -191,18 +200,18 @@ export default function Questions() {
                             className="size-1.5 rounded-full bg-brand"
                             aria-hidden="true"
                           />
-                          <span className="sr-only">بانتظار جواب</span>
+                          <span className="sr-only">{t('بانتظار جواب')}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] text-brand">
                           <CheckCheck size={12} aria-hidden="true" />
-                          <span className="sr-only">تمت الإجابة</span>
+                          <span className="sr-only">{t('تمت الإجابة')}</span>
                         </span>
                       )}
                     </div>
                     {drafts[q.id]?.trim() ? (
                       <span className="mb-2 block text-xs font-bold text-brand">
-                        مسودة رد
+                        {t('مسودة رد')}
                       </span>
                     ) : null}
                     <p className="line-clamp-2 text-[11px] leading-6">
@@ -221,8 +230,8 @@ export default function Questions() {
               ) : (
                 <p className="p-8 text-center text-xs leading-7 text-muted">
                   {questions.length
-                    ? 'لا أسئلة تطابق التصفية الحالية.'
-                    : 'لا توجد أسئلة بعد.'}
+                    ? t('لا أسئلة تطابق التصفية الحالية.')
+                    : t('لا توجد أسئلة بعد.')}
                 </p>
               )}
             </div>
@@ -232,7 +241,7 @@ export default function Questions() {
               <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line p-5 sm:p-6">
                 <div>
                   <h2 className="text-sm font-bold">
-                    {course?.title ?? 'نقاش الدورة'}
+                    {course?.title ?? t('نقاش الدورة')}
                   </h2>
                   {lessonTitle ? (
                     <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted">
@@ -244,7 +253,9 @@ export default function Questions() {
                 <span
                   className={`status-label ${isQuestionAnswered(active) ? '' : 'is-draft'}`}
                 >
-                  {isQuestionAnswered(active) ? 'تمت الإجابة' : 'بانتظار جواب'}
+                  {isQuestionAnswered(active)
+                    ? t('تمت الإجابة')
+                    : t('بانتظار جواب')}
                 </span>
               </header>
               <div className="space-y-6 p-5 sm:p-7">
@@ -282,7 +293,7 @@ export default function Questions() {
                       </span>
                       {r.authorRole === 'teacher' ? (
                         <span className="rounded bg-white px-2 py-0.5 text-[8px] text-brand">
-                          الأستاذ
+                          {t('الأستاذ')}
                         </span>
                       ) : null}
                       <span className="ms-auto text-[9px] text-muted">
@@ -297,7 +308,7 @@ export default function Questions() {
                 {!active.replies.length ? (
                   <div className="flex items-center gap-2 text-[10px] text-muted">
                     <MessageCircle size={15} />
-                    التلميذ كيتسنى توضيحك.
+                    {t('التلميذ كيتسنى توضيحك.')}
                   </div>
                 ) : null}
                 <div className="border-t border-line pt-5">
@@ -305,12 +316,13 @@ export default function Questions() {
                     className="mb-3 block text-xs font-bold"
                     htmlFor="teacher-reply"
                   >
-                    جوابك للتلميذ
+                    {t('جوابك للتلميذ')}
                   </label>
                   <textarea
+                    dir="auto"
                     id="teacher-reply"
                     className="textarea min-h-32"
-                    placeholder="اشرح الفكرة بمثال بسيط…"
+                    placeholder={t('اشرح الفكرة بمثال بسيط…')}
                     value={draft}
                     onChange={(e) =>
                       setDrafts((d) => ({ ...d, [active.id]: e.target.value }))
@@ -322,11 +334,14 @@ export default function Questions() {
                     <div className="text-xs leading-6 text-muted">
                       <p id="teacher-reply-hint">
                         {draft.trim()
-                          ? 'الجواب كيبان لمشتركي الدورة بعد نشر التحديثات.'
-                          : 'اكتب جواباً لتفعيل الإرسال. سيظهر للتلميذ بعد نشر التحديثات.'}
+                          ? t('الجواب كيبان لمشتركي الدورة بعد نشر التحديثات.')
+                          : t(
+                              'اكتب جواباً لتفعيل الإرسال. سيظهر للتلميذ بعد نشر التحديثات.',
+                            )}
                       </p>
                       <p id="teacher-reply-length">
-                        <span className="num">{draft.length} / 2000</span> حرف
+                        <span className="num">{draft.length} / 2000</span>
+                        {t(' حرف')}
                       </p>
                     </div>
                     <button
@@ -335,7 +350,7 @@ export default function Questions() {
                       onClick={send}
                     >
                       <Send size={14} />
-                      إرسال الرد
+                      {t('إرسال الرد')}
                     </button>
                   </div>
                 </div>
@@ -350,23 +365,23 @@ export default function Questions() {
                     ? filter === 'unanswered' &&
                       !query.trim() &&
                       courseId === 'all'
-                      ? 'لا أسئلة بانتظار جواب'
-                      : 'لا أسئلة مطابقة'
-                    : 'مساحة للنقاش والتوضيح'
+                      ? t('لا أسئلة بانتظار جواب')
+                      : t('لا أسئلة مطابقة')
+                    : t('مساحة للنقاش والتوضيح')
                 }
                 description={
                   filtered
-                    ? 'يمكنك إزالة البحث والتصفية للرجوع إلى جميع الأسئلة.'
-                    : 'ستظهر أسئلة التلاميذ هنا بعد جلبها من صفحة المزامنة.'
+                    ? t('يمكنك إزالة البحث والتصفية للرجوع إلى جميع الأسئلة.')
+                    : t('ستظهر أسئلة التلاميذ هنا بعد جلبها من صفحة المزامنة.')
                 }
                 action={
                   filtered ? (
                     <button className="btn btn-outline" onClick={clearFilters}>
-                      عرض كل الأسئلة
+                      {t('عرض كل الأسئلة')}
                     </button>
                   ) : (
                     <Link to="/sync" className="btn btn-outline">
-                      جلب الأسئلة
+                      {t('جلب الأسئلة')}
                     </Link>
                   )
                 }
