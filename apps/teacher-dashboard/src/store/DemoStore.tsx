@@ -127,6 +127,8 @@ export interface NewCourse {
 }
 
 export interface NewLesson {
+  /** Optional caller-generated ID keeps creation and editor navigation atomic. */
+  id?: string;
   title: string;
   kind: Lesson['kind'];
   file: string;
@@ -350,7 +352,7 @@ export function reducer(state: DemoState, action: Action): DemoState {
       const next = clone(state);
       const course = requireCourse(next, action.payload.courseId);
       const { chapter } = findChapter(course, action.payload.chapterId);
-      chapter.lessons.push({ id: newId('lsn'), ...action.payload.lesson });
+      chapter.lessons.push({ ...action.payload.lesson, id: action.payload.lesson.id ?? newId('lsn') });
       touch(next, course.id);
       logActivity(
         next,

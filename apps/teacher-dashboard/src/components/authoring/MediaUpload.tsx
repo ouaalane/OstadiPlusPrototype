@@ -1,0 +1,355 @@
+import { useEffect, useRef, useState } from 'react';
+import {
+  Check,
+  FileText,
+  Film,
+  FolderOpen,
+  LoaderCircle,
+  RefreshCw,
+  UploadCloud,
+  X,
+} from 'lucide-react';
+import { formatDuration, formatSize, type Lesson } from '@ostadiplus/shared';
+import { Modal } from '@/components/ui';
+import { library } from '@/lib/library';
+import { bundledMediaUrl, listUploads, prepareUpload } from '@/lib/media';
+
+type Asset = Pick<Lesson, 'file' | 'durationSec' | 'pages' | 'sizeMb'>;
+export function MediaUpload({
+  lesson,
+  onChange,
+  onBusy,
+}: {
+  lesson: Lesson;
+  onChange: (asset: Asset) => void;
+  onBusy: (busy: boolean) => void;
+}) {
+  const [stage, setStage] = useState<'idle' | 'reading' | 'uploading' | 'done'>(
+    'idle',
+  );
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState('');
+  const [canRetry, setCanRetry] = useState(false);
+  const [picker, setPicker] = useState(false);
+  const [drag, setDrag] = useState(false);
+  const [uploads, setUploads] = useState<
+    Awaited<ReturnType<typeof listUploads>>
+  >([]);
+  const input = useRef<HTMLInputElement>(null);
+  const controller = useRef<AbortController | null>(null);
+  const last = useRef<File | null>(null);
+  const kind = lesson.kind === 'pdf' ? 'pdf' : 'video';
+  const busy = stage === 'reading' || stage === 'uploading';
+  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    onBusy(busy);
+  }, [busy, onBusy]);
+  async function choose(file?: File) {
+    if (!file || busy) return;
+    last.current = file;
+    setError('');
+    setCanRetry(false);
+    const matches =
+      kind === 'pdf'
+        ? /\.pdf$/i.test(file.name)
+        : /\.(mp4|webm|mov)$/i.test(file.name);
+    if (!matches) {
+      setError(
+        kind === 'pdf'
+          ? 'اختر ملف PDF صالحاً.'
+          : 'اختر فيديو بصيغة MP4 أو WebM أو MOV.',
+      );
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024 || !file.size) {
+      setError('اختر ملفاً غير فارغ، لا يتجاوز 100 MB.');
+      return;
+    }
+    const abort = new AbortController();
+    controller.current = abort;
+    setStage('reading');
+    setProgress(0);
+    try {
+      const result = await prepareUpload(file, {
+        signal: abort.signal,
+        onProgress: (percent) => {
+          setStage('uploading');
+          setProgress(percent);
+        },
+      });
+      onChange({
+        file: result.name,
+        durationSec: result.durationSec,
+        pages: result.pages,
+        sizeMb: result.sizeMb,
+      });
+      setStage('done');
+    } catch (e) {
+      setStage('idle');
+      setCanRetry(!(e instanceof DOMException && e.name === 'AbortError'));
+      setError(
+        e instanceof DOMException && e.name === 'AbortError'
+          ? 'تم إلغاء الرفع. يمكنك اختيار الملف من جديد.'
+          : e instanceof Error
+            ? e.message
+            : 'تعذّر رفع الملف. حاول مجدداً.',
+      );
+    } finally {
+      controller.current = null;
+      if (input.current) input.current.value = '';
+    }
+  }
+  async function showLibrary() {
+    setPicker(true);
+    try {
+      setUploads(await listUploads());
+    } catch {
+      setUploads([]);
+    }
+  }
+  return (
+    <div className="space-y-4">
+      {lesson.file ? (
+        <div className="overflow-hidden rounded-xl border border-line">
+          {kind === 'video' ? (
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              src={bundledMediaUrl('video', lesson.file)}
+              poster={lesson.thumbnailUrl || undefined}
+              className="aspect-video max-h-[330px] w-full bg-ink"
+            />
+          ) : (
+            <div className="flex items-center gap-4 bg-surface-alt/50 p-6">
+              <span className="flex size-14 items-center justify-center rounded-xl bg-white text-brand">
+                <FileText size={27} strokeWidth={1.5} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold">المستند مرفق بالدرس</p>
+                <p className="mt-2 text-[10px] text-muted">
+                  {lesson.pages} صفحات · {formatSize(lesson.sizeMb)}
+                </p>
+              </div>
+              <a
+                href={bundledMediaUrl('doc', lesson.file)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-outline btn-sm"
+              >
+                فتح PDF
+              </a>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-white p-3 text-[10px]">
+            <span className="flex items-center gap-2 text-muted">
+              <Check size={13} className="text-brand" />
+              {kind === 'video'
+                ? formatDuration(lesson.durationSec)
+                : `${lesson.pages} صفحات`}
+              <span className="text-line-strong">/</span>
+              {formatSize(lesson.sizeMb)}
+            </span>
+            <button
+              className="font-bold text-brand"
+              disabled={busy}
+              onClick={() => input.current?.click()}
+            >
+              استبدال الملف
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {!lesson.file && !busy ? (
+        <button
+          className={`upload-zone ${drag ? 'is-dragging' : ''}`}
+          disabled={busy}
+          onClick={() => input.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDrag(false);
+            void choose(e.dataTransfer.files[0]);
+          }}
+        >
+          <span className="upload-zone-icon">
+            <UploadCloud size={28} strokeWidth={1.4} />
+          </span>
+          <span className="mt-4 block text-sm font-bold">
+            اسحب {kind === 'pdf' ? 'المستند' : 'الفيديو'} هنا، أو اختر ملفاً
+          </span>
+          <span className="mt-2 block text-[10px] text-muted">
+            {kind === 'pdf' ? 'PDF' : 'MP4، WebM، MOV'} · حتى 100 MB
+          </span>
+          <span className="btn btn-primary btn-sm mt-5">اختيار ملف</span>
+        </button>
+      ) : null}
+      {busy ? (
+        <div
+          className="rounded-xl border border-brand/20 bg-brand-soft/40 p-5"
+          role="status"
+        >
+          <div className="flex items-center gap-3">
+            <LoaderCircle size={20} className="animate-spin text-brand" />
+            <span className="flex-1 text-xs font-bold">
+              {stage === 'reading'
+                ? 'جارٍ التحقق من الملف وقراءة بياناته…'
+                : progress === 100
+                  ? 'اكتمل الإرسال، جارٍ حفظ الملف…'
+                  : 'جارٍ رفع الملف…'}
+            </span>
+            <button
+              onClick={() => controller.current?.abort()}
+              aria-label="إلغاء رفع الملف"
+              className="btn btn-icon btn-ghost"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          {stage === 'uploading' ? (
+            <>
+              <progress
+                className="upload-progress mt-4"
+                max="100"
+                value={progress}
+                aria-label="تقدّم رفع الملف"
+              />
+              <span className="num mt-2 block text-[10px] text-muted">
+                {progress}%
+              </span>
+            </>
+          ) : null}
+          <p className="mt-2 text-[10px] text-muted">
+            يمكنك إلغاء العملية. لا تغلق هذه الصفحة قبل اكتمال الرفع.
+          </p>
+        </div>
+      ) : null}
+      {stage === 'done' ? (
+        <p
+          role="status"
+          className="flex items-center gap-2 text-[11px] text-brand"
+        >
+          <Check size={14} />
+          الملف جاهز. احفظ الدرس لتثبيت التغيير.
+        </p>
+      ) : null}
+      {error ? (
+        <div
+          className="rounded-lg border border-brand/20 bg-accent/20 p-4"
+          role="alert"
+        >
+          <p className="text-xs leading-6">{error}</p>
+          {last.current && canRetry ? (
+            <button
+              className="mt-3 flex items-center gap-2 text-[11px] font-bold text-brand"
+              onClick={() => choose(last.current ?? undefined)}
+            >
+              <RefreshCw size={13} />
+              إعادة المحاولة
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <input
+        ref={input}
+        type="file"
+        className="sr-only"
+        aria-label={kind === 'pdf' ? 'رفع ملف PDF' : 'رفع فيديو'}
+        accept={
+          kind === 'pdf'
+            ? '.pdf,application/pdf'
+            : '.mp4,.webm,.mov,video/mp4,video/webm,video/quicktime'
+        }
+        disabled={busy}
+        onChange={(e) => void choose(e.target.files?.[0])}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted">
+        <span>
+          {kind === 'video'
+            ? 'MP4 / H.264 كيعطي أفضل توافق مع الهواتف.'
+            : 'المستند يظهر للتلميذ بالزوم والواترمارك.'}
+        </span>
+        <button
+          className="inline-flex items-center gap-2 font-bold text-brand"
+          disabled={busy}
+          onClick={() => void showLibrary()}
+        >
+          <FolderOpen size={14} />
+          اختيار من المكتبة
+        </button>
+      </div>
+      {picker ? (
+        <Modal
+          open
+          onClose={() => setPicker(false)}
+          title={kind === 'pdf' ? 'مكتبة المستندات' : 'مكتبة الفيديو'}
+          description="اختر ملفاً موجوداً لإضافته إلى هذا الدرس."
+          size="lg"
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              ...library
+                .filter((i) => i.kind === kind)
+                .map((i) => ({
+                  file: i.file,
+                  title: i.title,
+                  durationSec: i.durationSec,
+                  pages: i.pages,
+                  sizeMb: i.sizeMb,
+                })),
+              ...uploads
+                .filter(
+                  (i) =>
+                    i.kind === kind && !library.some((a) => a.file === i.name),
+                )
+                .map((i) => ({
+                  file: i.name,
+                  title: `ملف مرفوع · ${i.name.split('/').pop()?.slice(0, 12)}`,
+                  durationSec: i.durationSec,
+                  pages: i.pages,
+                  sizeMb: i.sizeMb,
+                })),
+            ].map((i) => (
+              <button
+                key={i.file}
+                className="flex items-center gap-3 rounded-lg border border-line p-3 text-start hover:bg-surface-alt"
+                onClick={() => {
+                  onChange({
+                    file: i.file,
+                    durationSec: i.durationSec,
+                    pages: i.pages,
+                    sizeMb: i.sizeMb,
+                  });
+                  setPicker(false);
+                }}
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                  {kind === 'video' ? (
+                    <Film size={19} />
+                  ) : (
+                    <FileText size={19} />
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-bold">
+                    {i.title}
+                  </span>
+                  <span className="mt-1 block text-[10px] text-muted">
+                    {kind === 'video'
+                      ? formatDuration(i.durationSec)
+                      : `${i.pages} صفحات`}{' '}
+                    · {formatSize(i.sizeMb)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Modal>
+      ) : null}
+    </div>
+  );
+}

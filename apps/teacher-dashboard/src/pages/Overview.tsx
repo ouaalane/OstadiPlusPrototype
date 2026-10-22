@@ -1,208 +1,333 @@
-import { useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Clock3, Plus, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  ArrowUpLeft,
+  BookOpen,
+  Check,
+  ChevronLeft,
+  CircleHelp,
+  Clock3,
+  FileText,
+  Film,
+  ListChecks,
+  MessageCircle,
+  Plus,
+  Upload,
+  Users,
+} from 'lucide-react';
 import {
   activeStudentCount,
   allLessons,
-  courseDurationSec,
   countLessons,
-  relativeTime,
   isQuestionAnswered,
+  relativeTime,
 } from '@ostadiplus/shared';
-import { CourseCover, EmptyState, Pill, StatCard } from '@/components/ui';
+import { CourseCover } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
-
-const ACTIVITY_ICON = {
-  course: BookOpen,
-  lesson: BookOpen,
-  student: Users,
-} as const;
 
 export default function Overview() {
   const { state } = useStore();
-  const navigate = useNavigate();
-
-  const published = useMemo(
-    () => state.courses.filter((c) => c.status === 'published'),
-    [state.courses],
+  const published = state.courses.filter((c) => c.status === 'published');
+  const lessons = state.courses.flatMap((c) => allLessons(c));
+  const questions = (state.questions ?? []).filter(
+    (q) => !isQuestionAnswered(q),
   );
-
-  const lessonCount = useMemo(
-    () =>
-      published.reduce(
-        (sum, course) => sum + allLessons(course).filter((l) => l.published).length,
-        0,
-      ),
-    [published],
+  const pending = state.enrollments.filter(
+    (e) => e.status === 'pending' || e.status === 'requested',
   );
-
-  const activeStudents = useMemo(() => activeStudentCount(state), [state]);
-  const pending = state.enrollments.filter((e) => e.status === 'pending').length;
-
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'صباح الخير' : hour < 18 ? 'طاب يومك' : 'مساء الخير';
-
-  const today = new Intl.DateTimeFormat('ar-MA', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date());
-
-  const recentCourses = state.courses
-    .slice()
-    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+  const recent = [...state.courses]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 4);
-
+  const metrics = [
+    {
+      label: 'الدورات المنشورة',
+      value: published.length,
+      detail: `${state.courses.length} دورات في مساحتك`,
+      icon: BookOpen,
+    },
+    {
+      label: 'التلاميذ النشطون',
+      value: activeStudentCount(state),
+      detail: 'باشتراك مفعّل',
+      icon: Users,
+    },
+    {
+      label: 'الدروس المنشورة',
+      value: lessons.filter((l) => l.published).length,
+      detail: `من أصل ${lessons.length} درس`,
+      icon: Film,
+    },
+    {
+      label: 'محاولات الاختبار',
+      value: (state.quizAttempts ?? []).length,
+      detail: 'نتائج مزامنة من التطبيق',
+      icon: ListChecks,
+    },
+  ];
+  const kinds = [
+    { kind: 'video', label: 'فيديوهات', icon: Film },
+    { kind: 'pdf', label: 'ملفات PDF', icon: FileText },
+    { kind: 'quiz', label: 'اختبارات', icon: ListChecks },
+    { kind: 'text', label: 'دروس مكتوبة', icon: BookOpen },
+  ];
   return (
     <>
-      <section className="mb-6 grid gap-5 rounded-3xl border border-line bg-white p-6 sm:p-8 lg:grid-cols-[1fr_auto]">
-        <div><p className="text-xs font-semibold text-muted">{today}</p><p className="mt-3 text-xs font-bold text-brand">إدارة التعلّم · oustadi plus</p><h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">{greeting}، {state.teacher.name}</h1><p className="mt-3 max-w-xl text-sm text-muted">محتوى منظّم، تواصل أقرب، وتقدّم واضح. كل ما يحتاجه تلاميذك من مكان واحد.</p><p className="mt-2 text-xs text-muted">{state.teacher.centerName} · {state.teacher.centerCity}</p></div>
-        <div className="flex flex-col justify-center gap-3"><button className="btn btn-primary" onClick={()=>navigate('/courses?action=new')}><Plus size={17}/>إنشاء دورة جديدة</button><Link className="btn btn-outline" to="/sync">مزامنة مع تطبيق التلميذ</Link></div>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="section-kicker">فضاء الأستاذ</p>
+          <h1 className="workspace-title">
+            مرحباً، {state.teacher.name.replace(/^أ\.\s*/, '')}
+            <span className="text-brand">.</span>
+          </h1>
+          <p className="workspace-subtitle">
+            هذه مساحتك لصناعة الدروس، ومتابعة التلاميذ، وتطوير تجربة تعلّمهم.
+          </p>
+        </div>
+        <Link to="/courses?action=new" className="btn btn-primary">
+          <Plus size={16} />
+          إنشاء دورة
+        </Link>
+      </div>
+      <section
+        className="workspace-panel mb-7 grid grid-cols-2 lg:grid-cols-4"
+        aria-label="إحصائيات مساحة العمل"
+      >
+        {metrics.map((m) => (
+          <div key={m.label} className="workspace-metric">
+            <div className="mb-4 flex items-center justify-between gap-2 text-muted">
+              <span className="text-[11px]">{m.label}</span>
+              <m.icon size={16} strokeWidth={1.5} />
+            </div>
+            <p className="metric-number num">{m.value}</p>
+            <p className="mt-2 text-[10px] text-muted">{m.detail}</p>
+          </div>
+        ))}
       </section>
-
-      {/* Metrics */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard
-          label="دورات منشورة"
-          value={published.length}
-          hint={`من أصل ${state.courses.length}`}
-          icon={<BookOpen size={20} />}
-        />
-        <StatCard
-          label="تلاميذ نشطون"
-          value={activeStudents}
-          hint={pending > 0 ? `${pending} بانتظار التفعيل` : undefined}
-          tone="success"
-          icon={<Users size={20} />}
-        />
-        <StatCard
-          label="دروس متاحة"
-          value={lessonCount}
-          tone="accent"
-          icon={<Clock3 size={20} />}
-        />
+      <section className="creation-strip mb-8">
+        <div className="flex-1">
+          <span className="mb-2 inline-flex rounded-md bg-white/70 px-2 py-1 text-[9px] font-bold text-brand">
+            ابدأ من فكرة
+          </span>
+          <h2 className="text-xl font-bold">درس جديد. فرصة جديدة للتعلّم.</h2>
+          <p className="mt-2 text-[11px] leading-6 text-muted">
+            ارفع شرحك، أرفق ملخّصاً، أو حضّر اختباراً. كل المحتوى في مكان واحد.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/library?action=upload" className="btn btn-primary">
+            <Upload size={16} />
+            رفع محتوى
+          </Link>
+          <Link to="/quizzes?action=new" className="btn btn-outline">
+            <ListChecks size={16} />
+            إنشاء اختبار
+          </Link>
+        </div>
+        <div className="creation-decoration" aria-hidden="true">
+          <BookOpen size={100} strokeWidth={0.65} />
+          <span>+</span>
+        </div>
       </section>
-
-      <section className="mt-5 grid gap-3 sm:grid-cols-3" aria-label="مهام اليوم">
-        {[{to:'/questions',label:'أسئلة بانتظار جواب',count:(state.questions??[]).filter(q=>!isQuestionAnswered(q)).length},{to:'/students',label:'طلبات وصول بانتظار التفعيل',count:pending},{to:'/courses',label:'دورات قيد التحضير',count:state.courses.filter(c=>c.status==='draft').length}].map(item=><Link key={item.to} to={item.to} className="card flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-raised"><span className="text-sm font-semibold">{item.label}</span><span className="num flex h-9 min-w-9 items-center justify-center rounded-xl bg-accent-soft px-2 font-bold text-brand">{item.count}</span></Link>)}
-      </section>
-      <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-5">
-        {/* Courses */}
-        <section className="lg:col-span-3">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-bold">دوراتك</h2>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <section className="workspace-panel min-w-0">
+          <header className="panel-heading">
+            <div>
+              <h2>دوراتك، قيد التطوير</h2>
+              <p className="mt-1 text-[10px] text-muted">
+                واصل من آخر تحديث للمحتوى
+              </p>
+            </div>
             <Link
+              className="flex items-center gap-2 text-[11px] font-bold text-brand"
               to="/courses"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:text-brand-dark"
             >
-              عرض الكل
-              <ArrowLeft size={15} />
+              كل الدورات
+              <ArrowLeft size={14} />
+            </Link>
+          </header>
+          <div className="overflow-x-auto">
+            <table className="workspace-table min-w-[540px]">
+              <thead>
+                <tr>
+                  <th>الدورة</th>
+                  <th>المحتوى</th>
+                  <th>الحالة</th>
+                  <th>
+                    <span className="sr-only">فتح الدورة</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((c) => (
+                  <tr key={c.id}>
+                    <td>
+                      <Link
+                        to={`/courses/${c.id}`}
+                        className="flex items-center gap-3"
+                      >
+                        <CourseCover
+                          cover={c.cover}
+                          subject={c.subject}
+                          compact
+                          className="h-12 w-14 shrink-0 rounded-lg"
+                        />
+                        <span className="min-w-0">
+                          <span className="block max-w-64 truncate text-xs font-bold">
+                            {c.title}
+                          </span>
+                          <span className="mt-1 block text-[10px] text-muted">
+                            {c.level}
+                          </span>
+                        </span>
+                      </Link>
+                    </td>
+                    <td>
+                      <span className="num">{countLessons(c)}</span> درس
+                      <p className="mt-1 text-[9px] text-muted">
+                        {relativeTime(c.updatedAt)}
+                      </p>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-label ${c.status === 'draft' ? 'is-draft' : ''}`}
+                      >
+                        {c.status === 'published' ? 'منشورة' : 'مسودة'}
+                      </span>
+                    </td>
+                    <td>
+                      <Link
+                        to={`/courses/${c.id}`}
+                        className="flex size-8 items-center justify-center rounded-lg border border-line hover:bg-surface-alt"
+                        aria-label={`إدارة ${c.title}`}
+                      >
+                        <ArrowUpLeft size={15} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!recent.length ? (
+              <div className="p-10 text-center text-sm text-muted">
+                أنشئ أول دورة، وابدأ بإضافة دروسك.
+              </div>
+            ) : null}
+          </div>
+        </section>
+        <aside className="workspace-panel">
+          <header className="panel-heading">
+            <h2>بانتظارك اليوم</h2>
+            <span className="num rounded-md bg-brand-soft px-2 py-1 text-[10px] text-brand">
+              {questions.length + pending.length}
+            </span>
+          </header>
+          <div className="p-5">
+            <Link
+              to="/questions"
+              className="flex items-center gap-3 border-b border-line pb-5"
+            >
+              <span className="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                <MessageCircle size={19} />
+              </span>
+              <span className="flex-1">
+                <span className="block text-xs font-bold">
+                  أسئلة تحتاج جوابك
+                </span>
+                <span className="mt-1 block text-[10px] text-muted">
+                  {questions.length
+                    ? `${questions.length} أسئلة من تلاميذك`
+                    : 'أجبت على كل الأسئلة'}
+                </span>
+              </span>
+              <ChevronLeft size={15} />
+            </Link>
+            <Link to="/students" className="flex items-center gap-3 py-5">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-accent/40 text-brand">
+                <Users size={19} />
+              </span>
+              <span className="flex-1">
+                <span className="block text-xs font-bold">طلبات التفعيل</span>
+                <span className="mt-1 block text-[10px] text-muted">
+                  {pending.length
+                    ? `${pending.length} طلبات قيد المراجعة`
+                    : 'لا طلبات جديدة'}
+                </span>
+              </span>
+              <ChevronLeft size={15} />
+            </Link>
+            <Link
+              to="/sync"
+              className="mt-1 flex items-start gap-2 rounded-lg border border-line bg-surface-alt/40 p-3 text-[10px] leading-6 text-muted"
+            >
+              <CircleHelp size={15} className="mt-1 shrink-0" />
+              <span>
+                بعد حفظ التعديلات، انشرها من صفحة المزامنة لتصل إلى تطبيق
+                التلميذ.
+              </span>
             </Link>
           </div>
-
-          {recentCourses.length === 0 ? (
-            <EmptyState
-              icon={<BookOpen size={24} />}
-              title="لا توجد دورات بعد"
-              description="أنشئ أول دورة لتبدأ في نشرها لتلاميذك."
-              action={
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => navigate('/courses?action=new')}
+        </aside>
+      </div>
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <section className="workspace-panel">
+          <header className="panel-heading">
+            <h2>مكتبة متنوّعة، تعلّم متكامل</h2>
+            <Link to="/library" className="text-[11px] text-brand">
+              إدارة المحتوى
+              <ArrowUpLeft size={13} className="ms-1 inline" />
+            </Link>
+          </header>
+          <div className="grid grid-cols-2 gap-5 p-6 sm:grid-cols-4">
+            {kinds.map((k) => {
+              const count = lessons.filter((l) => l.kind === k.kind).length;
+              return (
+                <Link
+                  to={
+                    k.kind === 'quiz' ? '/quizzes' : `/library?kind=${k.kind}`
+                  }
+                  key={k.kind}
+                  className="rounded-lg p-2 hover:bg-surface-alt"
                 >
-                  <Plus size={17} />
-                  إنشاء دورة
-                </button>
-              }
-            />
-          ) : (
-            <ul className="space-y-3">
-              {recentCourses.map((course) => (
-                <li key={course.id}>
-                  <Link
-                    to={`/courses/${course.id}`}
-                    className="card group flex items-stretch gap-0 overflow-hidden p-0 transition-shadow hover:shadow-raised"
-                  >
-                    <CourseCover
-                      cover={course.cover}
-                      subject={course.subject}
-                      className="w-24 shrink-0 sm:w-28"
-                    >
-                      <span className="num text-lg font-bold text-white">
-                        {countLessons(course)}
-                      </span>
-                    </CourseCover>
-                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 px-4 py-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="truncate text-[15px] font-bold leading-snug">
-                          {course.title}
-                        </h3>
-                        <Pill
-                          tone={course.status === 'published' ? 'success' : 'warning'}
-                          dot
-                        >
-                          {course.status === 'published' ? 'منشورة' : 'مسودة'}
-                        </Pill>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                        <span>{course.level}</span>
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 size={13} />
-                          <span className="num">
-                            {Math.round(courseDurationSec(course) / 60)}
-                          </span>
-                          دقيقة
-                        </span>
-                        <span className="num">
-                          {activeStudentCount(state, course.id)}
-                        </span>
-                        تلميذ
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                  <k.icon
+                    size={21}
+                    strokeWidth={1.4}
+                    className="mb-3 text-brand"
+                  />
+                  <span className="num text-2xl">{count}</span>
+                  <p className="mt-1 text-[10px] text-muted">{k.label}</p>
+                  <div className="mt-3 h-1 overflow-hidden rounded-full bg-brand-soft">
+                    <div
+                      className="h-full rounded-full bg-brand"
+                      style={{
+                        width: `${lessons.length ? (count / lessons.length) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </section>
-
-        {/* Activity */}
-        <section className="lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-bold">آخر النشاط</h2>
-          </div>
-          <div className="card p-4">
-            {state.activity.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted">
-                لا توجد نشاطات بعد.
-              </p>
-            ) : (
-              <ol className="relative space-y-4">
-                {state.activity
-                  .slice(0, 7)
-                  .map((event) => {
-                    const Icon =
-                      ACTIVITY_ICON[event.kind as keyof typeof ACTIVITY_ICON] ?? BookOpen;
-                    return (
-                    <li key={event.id} className="flex gap-3">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-softer text-brand">
-                        <Icon size={15} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] leading-relaxed text-body">
-                          {event.text}
-                        </p>
-                        <span className="text-xs text-faint">
-                          {relativeTime(event.at)}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </div>
+        <section className="workspace-panel">
+          <header className="panel-heading">
+            <h2>آخر النشاط</h2>
+            <Clock3 size={15} className="text-muted" />
+          </header>
+          <ol className="space-y-4 p-5">
+            {state.activity.slice(0, 3).map((e) => (
+              <li key={e.id} className="flex gap-3">
+                <span className="mt-1 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+                  <Check size={10} />
+                </span>
+                <div>
+                  <p className="line-clamp-2 text-[10px] leading-6">{e.text}</p>
+                  <span className="text-[9px] text-muted">
+                    {relativeTime(e.at)}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
       </div>
     </>

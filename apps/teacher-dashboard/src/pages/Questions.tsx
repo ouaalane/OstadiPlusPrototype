@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
+  ArrowUpLeft,
   BookOpen,
-  CheckCircle2,
-  Clock3,
+  CheckCheck,
   MessageCircle,
+  Search,
   Send,
 } from 'lucide-react';
 import {
@@ -12,25 +14,15 @@ import {
   makeReply,
   relativeTime,
 } from '@ostadiplus/shared';
-import { EmptyState, PageHeader, Pill } from '@/components/ui';
-import { useAction, useStore } from '@/store/DemoStore';
-
-type Filter = 'all' | 'unanswered';
-
-/**
- * Course Q & R inbox.
- *
- * Every thread raised by an enrolled student is listed with its course and
- * optional lesson. Replies are written as the signed-in teacher and ride along
- * in the sync payload the student app imports.
- */
+import { Avatar } from '@/components/ui';
+import { useStore } from '@/store/DemoStore';
 export default function Questions() {
-  const { state } = useStore();
-  const dispatch = useAction();
-  const [filter, setFilter] = useState<Filter>('all');
-  const [courseId, setCourseId] = useState<string>('all');
+  const { state, dispatch, notify } = useStore();
+  const [filter, setFilter] = useState<'all' | 'unanswered'>('all');
+  const [query, setQuery] = useState('');
+  const [courseId, setCourse] = useState('all');
+  const [selected, setSelected] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-
   const questions = useMemo(
     () =>
       [...(state.questions ?? [])].sort((a, b) =>
@@ -38,222 +30,278 @@ export default function Questions() {
       ),
     [state.questions],
   );
-
-  const unansweredCount = questions.filter(
-    (question) => !isQuestionAnswered(question),
-  ).length;
-
-  const coursesWithQuestions = useMemo(() => {
-    const ids = new Set(questions.map((question) => question.courseId));
-    return state.courses.filter((course) => ids.has(course.id));
-  }, [questions, state.courses]);
-
-  const visible = useMemo(
-    () =>
-      questions.filter((question) => {
-        if (courseId !== 'all' && question.courseId !== courseId) return false;
-        if (filter === 'unanswered' && isQuestionAnswered(question)) return false;
-        return true;
-      }),
-    [questions, filter, courseId],
+  const pending = questions.filter((q) => !isQuestionAnswered(q));
+  const visible = questions.filter(
+    (q) =>
+      (filter === 'all' || !isQuestionAnswered(q)) &&
+      (courseId === 'all' || q.courseId === courseId) &&
+      `${q.body} ${q.authorName}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
   );
-
-  const reply = (questionId: string) => {
-    const body = (drafts[questionId] ?? '').trim();
-    if (!body) return;
-    dispatch(
-      {
-        type: 'qna/reply',
-        payload: {
-          questionId,
-          reply: makeReply({
-            authorId: state.teacher.id,
-            authorName: state.teacher.name,
-            authorRole: 'teacher',
-            body,
-          }),
-        },
+  const active = visible.find((q) => q.id === selected) ?? visible[0];
+  const course = state.courses.find((c) => c.id === active?.courseId);
+  const lessonTitle = active ? lessonTitleForQuestion(state, active) : '';
+  const draft = active ? (drafts[active.id] ?? '') : '';
+  function send() {
+    if (!active || !draft.trim()) return;
+    dispatch({
+      type: 'qna/reply',
+      payload: {
+        questionId: active.id,
+        reply: makeReply({
+          authorId: state.teacher.id,
+          authorName: state.teacher.name,
+          authorRole: 'teacher',
+          body: draft.trim(),
+        }),
       },
-      'تم إرسال الرد',
-    );
-    setDrafts((current) => ({ ...current, [questionId]: '' }));
-  };
-
+    });
+    setDrafts((d) => ({ ...d, [active.id]: '' }));
+    notify('تم حفظ الرد. انشر التحديثات لتصل إلى التلميذ.');
+  }
   return (
     <>
-      <PageHeader
-        title="الأسئلة والأجوبة"
-        description="أسئلة التلاميذ المشتركة داخل كل دورة. يظهر ردك لجميع الطلاب المشتركين، ويُزامَن مع تطبيقهم من صفحة مزامنة التطبيق."
-      />
-
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:max-w-md">
-        <div className="card flex items-center gap-3 p-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-softer text-brand">
-            <MessageCircle size={19} />
-          </span>
-          <div>
-            <div className="num text-xl font-bold text-ink">{questions.length}</div>
-            <div className="text-xs text-muted">إجمالي الأسئلة</div>
-          </div>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="section-kicker">قريب من تلاميذك</p>
+          <h1 className="workspace-title">كل سؤال، بداية للفهم</h1>
+          <p className="workspace-subtitle">
+            تابع نقاشات الدروس، وضّح الأفكار، وخلي كل تلميذ يلقى الجواب.
+          </p>
         </div>
-        <div className="card flex items-center gap-3 p-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-brand">
-            <Clock3 size={19} />
-          </span>
-          <div>
-            <div className="num text-xl font-bold text-ink">{unansweredCount}</div>
-            <div className="text-xs text-muted">بانتظار الرد</div>
-          </div>
-        </div>
+        <Link to="/sync" className="btn btn-outline btn-sm">
+          جلب الأسئلة ونشر الأجوبة
+          <ArrowUpLeft size={14} />
+        </Link>
       </div>
-
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2" role="tablist" aria-label="تصفية الأسئلة">
-          {(
-            [
-              ['all', 'الكل'],
-              ['unanswered', 'بدون رد'],
-            ] as [Filter, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={filter === key}
-              onClick={() => setFilter(key)}
-              className={`btn btn-sm ${filter === key ? 'btn-primary' : 'btn-outline'}`}
-            >
-              {label} ({key === 'all' ? questions.length : unansweredCount})
-            </button>
-          ))}
-        </div>
-
-        <label className="w-full sm:max-w-xs">
-          <span className="sr-only">تصفية حسب الدورة</span>
-          <select
-            className="input"
-            value={courseId}
-            onChange={(event) => setCourseId(event.target.value)}
+      <section className="workspace-panel">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5">
+          <div
+            className="workspace-tabs border-0"
+            role="tablist"
+            aria-label="تصفية الأسئلة"
           >
-            <option value="all">كل الدورات</option>
-            {coursesWithQuestions.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.title}
+            {(
+              [
+                ['all', 'كل الأسئلة', questions.length],
+                ['unanswered', 'بانتظار جواب', pending.length],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                role="tab"
+                aria-selected={filter === key}
+                key={key}
+                className="workspace-tab"
+                onClick={() => setFilter(key)}
+              >
+                {label}
+                <span className="num ms-2 rounded bg-brand-soft px-1.5 py-0.5 text-[9px]">
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <select
+            aria-label="تصفية الأسئلة حسب الدورة"
+            className="input my-2 h-9 w-auto max-w-60 text-[10px]"
+            value={courseId}
+            onChange={(e) => setCourse(e.target.value)}
+          >
+            <option value="all">جميع الدورات</option>
+            {state.courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
               </option>
             ))}
           </select>
-        </label>
-      </div>
-
-      {visible.length === 0 ? (
-        <EmptyState
-          icon={<MessageCircle size={24} />}
-          title={filter === 'unanswered' ? 'لا أسئلة بانتظار الرد' : 'لا توجد أسئلة بعد'}
-          description={
-            filter === 'unanswered'
-              ? 'أجبت على كل أسئلة التلاميذ. ستظهر هنا أي أسئلة جديدة.'
-              : 'عندما يطرح تلميذ سؤالاً في إحدى دوراتك، ستجده هنا مع إمكانية الرد عليه.'
-          }
-        />
-      ) : (
-        <ul className="space-y-4">
-          {visible.map((question) => {
-            const course = state.courses.find(
-              (item) => item.id === question.courseId,
-            );
-            const lessonTitle = lessonTitleForQuestion(state, question);
-            const answered = isQuestionAnswered(question);
-            const draft = drafts[question.id] ?? '';
-
-            return (
-              <li key={question.id} className="card p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-ink">
-                      {question.authorName}
+        </div>
+        <div className="inbox-layout">
+          <aside className="inbox-list">
+            <div className="relative border-b border-line p-4">
+              <Search
+                size={14}
+                className="pointer-events-none absolute start-7 top-7 text-muted"
+              />
+              <input
+                className="workspace-search"
+                aria-label="البحث في الأسئلة"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ابحث عن سؤال أو تلميذ…"
+              />
+            </div>
+            <div className="inbox-threads">
+              {visible.length ? (
+                visible.map((q) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setSelected(q.id)}
+                    aria-pressed={active?.id === q.id}
+                    className={`inbox-thread ${active?.id === q.id ? 'is-selected' : ''}`}
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <Avatar
+                        label={q.authorName
+                          .split(' ')
+                          .map((s) => s[0])
+                          .slice(0, 2)
+                          .join('')}
+                        size={28}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[10px] font-bold">
+                        {q.authorName}
+                      </span>
+                      {!isQuestionAnswered(q) ? (
+                        <span
+                          className="size-1.5 rounded-full bg-brand"
+                          aria-label="بانتظار جواب"
+                        />
+                      ) : (
+                        <CheckCheck size={12} className="text-brand" />
+                      )}
                     </div>
-                    <div className="mt-0.5 text-xs text-muted">
-                      {course?.title ?? 'دورة محذوفة'} ·{' '}
-                      {relativeTime(question.createdAt)}
-                    </div>
-                  </div>
-                  <Pill tone={answered ? 'success' : 'warning'} dot>
-                    {answered ? 'تمت الإجابة' : 'بانتظار الرد'}
-                  </Pill>
+                    <p className="line-clamp-2 text-[11px] leading-6">
+                      {q.body}
+                    </p>
+                    <p className="mt-3 flex items-center justify-between gap-2 text-[9px] text-muted">
+                      <span className="max-w-40 truncate">
+                        {state.courses.find((c) => c.id === q.courseId)?.title}
+                      </span>
+                      <span className="shrink-0">
+                        {relativeTime(q.createdAt)}
+                      </span>
+                    </p>
+                  </button>
+                ))
+              ) : (
+                <p className="p-8 text-center text-xs leading-7 text-muted">
+                  لا أسئلة مطابقة. جرّب بحثاً أو تصفية أخرى.
+                </p>
+              )}
+            </div>
+          </aside>
+          {active ? (
+            <article className="min-w-0">
+              <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line p-5 sm:p-6">
+                <div>
+                  <h2 className="text-sm font-bold">
+                    {course?.title ?? 'نقاش الدورة'}
+                  </h2>
+                  {lessonTitle ? (
+                    <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted">
+                      <BookOpen size={12} />
+                      {lessonTitle}
+                    </p>
+                  ) : null}
                 </div>
-
-                {lessonTitle ? (
-                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-softer px-2.5 py-1 text-xs font-semibold text-brand">
-                    <BookOpen size={13} />
-                    {lessonTitle}
+                <span
+                  className={`status-label ${isQuestionAnswered(active) ? '' : 'is-draft'}`}
+                >
+                  {isQuestionAnswered(active) ? 'تمت الإجابة' : 'بانتظار جواب'}
+                </span>
+              </header>
+              <div className="space-y-6 p-5 sm:p-7">
+                <div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <Avatar
+                      label={active.authorName
+                        .split(' ')
+                        .map((s) => s[0])
+                        .slice(0, 2)
+                        .join('')}
+                      size={31}
+                    />
+                    <div>
+                      <p className="text-[11px] font-bold">
+                        {active.authorName}
+                      </p>
+                      <p className="mt-1 text-[9px] text-muted">
+                        {relativeTime(active.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="rounded-xl border border-line p-4 text-xs leading-8">
+                    {active.body}
+                  </p>
+                </div>
+                {active.replies.map((r) => (
+                  <div
+                    key={r.id}
+                    className={`rounded-xl p-4 ${r.authorRole === 'teacher' ? 'bg-brand-soft/65' : 'border border-line'}`}
+                  >
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] font-bold">
+                        {r.authorName}
+                      </span>
+                      {r.authorRole === 'teacher' ? (
+                        <span className="rounded bg-white px-2 py-0.5 text-[8px] text-brand">
+                          الأستاذ
+                        </span>
+                      ) : null}
+                      <span className="ms-auto text-[9px] text-muted">
+                        {relativeTime(r.createdAt)}
+                      </span>
+                    </div>
+                    <p className="whitespace-pre-wrap text-xs leading-8">
+                      {r.body}
+                    </p>
+                  </div>
+                ))}
+                {!active.replies.length ? (
+                  <div className="flex items-center gap-2 text-[10px] text-muted">
+                    <MessageCircle size={15} />
+                    التلميذ كيتسنى توضيحك.
                   </div>
                 ) : null}
-
-                <p className="mt-3 text-[14px] leading-7 text-ink">{question.body}</p>
-
-                {question.replies.length > 0 ? (
-                  <div className="mt-4 space-y-2.5">
-                    {question.replies.map((item) => (
-                      <div
-                        key={item.id}
-                        className={
-                          item.authorRole === 'teacher'
-                            ? 'rounded-xl border border-brand-soft bg-brand-softer p-3'
-                            : 'rounded-xl bg-surface-alt p-3'
-                        }
-                      >
-                        <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-bold text-ink">
-                            {item.authorName}
-                          </span>
-                          {item.authorRole === 'teacher' ? (
-                            <Pill tone="brand">الأستاذ</Pill>
-                          ) : null}
-                          <span className="text-[11px] text-faint">
-                            {relativeTime(item.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-[13px] leading-6 text-body">{item.body}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className="mt-4 border-t border-line pt-3">
+                <div className="border-t border-line pt-5">
+                  <label
+                    className="mb-3 block text-xs font-bold"
+                    htmlFor="teacher-reply"
+                  >
+                    جوابك للتلميذ
+                  </label>
                   <textarea
-                    className="textarea"
-                    style={{ minHeight: 80 }}
+                    id="teacher-reply"
+                    className="textarea min-h-32"
+                    placeholder="اشرح الفكرة بمثال بسيط…"
                     value={draft}
-                    onChange={(event) =>
-                      setDrafts((current) => ({
-                        ...current,
-                        [question.id]: event.target.value,
-                      }))
+                    onChange={(e) =>
+                      setDrafts((d) => ({ ...d, [active.id]: e.target.value }))
                     }
-                    placeholder="اكتب ردك على السؤال…"
-                    maxLength={800}
-                    aria-label={`الرد على سؤال ${question.authorName}`}
+                    maxLength={2000}
                   />
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[11px] text-muted">
-                      يظهر ردك لجميع طلاب الدورة.
-                    </span>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-[9px] leading-6 text-muted">
+                      الجواب كيبان لمشتركي الدورة بعد نشر التحديثات.
+                    </p>
                     <button
-                      type="button"
                       className="btn btn-primary btn-sm"
                       disabled={!draft.trim()}
-                      onClick={() => reply(question.id)}
+                      onClick={send}
                     >
-                      {answered ? <CheckCircle2 size={14} /> : <Send size={14} />}
+                      <Send size={14} />
                       إرسال الرد
                     </button>
                   </div>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              </div>
+            </article>
+          ) : (
+            <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center">
+              <MessageCircle
+                size={32}
+                strokeWidth={1.3}
+                className="text-brand"
+              />
+              <h2 className="text-sm font-bold">مساحة للنقاش والتوضيح</h2>
+              <p className="max-w-xs text-xs leading-7 text-muted">
+                أسئلة تلاميذك غاتبان هنا من بعد المزامنة.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
     </>
   );
 }

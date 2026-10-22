@@ -139,7 +139,10 @@ export function ProgressBar({
     >
       <div
         className="h-full rounded-full transition-[width] duration-500"
-        style={{ width: `${Math.min(100, Math.max(0, value))}%`, background: color }}
+        style={{
+          width: `${Math.min(100, Math.max(0, value))}%`,
+          background: color,
+        }}
       />
     </div>
   );
@@ -154,10 +157,12 @@ export function CourseCover({
   subject,
   className = '',
   children,
+  compact = false,
 }: {
   cover: string;
   subject: string;
   className?: string;
+  compact?: boolean;
   children?: ReactNode;
 }) {
   const [from, to] = coverGradients[cover] ?? coverGradients.blue;
@@ -187,9 +192,11 @@ export function CourseCover({
         }}
       />
       <div className="relative flex h-full flex-col justify-between p-4">
-        <span className="pill bg-white/20 text-white backdrop-blur-sm">
-          {subject}
-        </span>
+        {!compact && subject ? (
+          <span className="pill bg-white/20 text-white backdrop-blur-sm">
+            {subject}
+          </span>
+        ) : null}
         {children}
       </div>
     </div>
@@ -247,12 +254,31 @@ export function Modal({
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') closeRef.current();
+      if (event.key === 'Tab') {
+        const items = panelRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]',
+        );
+        if (!items?.length) return;
+        const first = items[0],
+          last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener('keydown', onKey);
     const overflow = document.body.style.overflow;
@@ -269,7 +295,7 @@ export function Modal({
       window.clearTimeout(timer);
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -295,7 +321,9 @@ export function Modal({
       >
         <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            <h2 className="text-lg leading-snug">{title}</h2>
+            <h2 id={titleId} className="text-lg leading-snug">
+              {title}
+            </h2>
             {description ? (
               <p id={descId} className="mt-1 text-sm text-muted">
                 {description}
@@ -333,7 +361,7 @@ export function ToastHost() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 top-4 z-[60] flex flex-col items-center gap-2 px-4"
+      className="pointer-events-none fixed bottom-5 end-5 z-[60] flex max-w-sm flex-col items-end gap-2 ps-4"
     >
       {toasts.map((toast) => {
         const tone =
@@ -343,7 +371,11 @@ export function ToastHost() {
               ? { bg: 'var(--color-info-soft)', fg: 'var(--color-info)' }
               : { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' };
         const Icon =
-          toast.tone === 'error' ? AlertCircle : toast.tone === 'info' ? Info : CheckCircle2;
+          toast.tone === 'error'
+            ? AlertCircle
+            : toast.tone === 'info'
+              ? Info
+              : CheckCircle2;
         return (
           <button
             key={toast.id}
@@ -388,7 +420,9 @@ export function Toggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
-      style={{ background: checked ? 'var(--color-brand)' : 'var(--color-line-strong)' }}
+      style={{
+        background: checked ? 'var(--color-brand)' : 'var(--color-line-strong)',
+      }}
     >
       <span
         className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
@@ -459,14 +493,16 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-xl sm:text-2xl">{title}</h1>
+        <h1 className="workspace-title">{title}</h1>
         {description ? (
-          <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>
+          <p className="workspace-subtitle max-w-2xl">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+      ) : null}
     </div>
   );
 }
@@ -571,7 +607,8 @@ export function DataTable<T>({
 
   const query = searchValue ?? internalSearch;
   const setQuery = onSearchChange ?? setInternalSearch;
-  const selectable = selectedIds !== undefined && onSelectionChange !== undefined;
+  const selectable =
+    selectedIds !== undefined && onSelectionChange !== undefined;
 
   /* --- filtering --- */
   const filtered = useMemo(() => {
@@ -605,19 +642,28 @@ export function DataTable<T>({
   /* --- pagination --- */
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
-  const paginated = sorted.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const paginated = sorted.slice(
+    safePage * pageSize,
+    (safePage + 1) * pageSize,
+  );
 
-  const toggleSort = useCallback((key: string) => {
-    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-  }, [sortKey]);
+  const toggleSort = useCallback(
+    (key: string) => {
+      if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      else {
+        setSortKey(key);
+        setSortDir('asc');
+      }
+    },
+    [sortKey],
+  );
 
   /* --- selection helpers --- */
   const pageIds = paginated.map(getRowId);
-  const allPageSelected = selectable && pageIds.length > 0 && pageIds.every((id) => selectedIds!.has(id));
+  const allPageSelected =
+    selectable &&
+    pageIds.length > 0 &&
+    pageIds.every((id) => selectedIds!.has(id));
 
   const toggleSelectAll = () => {
     if (!selectable) return;
@@ -643,8 +689,12 @@ export function DataTable<T>({
       {/* ---- Card head: title + description ---- */}
       {title ? (
         <div className="px-6 pt-6">
-          <h2 className="text-[22px] font-bold leading-tight text-ink sm:text-2xl">{title}</h2>
-          {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
+          <h2 className="text-[22px] font-bold leading-tight text-ink sm:text-2xl">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-1 text-sm text-muted">{description}</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -658,7 +708,10 @@ export function DataTable<T>({
               </span>
             ) : (
               <span>
-                <span className="num font-semibold text-ink">{sorted.length}</span> عنصر
+                <span className="num font-semibold text-ink">
+                  {sorted.length}
+                </span>{' '}
+                عنصر
               </span>
             )}
           </div>
@@ -690,7 +743,10 @@ export function DataTable<T>({
 
       {/* ---- Table ---- */}
       <div className="scrollbar-slim overflow-x-auto px-6 pb-2">
-        <table className="w-full border-collapse text-sm" style={{ minWidth: 640 }}>
+        <table
+          className="w-full border-collapse text-sm"
+          style={{ minWidth: 640 }}
+        >
           <thead>
             <tr className="rounded-xl bg-surface-alt">
               {selectable ? (
@@ -708,7 +764,11 @@ export function DataTable<T>({
                 const isSortable = !!col.sortValue;
                 const active = sortKey === col.key;
                 const alignClass =
-                  col.align === 'center' ? 'text-center' : col.align === 'end' ? 'text-end' : 'text-start';
+                  col.align === 'center'
+                    ? 'text-center'
+                    : col.align === 'end'
+                      ? 'text-end'
+                      : 'text-start';
                 return (
                   <th
                     key={col.key}
@@ -719,12 +779,22 @@ export function DataTable<T>({
                       alignClass,
                       'text-[13px] font-semibold text-muted',
                       col.hideOnMobile ? 'hidden md:table-cell' : '',
-                      isSortable ? 'cursor-pointer select-none transition-colors hover:text-ink' : '',
+                      isSortable
+                        ? 'cursor-pointer select-none transition-colors hover:text-ink'
+                        : '',
                     ].join(' ')}
                     onClick={isSortable ? () => toggleSort(col.key) : undefined}
-                    aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    aria-sort={
+                      active
+                        ? sortDir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : undefined
+                    }
                   >
-                    <span className={`inline-flex items-center gap-1.5 ${col.align === 'end' ? 'flex-row-reverse' : ''}`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 ${col.align === 'end' ? 'flex-row-reverse' : ''}`}
+                    >
                       {col.header}
                       {isSortable ? (
                         active ? (
@@ -787,7 +857,11 @@ export function DataTable<T>({
                     ) : null}
                     {columns.map((col) => {
                       const alignClass =
-                        col.align === 'center' ? 'text-center' : col.align === 'end' ? 'text-end' : 'text-start';
+                        col.align === 'center'
+                          ? 'text-center'
+                          : col.align === 'end'
+                            ? 'text-end'
+                            : 'text-start';
                       return (
                         <td
                           key={col.key}
@@ -807,84 +881,85 @@ export function DataTable<T>({
 
       {/* ---- Footer: per-page selector | page buttons ---- */}
       {totalPages > 1 ? (
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 pb-5 pt-3">
-        <div className="flex items-center gap-2 text-[13px] text-muted">
-          <span>عرض</span>
-          <select
-            className="num rounded-lg border border-line bg-white px-2 py-1 text-[13px] font-semibold text-ink"
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPage(0);
-            }}
-            aria-label="عدد العناصر في الصفحة"
-          >
-            {pageSizeOptions.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-          <span>عناصر في الصفحة</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 pb-5 pt-3">
+          <div className="flex items-center gap-2 text-[13px] text-muted">
+            <span>عرض</span>
+            <select
+              className="num rounded-lg border border-line bg-white px-2 py-1 text-[13px] font-semibold text-ink"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(0);
+              }}
+              aria-label="عدد العناصر في الصفحة"
+            >
+              {pageSizeOptions.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <span>عناصر في الصفحة</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-surface-alt disabled:opacity-40"
+              disabled={safePage === 0}
+              onClick={() => setPage(safePage - 1)}
+              aria-label="الصفحة السابقة"
+            >
+              <ChevronRight size={15} />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i)
+              .filter((i) => {
+                if (totalPages <= 5) return true;
+                if (i === 0 || i === totalPages - 1) return true;
+                if (Math.abs(i - safePage) <= 1) return true;
+                return false;
+              })
+              .reduce<(number | 'gap')[]>((acc, i, _, arr) => {
+                if (arr.length > 0 && i - (arr[arr.length - 1] as number) > 1)
+                  acc.push('gap');
+                acc.push(i);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === 'gap' ? (
+                  <span key={`gap-${i}`} className="px-1 text-faint">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPage(item as number)}
+                    className={[
+                      'num flex h-8 w-8 items-center justify-center rounded-lg text-[13px] font-semibold transition-colors',
+                      item === safePage
+                        ? 'bg-ink text-white'
+                        : 'border border-line text-muted hover:bg-surface-alt hover:text-ink',
+                    ].join(' ')}
+                    aria-current={item === safePage ? 'page' : undefined}
+                  >
+                    {(item as number) + 1}
+                  </button>
+                ),
+              )}
+
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-surface-alt disabled:opacity-40"
+              disabled={safePage >= totalPages - 1}
+              onClick={() => setPage(safePage + 1)}
+              aria-label="الصفحة التالية"
+            >
+              <ChevronLeft size={15} />
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-surface-alt disabled:opacity-40"
-            disabled={safePage === 0}
-            onClick={() => setPage(safePage - 1)}
-            aria-label="الصفحة السابقة"
-          >
-            <ChevronRight size={15} />
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i)
-            .filter((i) => {
-              if (totalPages <= 5) return true;
-              if (i === 0 || i === totalPages - 1) return true;
-              if (Math.abs(i - safePage) <= 1) return true;
-              return false;
-            })
-            .reduce<(number | 'gap')[]>((acc, i, _, arr) => {
-              if (arr.length > 0 && i - (arr[arr.length - 1] as number) > 1) acc.push('gap');
-              acc.push(i);
-              return acc;
-            }, [])
-            .map((item, i) =>
-              item === 'gap' ? (
-                <span key={`gap-${i}`} className="px-1 text-faint">
-                  …
-                </span>
-              ) : (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setPage(item as number)}
-                  className={[
-                    'num flex h-8 w-8 items-center justify-center rounded-lg text-[13px] font-semibold transition-colors',
-                    item === safePage
-                      ? 'bg-ink text-white'
-                      : 'border border-line text-muted hover:bg-surface-alt hover:text-ink',
-                  ].join(' ')}
-                  aria-current={item === safePage ? 'page' : undefined}
-                >
-                  {item as number + 1}
-                </button>
-              ),
-            )}
-
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-surface-alt disabled:opacity-40"
-            disabled={safePage >= totalPages - 1}
-            onClick={() => setPage(safePage + 1)}
-            aria-label="الصفحة التالية"
-          >
-            <ChevronLeft size={15} />
-          </button>
-        </div>
-      </div>
       ) : null}
     </div>
   );

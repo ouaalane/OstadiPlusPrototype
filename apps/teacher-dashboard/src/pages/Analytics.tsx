@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BarChart3, CheckCircle2, Clock3, Users } from 'lucide-react';
 import { accessibleCourses, allLessons } from '@ostadiplus/shared';
-import { PageHeader, StatCard, EmptyState } from '@/components/ui';
+import { EmptyState } from '@/components/ui';
 import { useStore } from '@/store/DemoStore';
 export default function Analytics() {
   const { state } = useStore();
@@ -45,35 +45,48 @@ export default function Analytics() {
   );
   return (
     <>
-      <PageHeader
-        title="التقدّم والنتائج"
-        description="مؤشرات من تقدّم التلاميذ ومحاولات الكويز المزامنة من التطبيق."
-      />
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="تلاميذ لديهم وصول"
-          value={rows.filter((r) => r.courses > 0).length}
-          icon={<Users size={20} />}
-        />
-        <StatCard
-          label="دروس مكتملة"
-          value={rows.reduce((n, r) => n + r.completed, 0)}
-          icon={<CheckCircle2 size={20} />}
-        />
-        <StatCard
-          label="دقائق مشاهدة مسجّلة"
-          value={rows.reduce((n, r) => n + r.minutes, 0)}
-          icon={<Clock3 size={20} />}
-        />
-        <StatCard
-          label="محاولات اختبار"
-          value={attempts.length}
-          icon={<BarChart3 size={20} />}
-        />
+      <div className="mb-8">
+        <p className="section-kicker">من المحتوى إلى الأثر</p>
+        <h1 className="workspace-title">التقدّم والنتائج</h1>
+        <p className="workspace-subtitle">
+          شوف فين وصل كل تلميذ، وتابع نتائج الاختبارات المزامنة من التطبيق.
+        </p>
       </div>
-      <section className="card p-5">
+      <section className="workspace-panel mb-6 grid grid-cols-2 lg:grid-cols-4">
+        {[
+          {
+            label: 'تلاميذ لديهم وصول',
+            value: rows.filter((r) => r.courses > 0).length,
+            icon: Users,
+          },
+          {
+            label: 'دروس مكتملة',
+            value: rows.reduce((n, r) => n + r.completed, 0),
+            icon: CheckCircle2,
+          },
+          {
+            label: 'دقائق مشاهدة مسجّلة',
+            value: rows.reduce((n, r) => n + r.minutes, 0),
+            icon: Clock3,
+          },
+          {
+            label: 'محاولات الاختبار',
+            value: attempts.length,
+            icon: BarChart3,
+          },
+        ].map((m) => (
+          <div key={m.label} className="workspace-metric">
+            <div className="mb-4 flex items-center justify-between gap-2 text-muted">
+              <span className="text-[10px]">{m.label}</span>
+              <m.icon size={16} strokeWidth={1.5} />
+            </div>
+            <p className="metric-number num">{m.value}</p>
+          </div>
+        ))}
+      </section>
+      <section className="workspace-panel p-5">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">متابعة التلاميذ</h2>
+          <h2 className="text-sm font-bold">متابعة التلاميذ</h2>
           <input
             className="input max-w-sm"
             aria-label="البحث في النتائج"
@@ -84,8 +97,8 @@ export default function Analytics() {
         </div>
         {visible.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-start text-sm">
-              <thead className="bg-brand-softer text-brand">
+            <table className="workspace-table min-w-[650px]">
+              <thead>
                 <tr>
                   {[
                     'التلميذ',
@@ -146,8 +159,8 @@ export default function Analytics() {
           />
         )}
       </section>
-      <section className="card mt-5 p-5">
-        <h2 className="mb-4 text-lg font-bold">آخر محاولات الاختبار</h2>
+      <section className="workspace-panel mt-5 p-5">
+        <h2 className="mb-4 text-sm font-bold">آخر محاولات الاختبار</h2>
         {attempts.length ? (
           <ul className="divide-y divide-line">
             {[...attempts]

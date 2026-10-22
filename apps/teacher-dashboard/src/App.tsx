@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import Overview from './pages/Overview';
 import Courses from './pages/Courses';
+import ContentLibrary from './pages/ContentLibrary';
 import CourseEditor from './pages/CourseEditor';
 import Students from './pages/Students';
 import Questions from './pages/Questions';
@@ -17,6 +18,8 @@ export default function App() {
       <Route element={<AppShell />}>
         <Route index element={<Overview />} />
         <Route path="courses" element={<Courses />} />
+        <Route path="library" element={<ContentLibrary key="library" />} />
+        <Route path="quizzes" element={<ContentLibrary key="quizzes" quiz />} />
         <Route path="courses/:courseId" element={<CourseEditor />} />
         <Route path="students" element={<Students />} />
         <Route path="questions" element={<Questions />} />

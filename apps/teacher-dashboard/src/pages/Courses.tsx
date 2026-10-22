@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  ArrowUpLeft,
   BookOpen,
   Clock3,
   Layers,
-  Pencil,
+  LayoutGrid,
+  List,
   Plus,
   Search,
   Users,
@@ -17,9 +19,8 @@ import {
   coverGradients,
   relativeTime,
 } from '@ostadiplus/shared';
-import { CourseCover, EmptyState, Field, Modal, PageHeader, Pill } from '@/components/ui';
+import { CourseCover, EmptyState, Field, Modal } from '@/components/ui';
 import { useAction, useStore, newId, type NewCourse } from '@/store/DemoStore';
-
 const LEVELS = [
   '2ème Bac — SVT & PC',
   '2ème Bac — PC & SM',
@@ -27,192 +28,269 @@ const LEVELS = [
   '1ère Bac SM',
   'السنة الأولى ثانوي',
 ];
-
 const SUBJECTS = ['الرياضيات', 'الفيزياء والكيمياء', 'علوم الحياة والأرض'];
-
 const COVERS = Object.keys(coverGradients);
-
 type Filter = 'all' | 'published' | 'draft';
-
 export default function Courses() {
   const { state } = useStore();
   const dispatch = useAction();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [creating, setCreating] = useState(false);
-
+  const [view, setView] = useState<'list' | 'grid'>('list');
   useEffect(() => {
     if (params.get('action') === 'new') {
       setCreating(true);
       setParams({}, { replace: true });
     }
   }, [params, setParams]);
-
-  const courses = useMemo(() => {
-    const needle = query.trim();
-    return state.courses.filter((course) => {
-      if (filter !== 'all' && course.status !== filter) return false;
-      if (!needle) return true;
-      return (
-        course.title.includes(needle) ||
-        course.level.includes(needle) ||
-        course.subject.includes(needle)
-      );
-    });
-  }, [state.courses, query, filter]);
-
+  const courses = useMemo(
+    () =>
+      state.courses.filter(
+        (c) =>
+          (filter === 'all' || c.status === filter) &&
+          `${c.title} ${c.level} ${c.subject}`
+            .toLowerCase()
+            .includes(query.trim().toLowerCase()),
+      ),
+    [state.courses, filter, query],
+  );
   return (
     <>
-      <PageHeader
-        title="الدورات"
-        actions={
-          <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
-            <Plus size={17} />
-            إنشاء دورة
-          </button>
-        }
-      />
-
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search
-            size={17}
-            className="pointer-events-none absolute top-1/2 start-3.5 -translate-y-1/2 text-faint"
-          />
-          <input
-            className="input ps-10"
-            placeholder="ابحث في دوراتك…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            aria-label="بحث في الدورات"
-          />
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="section-kicker">صناعة المحتوى</p>
+          <h1 className="workspace-title">دوراتك التعليمية</h1>
+          <p className="workspace-subtitle">
+            من أول فكرة إلى درس منشور. رتّب محتواك وصمّم رحلة تعلّم متكاملة.
+          </p>
         </div>
-
-        <div className="flex gap-2" role="tablist" aria-label="تصفية حسب الحالة">
-          {(
-            [
-              ['all', 'الكل'],
-              ['published', 'منشورة'],
-              ['draft', 'مسودة'],
-            ] as [Filter, string][]
-          ).map(([key, labelText]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={filter === key}
-              onClick={() => setFilter(key)}
-              className={`btn btn-sm ${
-                filter === key ? 'btn-primary' : 'btn-outline'
-              }`}
-            >
-              {labelText}
-            </button>
-          ))}
-        </div>
+        <button className="btn btn-primary" onClick={() => setCreating(true)}>
+          <Plus size={17} />
+          إنشاء دورة
+        </button>
       </div>
-
-      {courses.length === 0 ? (
-        <EmptyState
-          icon={<BookOpen size={24} />}
-          title={query || filter !== 'all' ? 'لا توجد نتائج مطابقة' : 'لا توجد دورات بعد'}
-          description={
-            query || filter !== 'all'
-              ? 'جرّب كلمة بحث أخرى أو غيّر التصفية.'
-              : 'أنشئ دورتك الأولى، أضف الفصول والدروس، ثم انشرها في خطوات بسيطة.'
-          }
-          action={
-            <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
-              <Plus size={17} />
-              إنشاء دورة
-            </button>
-          }
-        />
-      ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {courses.map((course) => {
-            const lessons = countLessons(course);
-            const students = activeStudentCount(state, course.id);
-            const isPublished = course.status === 'published';
-            return (
-              <li key={course.id} className="card group flex flex-col overflow-hidden p-0">
-                <Link to={`/courses/${course.id}`} className="block">
+      <section className="workspace-panel">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5">
+          <div
+            className="workspace-tabs border-0"
+            role="tablist"
+            aria-label="حالة الدورات"
+          >
+            {(
+              [
+                ['all', 'كل الدورات'],
+                ['published', 'منشورة'],
+                ['draft', 'مسودات'],
+              ] as [Filter, string][]
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                className="workspace-tab"
+                role="tab"
+                aria-selected={filter === key}
+                onClick={() => setFilter(key)}
+              >
+                {label}
+                <span className="num ms-2 rounded bg-brand-soft/60 px-1.5 py-0.5 text-[9px] text-muted">
+                  {
+                    state.courses.filter(
+                      (c) => key === 'all' || c.status === key,
+                    ).length
+                  }
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 py-3">
+            <div className="relative">
+              <Search
+                size={15}
+                className="pointer-events-none absolute start-3 top-3 text-muted"
+              />
+              <input
+                aria-label="بحث في الدورات"
+                placeholder="ابحث في دوراتك…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="workspace-search max-w-56"
+              />
+            </div>
+            <div className="hidden items-center rounded-lg border border-line p-1 sm:flex">
+              <button
+                className={`rounded p-1.5 ${view === 'list' ? 'bg-brand-soft text-brand' : 'text-muted'}`}
+                onClick={() => setView('list')}
+                aria-label="عرض قائمة"
+                aria-pressed={view === 'list'}
+              >
+                <List size={16} />
+              </button>
+              <button
+                className={`rounded p-1.5 ${view === 'grid' ? 'bg-brand-soft text-brand' : 'text-muted'}`}
+                onClick={() => setView('grid')}
+                aria-label="عرض بطاقات"
+                aria-pressed={view === 'grid'}
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+        {courses.length ? (
+          view === 'list' ? (
+            <div className="overflow-x-auto">
+              <table className="workspace-table min-w-[780px]">
+                <thead>
+                  <tr>
+                    <th>الدورة التعليمية</th>
+                    <th>المنهج</th>
+                    <th>التلاميذ</th>
+                    <th>الحالة</th>
+                    <th>آخر تحديث</th>
+                    <th>
+                      <span className="sr-only">الإدارة</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courses.map((c) => (
+                    <tr key={c.id}>
+                      <td>
+                        <Link
+                          to={`/courses/${c.id}`}
+                          className="flex items-center gap-4"
+                        >
+                          <CourseCover
+                            cover={c.cover}
+                            subject={c.subject}
+                            compact
+                            className="h-16 w-24 shrink-0 rounded-lg"
+                          />
+                          <span>
+                            <span className="block max-w-64 truncate font-bold">
+                              {c.title}
+                            </span>
+                            <span className="mt-1 block text-[10px] text-muted">
+                              {c.level}
+                            </span>
+                            <span className="mt-2 inline-flex items-center gap-1 text-[9px] text-muted">
+                              <Clock3 size={11} />
+                              {Math.round(courseDurationSec(c) / 60)} دقيقة
+                            </span>
+                          </span>
+                        </Link>
+                      </td>
+                      <td>
+                        <p>{countLessons(c)} دروس</p>
+                        <p className="mt-1 text-[10px] text-muted">
+                          {countChapters(c)} فصول
+                        </p>
+                      </td>
+                      <td>
+                        <span className="num">
+                          {activeStudentCount(state, c.id)}
+                        </span>
+                        <span className="ms-1 text-[10px] text-muted">نشط</span>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-label ${c.status === 'draft' ? 'is-draft' : ''}`}
+                        >
+                          {c.status === 'published' ? 'منشورة' : 'مسودة'}
+                        </span>
+                      </td>
+                      <td className="text-[10px] text-muted">
+                        {relativeTime(c.updatedAt)}
+                      </td>
+                      <td>
+                        <Link
+                          to={`/courses/${c.id}`}
+                          className="btn btn-outline btn-sm"
+                        >
+                          إدارة
+                          <ArrowUpLeft size={14} />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid gap-5 p-5 sm:grid-cols-2 xl:grid-cols-3">
+              {courses.map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/courses/${c.id}`}
+                  className="overflow-hidden rounded-xl border border-line transition-shadow hover:shadow-raised"
+                >
                   <CourseCover
-                    cover={course.cover}
-                    subject={course.subject}
+                    cover={c.cover}
+                    subject={c.subject}
                     className="h-32"
                   >
-                    <div className="flex items-end justify-between gap-2">
-                      <Pill
-                        tone={isPublished ? 'success' : 'warning'}
-                        dot
-                      >
-                        {isPublished ? 'منشورة' : 'مسودة'}
-                      </Pill>
-                      <span className="num rounded-lg bg-black/20 px-2 py-1 text-xs font-semibold text-white">
-                        {lessons} درس
-                      </span>
-                    </div>
+                    <span className="mt-auto rounded bg-white px-2 py-1 text-[9px] text-ink">
+                      {c.subject}
+                    </span>
                   </CourseCover>
-                </Link>
-
-                <div className="flex flex-1 flex-col gap-3 p-4">
-                  <div className="min-w-0">
-                    <Link to={`/courses/${course.id}`}>
-                      <h3 className="line-clamp-2 text-[15.5px] font-bold leading-snug hover:text-brand">
-                        {course.title}
-                      </h3>
-                    </Link>
-                    <p className="mt-1 text-xs text-muted">{course.level}</p>
-                  </div>
-
-                  <div className="mt-auto flex items-center justify-between gap-2 border-t border-line pt-3 text-xs text-muted">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Layers size={14} />
-                      <span className="num">{countChapters(course)}</span>
-                      فصل
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock3 size={14} />
-                      <span className="num">
-                        {Math.round(courseDurationSec(course) / 60)}
-                      </span>
-                      دقيقة
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Users size={14} />
-                      <span className="num">{students}</span>
-                      تلميذ
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`/courses/${course.id}`}
-                      className="btn btn-soft btn-sm flex-1"
+                  <div className="space-y-3 p-4">
+                    <span
+                      className={`status-label ${c.status === 'draft' ? 'is-draft' : ''}`}
                     >
-                      <Pencil size={14} />
-                      إدارة الدورة
-                    </Link>
-                    <span className="text-[11px] text-faint">
-                      {relativeTime(course.updatedAt)}
+                      {c.status === 'published' ? 'منشورة' : 'مسودة'}
                     </span>
+                    <h2 className="truncate text-sm font-bold">{c.title}</h2>
+                    <p className="text-[10px] text-muted">{c.level}</p>
+                    <div className="flex items-center justify-between border-t border-line pt-3 text-[10px] text-muted">
+                      <span>
+                        <Layers size={12} className="me-1 inline" />
+                        {countLessons(c)} درس
+                      </span>
+                      <span>
+                        <Users size={12} className="me-1 inline" />
+                        {activeStudentCount(state, c.id)} تلميذ
+                      </span>
+                      <ArrowUpLeft size={15} />
+                    </div>
                   </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
+                </Link>
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="p-6">
+            <EmptyState
+              icon={<BookOpen size={25} />}
+              title="لا توجد دورات مطابقة"
+              description="جرّب بحثاً آخر أو أنشئ دورة جديدة."
+              action={
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setCreating(true)}
+                >
+                  إنشاء دورة
+                </button>
+              }
+            />
+          </div>
+        )}
+        <footer className="flex items-center justify-between border-t border-line px-5 py-4 text-[10px] text-muted">
+          <span>
+            عرض {courses.length} من {state.courses.length} دورات
+          </span>
+          <span>المحتوى محفوظ في مساحتك</span>
+        </footer>
+      </section>
       <CreateCourseModal
         open={creating}
         onClose={() => setCreating(false)}
         onCreate={(payload) => {
-          dispatch({ type: 'course/create', payload }, 'تم إنشاء الدورة كمسودة');
+          dispatch(
+            { type: 'course/create', payload },
+            'تم إنشاء الدورة كمسودة',
+          );
           setCreating(false);
           navigate(`/courses/${payload.id}`);
         }}
@@ -220,8 +298,6 @@ export default function Courses() {
     </>
   );
 }
-
-/* ------------------------------------------------------------------ */
 
 function CreateCourseModal({
   open,
@@ -288,7 +364,9 @@ function CreateCourseModal({
         <Field
           label="عنوان الدورة"
           hint="مثال: الحساب التفاضلي — مدخل وتطبيقات"
-          error={touched && invalid ? 'اكتب عنواناً من 4 أحرف على الأقل.' : undefined}
+          error={
+            touched && invalid ? 'اكتب عنواناً من 4 أحرف على الأقل.' : undefined
+          }
         >
           <input
             className="input"
@@ -336,10 +414,9 @@ function CreateCourseModal({
         </Field>
 
         <div>
-          <span className="label">لون الغلاف</span>
+          <span className="label">غلاف الدورة</span>
           <div className="flex flex-wrap gap-2">
             {COVERS.map((key) => {
-              const [from, to] = coverGradients[key];
               const selected = cover === key;
               return (
                 <button
@@ -348,11 +425,14 @@ function CreateCourseModal({
                   aria-label={`غلاف ${key}`}
                   aria-pressed={selected}
                   onClick={() => setCover(key)}
-                  className={`h-9 w-9 rounded-lg transition-transform ${
-                    selected ? 'scale-110 ring-2 ring-ink ring-offset-2' : 'hover:scale-105'
+                  className={`overflow-hidden rounded-lg transition-transform ${
+                    selected
+                      ? 'scale-110 ring-2 ring-ink ring-offset-2'
+                      : 'hover:scale-105'
                   }`}
-                  style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
-                />
+                >
+                  <CourseCover cover={key} subject={''} className="h-12 w-20" />
+                </button>
               );
             })}
           </div>

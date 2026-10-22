@@ -1,4 +1,5 @@
-import { demoMediaUrl, uploadDemo } from './demo-sync';
+import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+import { demoMediaUrl, uploadDemo, type UploadOptions } from './demo-sync';
 /**
  * Demo uploads are persisted by the opt-in demo server and shared with mobile.
  * IndexedDB retains a browser copy for the teacher's existing local library.
@@ -40,9 +41,23 @@ async function withStore<T>(
   return new Promise<T>((resolve, reject) => {
     const tx = db.transaction(STORE, mode);
     const request = run(tx.objectStore(STORE));
-    request.onsuccess = () => resolve(request.result);
+    let result: T;
+    request.onsuccess = () => {
+      result = request.result;
+    };
     request.onerror = () => reject(request.error);
-    tx.oncomplete = () => db.close();
+    tx.oncomplete = () => {
+      db.close();
+      resolve(result);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
+    tx.onabort = () => {
+      db.close();
+      reject(tx.error ?? new Error('تعذّر حفظ الملف محلياً'));
+    };
   });
 }
 
@@ -51,14 +66,18 @@ export async function putUpload(asset: StoredAsset): Promise<void> {
 }
 
 export async function listUploads(): Promise<StoredAsset[]> {
-  return withStore<StoredAsset[]>('readonly', (store) =>
-    store.getAll() as IDBRequest<StoredAsset[]>,
+  return withStore<StoredAsset[]>(
+    'readonly',
+    (store) => store.getAll() as IDBRequest<StoredAsset[]>,
   );
 }
 
-export async function getUpload(name: string): Promise<StoredAsset | undefined> {
-  return withStore<StoredAsset | undefined>('readonly', (store) =>
-    store.get(name) as IDBRequest<StoredAsset | undefined>,
+export async function getUpload(
+  name: string,
+): Promise<StoredAsset | undefined> {
+  return withStore<StoredAsset | undefined>(
+    'readonly',
+    (store) => store.get(name) as IDBRequest<StoredAsset | undefined>,
   );
 }
 
@@ -99,11 +118,18 @@ export function readVideoDuration(objectUrl: string): Promise<number> {
   });
 }
 
-export function readPdfPages(file: File): Promise<number> {
-  return file.text().then((text) => {
-    const matches = text.match(/\/Type\s*\/Page[^s]/g);
-    return matches ? matches.length : 0;
+export async function readPdfPages(file: File): Promise<number> {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  const task = pdfjs.getDocument({
+    data: new Uint8Array(await file.arrayBuffer()),
   });
+  try {
+    const document = await task.promise;
+    return document.numPages;
+  } finally {
+    await task.destroy();
+  }
 }
 
 export interface PreparedUpload {
@@ -115,17 +141,23 @@ export interface PreparedUpload {
 }
 
 /** Read real metadata and persist the file. */
-export async function prepareUpload(file: File): Promise<PreparedUpload> {
+export async function prepareUpload(
+  file: File,
+  options: UploadOptions = {},
+): Promise<PreparedUpload> {
   const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
   const kind: 'video' | 'pdf' = isPdf ? 'pdf' : 'video';
   const url = URL.createObjectURL(file);
   let durationSec = 0;
   let pages = 0;
-  if (kind === 'video') durationSec = await readVideoDuration(url);
-  else pages = await readPdfPages(file);
-  URL.revokeObjectURL(url);
+  try {
+    if (kind === 'video') durationSec = await readVideoDuration(url);
+    else pages = await readPdfPages(file);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 
-  const shared = await uploadDemo(file);
+  const shared = await uploadDemo(file, options);
   const sharedName = shared.file;
   const asset: StoredAsset = {
     name: sharedName,
@@ -154,8 +186,10 @@ export async function prepareUpload(file: File): Promise<PreparedUpload> {
 export type MediaKind = 'video' | 'poster' | 'doc';
 
 export function bundledMediaUrl(kind: MediaKind, file: string): string {
-  if (file.startsWith('/api/demo/') || /^https?:\/\//.test(file)) return demoMediaUrl(file);
-  const folder = kind === 'video' ? 'videos' : kind === 'poster' ? 'posters' : 'docs';
+  if (file.startsWith('/api/demo/') || /^https?:\/\//.test(file))
+    return demoMediaUrl(file);
+  const folder =
+    kind === 'video' ? 'videos' : kind === 'poster' ? 'posters' : 'docs';
   return `/media/${folder}/${file}`;
 }
 
