@@ -127,6 +127,32 @@ try {
   done(
     'sending under unanswered filter shows persistent contextual publish confirmation',
   );
+  // An accepted centre member can still have no course subscription.
+  await page.evaluate(() => {
+    const value = JSON.parse(localStorage.getItem('ostadiplus.demo.v3'));
+    const student = value.students.find(
+      (s) =>
+        !value.enrollments.some(
+          (e) => e.studentId === s.id && e.status === 'active',
+        ),
+    );
+    if (student) {
+      const membership = value.memberships.find(
+        (m) => m.studentId === student.id && m.centerId === value.centers[0].id,
+      );
+      if (membership) membership.status = 'active';
+      else
+        value.memberships.push({
+          id: 'ux-accepted-no-course',
+          studentId: student.id,
+          centerId: value.centers[0].id,
+          status: 'active',
+          requestedAt: new Date().toISOString(),
+        });
+    }
+    localStorage.setItem('ostadiplus.demo.v3', JSON.stringify(value));
+  });
+  await page.reload();
   await page.goto(base + '/#/analytics');
   await page.locator('h1').waitFor();
   const count = await page.locator('tbody tr').count();

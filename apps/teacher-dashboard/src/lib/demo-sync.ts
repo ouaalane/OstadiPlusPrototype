@@ -113,3 +113,39 @@ export async function uploadDemo(
     xhr.send(file);
   });
 }
+
+export type ConnectionUpdate = Pick<
+  DemoState,
+  'students' | 'memberships' | 'notifications' | 'centers'
+>;
+export async function connectionRequest(
+  path: string,
+  body?: unknown,
+): Promise<ConnectionUpdate> {
+  return fetchState(
+    '/api/demo/connections' + path,
+    body === undefined
+      ? undefined
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+  );
+}
+export async function lookupConnection(
+  studentCode: string,
+  centerId: string,
+): Promise<DemoState['students'][number] | undefined> {
+  const response = await fetch(
+    demoEndpoint() + '/api/demo/connections/lookup',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentCode, centerId }),
+      signal: AbortSignal.timeout(10000),
+    },
+  );
+  if (response.status === 404) return undefined;
+  return (await responseJson(response)).student;
+}

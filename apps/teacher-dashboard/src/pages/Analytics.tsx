@@ -10,8 +10,18 @@ export default function Analytics() {
   useI18n();
   const { state } = useStore();
   const [query, setQuery] = useState('');
-  const attempts = state.quizAttempts ?? [];
-  const rows = state.students.map((student) => {
+  const centreStudents = state.students.filter((s) =>
+    state.memberships.some(
+      (m) =>
+        m.studentId === s.id &&
+        m.centerId === state.centers[0]?.id &&
+        m.status === 'active',
+    ),
+  );
+  const attempts = (state.quizAttempts ?? []).filter((a) =>
+    centreStudents.some((s) => s.id === a.studentId),
+  );
+  const rows = centreStudents.map((student) => {
     const courses = accessibleCourses(state, student.id);
     const ids = new Set(
       courses.flatMap((c) =>

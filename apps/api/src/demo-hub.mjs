@@ -15,6 +15,7 @@ import { createRequire } from 'node:module';
 import {
   createDemoState,
   repairStudentCodes,
+  membershipForNotification,
   allLessons,
   enrollmentHasAccess,
   enrollmentAllowsLesson,
@@ -311,6 +312,123 @@ export function createDemoHub(directory) {
     });
     return state;
   }
+  // Connection operations are deliberately scoped: never replace course drafts.
+  function connectionView({ studentId, centerId } = {}) {
+    const memberships = (state.memberships ?? []).filter((m) =>
+      studentId ? m.studentId === studentId : m.centerId === centerId,
+    );
+    const accepted = new Set(
+      memberships.filter((m) => m.status === 'active').map((m) => m.studentId),
+    );
+    return {
+      centers: state.centers,
+      memberships,
+      students: state.students
+        .filter((s) =>
+          studentId
+            ? s.id === studentId
+            : memberships.some(
+                (m) =>
+                  m.studentId === s.id &&
+                  ['active', 'requested'].includes(m.status),
+              ),
+        )
+        .map((s) =>
+          studentId || accepted.has(s.id)
+            ? s
+            : {
+                id: s.id,
+                fullName: s.fullName,
+                studentCode: s.studentCode,
+                monogram: s.monogram,
+                phone: '',
+                email: '',
+                level: '',
+                joinedAt: '',
+                studentType: s.studentType,
+              },
+        ),
+      notifications: studentId
+        ? state.notifications.filter((n) => n.studentId === studentId)
+        : [],
+    };
+  }
+  function inviteStudent(body) {
+    const center = state.centers.find((c) => c.id === body.centerId);
+    const student = state.students.find(
+      (s) =>
+        s.studentCode.toLowerCase() ===
+        String(body.studentCode ?? '')
+          .trim()
+          .toLowerCase(),
+    );
+    if (!center || !student)
+      throw Object.assign(new Error('not-found'), { status: 404 });
+    const existing = state.memberships.find(
+      (m) =>
+        m.centerId === center.id &&
+        m.studentId === student.id &&
+        ['requested', 'active'].includes(m.status),
+    );
+    if (!existing) {
+      const membership = {
+        id: randomUUID(),
+        studentId: student.id,
+        centerId: center.id,
+        status: 'requested',
+        requestedAt: new Date().toISOString(),
+      };
+      persist({
+        ...state,
+        memberships: [...state.memberships, membership],
+        notifications: [
+          ...state.notifications,
+          {
+            id: randomUUID(),
+            studentId: student.id,
+            kind: 'center-request',
+            read: false,
+            createdAt: membership.requestedAt,
+            payload: {
+              membershipId: membership.id,
+              centerId: center.id,
+              centerName: center.name,
+            },
+          },
+        ],
+      });
+    }
+    return connectionView({ centerId: center.id });
+  }
+  function respondToInvite(body) {
+    if (typeof body.accept !== 'boolean')
+      throw Object.assign(new Error('invalid-response'), { status: 400 });
+    const membership = state.memberships.find(
+      (m) => m.id === body.membershipId && m.studentId === body.studentId,
+    );
+    if (!membership)
+      throw Object.assign(new Error('not-found'), { status: 404 });
+    const status = body.accept ? 'active' : 'rejected';
+    if (membership.status !== 'requested' && membership.status !== status)
+      throw Object.assign(new Error('already-answered'), { status: 409 });
+    if (membership.status === 'requested')
+      persist({
+        ...state,
+        memberships: state.memberships.map((m) =>
+          m.id === membership.id
+            ? { ...m, status, respondedAt: new Date().toISOString() }
+            : m,
+        ),
+        notifications: state.notifications.map((n) =>
+          n.studentId === body.studentId &&
+          n.kind === 'center-request' &&
+          membershipForNotification(state.memberships, n)?.id === membership.id
+            ? { ...n, read: true }
+            : n,
+        ),
+      });
+    return connectionView({ studentId: body.studentId });
+  }
   async function handle(req, res, url) {
     if (!url.pathname.startsWith('/api/demo/')) return false;
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -323,7 +441,74 @@ export function createDemoHub(directory) {
       return true;
     }
     try {
-      if (url.pathname === '/api/demo/state') {
+      if (url.pathname === '/api/demo/connections' && req.method === 'GET') {
+        const studentId = url.searchParams.get('studentId');
+        const centerId = url.searchParams.get('centerId');
+        if (!studentId && !centerId)
+          throw Object.assign(new Error('missing-scope'), { status: 400 });
+        json(res, 200, connectionView({ studentId, centerId }));
+      } else if (
+        url.pathname === '/api/demo/connections/student' &&
+        req.method === 'POST'
+      ) {
+        const body = JSON.parse((await readBody(req, 1024 * 1024)).toString());
+        studentUpdate({ student: body.student });
+        json(res, 200, connectionView({ studentId: body.student.id }));
+      } else if (
+        url.pathname === '/api/demo/connections/lookup' &&
+        req.method === 'POST'
+      ) {
+        const body = JSON.parse((await readBody(req, 4096)).toString());
+        const student = state.students.find(
+          (s) =>
+            s.studentCode.toLowerCase() ===
+            String(body.studentCode ?? '')
+              .trim()
+              .toLowerCase(),
+        );
+        if (!student)
+          throw Object.assign(new Error('not-found'), { status: 404 });
+        const accepted = state.memberships.some(
+          (m) =>
+            m.studentId === student.id &&
+            m.centerId === body.centerId &&
+            m.status === 'active',
+        );
+        // Identity preview only until the student consents.
+        json(res, 200, {
+          student: accepted
+            ? student
+            : {
+                id: student.id,
+                studentCode: student.studentCode,
+                fullName: student.fullName,
+                monogram: student.monogram,
+                phone: '',
+                email: '',
+                level: '',
+                joinedAt: '',
+                studentType: student.studentType,
+              },
+        });
+      } else if (
+        url.pathname === '/api/demo/connections/invite' &&
+        req.method === 'POST'
+      ) {
+        json(
+          res,
+          200,
+          inviteStudent(JSON.parse((await readBody(req, 4096)).toString())),
+        );
+      } else if (
+        url.pathname === '/api/demo/connections/respond' &&
+        req.method === 'POST'
+      ) {
+        json(
+          res,
+          200,
+          respondToInvite(JSON.parse((await readBody(req, 4096)).toString())),
+        );
+      } else if (url.pathname === '/api/demo/state') {
         if (req.method === 'GET') json(res, 200, state);
         else if (req.method === 'POST')
           json(

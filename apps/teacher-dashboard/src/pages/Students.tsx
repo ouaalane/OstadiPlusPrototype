@@ -1,7 +1,7 @@
 import { useI18n } from '@/i18n/useI18n';
 import { translate as t, relativeTime } from '@/i18n/locale';
 import SubscriptionManager from '@/components/SubscriptionManager';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ClipboardPaste,
   QrCode,
@@ -28,7 +28,7 @@ import {
   Segmented,
   type DataTableColumn,
 } from '@/components/ui';
-import { useAction, useStore } from '@/store/DemoStore';
+import { useStore } from '@/store/DemoStore';
 
 type Filter = 'all' | EnrollmentStatus | 'expired' | 'scheduled';
 
@@ -42,8 +42,13 @@ const FILTERS: [Filter, string][] = [
 
 export default function Students() {
   const { lang } = useI18n();
-  const { state, pendingMemberships, findStudentByCode } = useStore();
-  const action = useAction();
+  const {
+    state,
+    pendingMemberships,
+    lookupStudentByCode,
+    inviteStudent,
+  } = useStore();
+  const [connectionBusy, setConnectionBusy] = useState(false);
 
   const [filter, setFilter] = useState<Filter>('all');
   const [activationOpen, setActivationOpen] = useState(false);
@@ -63,6 +68,20 @@ export default function Students() {
   const [method, setMethod] = useState<'code' | 'qr'>('code');
   const [codeInput, setCodeInput] = useState('');
   const center = state.centers[0];
+  const latestCode = useRef(codeInput);
+  latestCode.current = codeInput;
+  const centreStudents = useMemo(
+    () =>
+      state.students.filter((student) =>
+        state.memberships.some(
+          (m) =>
+            m.studentId === student.id &&
+            m.centerId === center?.id &&
+            m.status === 'active',
+        ),
+      ),
+    [state.students, state.memberships, center?.id],
+  );
   const verifiedStudent = state.students.find(
     (student) => student.id === expanded,
   );
@@ -80,7 +99,7 @@ export default function Students() {
 
   const rows = useMemo(
     () =>
-      state.students
+      centreStudents
         .map((student) => {
           const enrollments = state.enrollments.filter(
             (e) => e.studentId === student.id,
@@ -106,17 +125,21 @@ export default function Students() {
             return false;
           return true;
         }),
-    [state.students, state.enrollments, filter, lang],
+    [centreStudents, state.enrollments, filter, lang],
   );
 
   const counts = useMemo(() => {
-    const total = state.students.length;
+    const total = centreStudents.length;
     const active = new Set(
       state.enrollments
-        .filter((e) => enrollmentHasAccess(e))
+        .filter(
+          (e) =>
+            centreStudents.some((s) => s.id === e.studentId) &&
+            enrollmentHasAccess(e),
+        )
         .map((e) => e.studentId),
     ).size;
-    const pending = state.students.filter((student) => {
+    const pending = centreStudents.filter((student) => {
       const enrollments = state.enrollments.filter(
         (enrollment) => enrollment.studentId === student.id,
       );
@@ -126,7 +149,7 @@ export default function Students() {
       );
     }).length;
     return { total, active, pending };
-  }, [state.students, state.enrollments, lang]);
+  }, [centreStudents, state.enrollments, lang]);
 
   /* ---- Table columns ---- */
   const columns: DataTableColumn<(typeof rows)[number]>[] = useMemo(
@@ -183,7 +206,11 @@ export default function Students() {
         align: 'center',
         width: '130px',
         sortValue: ({ enrollments }) =>
-          enrollments.filter((e) => enrollmentHasAccess(e)).length,
+          enrollments.filter(
+            (e) =>
+              centreStudents.some((s) => s.id === e.studentId) &&
+              enrollmentHasAccess(e),
+          ).length,
         render: ({ enrollments }) => {
           const activeCount = enrollments.filter((e) =>
             enrollmentHasAccess(e),
@@ -266,7 +293,7 @@ export default function Students() {
 
   /* Resolve a student by their opaque code (UST-XXXXX). Security: lookup is
    * by code only — never by name or phone (multi-center privacy). */
-  const verifyStudent = () => {
+  const verifyStudent = async () => {
     const needle = codeInput.trim();
     setExpanded(null);
     setRequestResult(null);
@@ -274,7 +301,20 @@ export default function Students() {
       setActivation({ tone: 'error', text: t('أدخل رمز الطالب أولاً.') });
       return;
     }
-    const found = findStudentByCode(needle);
+    setConnectionBusy(true);
+    let found;
+    try {
+      found = await lookupStudentByCode(needle);
+    } catch {
+      setActivation({
+        tone: 'error',
+        text: t('تعذّر الاتصال بالمركز. تحقق من الرابط وحاول مجدداً.'),
+      });
+      return;
+    } finally {
+      setConnectionBusy(false);
+    }
+    if (latestCode.current.trim() !== needle) return;
     if (!found) {
       setActivation({
         tone: 'error',
@@ -299,16 +339,24 @@ export default function Students() {
    * membership in 'requested' state and a notification for the student. The
    * student must accept via their app before the center can see details or
    * assign courses. */
-  const sendRequest = () => {
+  const sendRequest = async () => {
     if (!verifiedStudent || existingMembership) return;
     if (!center) {
       setRequestResult({ tone: 'error', text: t('لم يتم إعداد مركز للمعلم.') });
       return;
     }
-    action({
-      type: 'membership/request',
-      payload: { studentId: verifiedStudent.id, centerId: center.id },
-    });
+    setConnectionBusy(true);
+    try {
+      await inviteStudent(verifiedStudent.id, center.id);
+    } catch {
+      setRequestResult({
+        tone: 'error',
+        text: t('تعذّر إرسال الدعوة. تحقق من الاتصال وحاول مجدداً.'),
+      });
+      return;
+    } finally {
+      setConnectionBusy(false);
+    }
     setRequestResult({
       tone: 'ok',
       text: t(
@@ -466,6 +514,7 @@ export default function Students() {
                   type="button"
                   className="btn btn-primary"
                   onClick={verifyStudent}
+                  disabled={connectionBusy}
                 >
                   <ShieldCheck size={16} />
                   {t('تحقق')}
@@ -523,7 +572,7 @@ export default function Students() {
                   type="button"
                   className="btn btn-dark"
                   onClick={sendRequest}
-                  disabled={!center || !!existingMembership}
+                  disabled={connectionBusy || !center || !!existingMembership}
                 >
                   <UserPlus size={16} aria-hidden="true" />
                   {existingMembership?.status === 'active'
@@ -598,7 +647,7 @@ export default function Students() {
         />
       </div>
 
-      {state.students.length === 0 ? (
+      {centreStudents.length === 0 ? (
         <EmptyState
           icon={<Users size={24} />}
           title={

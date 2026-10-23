@@ -16,7 +16,7 @@ import SubscriptionManager from '@/components/SubscriptionManager';
  * Bilingual (FR/AR), RTL layout.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Inbox } from 'lucide-react';
 import {
   enrollmentHasAccess,
@@ -33,7 +33,7 @@ import {
   Segmented,
   type DataTableColumn,
 } from '@/components/ui';
-import { useAction, useStore } from '@/store/DemoStore';
+import { useStore } from '@/store/DemoStore';
 
 type Tab = 'active' | 'expired' | 'all';
 
@@ -57,15 +57,21 @@ const STATUS_META: Record<
 
 export default function Reception() {
   const { lang } = useI18n();
-  const { state, pendingMemberships, findStudentByCode } = useStore();
-  const action = useAction();
+  const {
+    state,
+    pendingMemberships,
+    findStudentByCode,
+    lookupStudentByCode,
+    inviteStudent,
+  } = useStore();
+  const [connectionBusy, setConnectionBusy] = useState(false);
 
   const [subscriptionCourse, setSubscriptionCourse] = useState<string | null>(
     null,
   );
   const [tab, setTab] = useState<Tab>('all');
   const [searchCode, setSearchCode] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<ReturnType<
+  const [studentSelection, setSelectedStudent] = useState<ReturnType<
     typeof findStudentByCode
   > | null>(null);
   const [result, setResult] = useState<{
@@ -73,6 +79,9 @@ export default function Reception() {
     text: string;
   } | null>(null);
 
+  const selectedStudent =
+    state.students.find((s) => s.id === studentSelection?.id) ??
+    studentSelection;
   const center = state.centers[0];
   const selectedMembership = (state.memberships ?? []).find(
     (membership) =>
@@ -81,7 +90,9 @@ export default function Reception() {
       (membership.status === 'active' || membership.status === 'requested'),
   );
 
-  const searchStudent = useCallback(() => {
+  const latestCode = useRef(searchCode);
+  latestCode.current = searchCode;
+  const searchStudent = useCallback(async () => {
     const code = searchCode.trim();
     if (!code) {
       setSelectedStudent(null);
@@ -89,7 +100,20 @@ export default function Reception() {
       setResult({ tone: 'error', text: t('أدخل رمز الطالب أولاً.') });
       return;
     }
-    const student = findStudentByCode(code);
+    setConnectionBusy(true);
+    let student;
+    try {
+      student = await lookupStudentByCode(code);
+    } catch {
+      setResult({
+        tone: 'error',
+        text: t('تعذّر الاتصال بالمركز. تحقق من الرابط وحاول مجدداً.'),
+      });
+      return;
+    } finally {
+      setConnectionBusy(false);
+    }
+    if (latestCode.current.trim() !== code) return;
     if (!student) {
       setSelectedStudent(null);
       setResult({
@@ -108,7 +132,7 @@ export default function Reception() {
         student.studentCode,
       ]),
     });
-  }, [searchCode, findStudentByCode, lang]);
+  }, [searchCode, findStudentByCode, lookupStudentByCode, lang]);
 
   const enrollmentsOfStudent = useMemo(() => {
     if (!selectedStudent) return [];
@@ -252,7 +276,7 @@ export default function Reception() {
     [coursesMap, manageSubscription, lang],
   );
 
-  const handleRegisterLink = useCallback(() => {
+  const handleRegisterLink = useCallback(async () => {
     if (!selectedStudent) return;
     const existing = (state.memberships ?? []).find(
       (membership) =>
@@ -274,17 +298,25 @@ export default function Reception() {
       setResult({ tone: 'error', text: t('لم يتم إعداد مركز.') });
       return;
     }
-    action({
-      type: 'membership/request',
-      payload: { studentId: selectedStudent.id, centerId: center.id },
-    });
+    setConnectionBusy(true);
+    try {
+      await inviteStudent(selectedStudent.id, center.id);
+    } catch {
+      setResult({
+        tone: 'error',
+        text: t('تعذّر إرسال الدعوة. تحقق من الاتصال وحاول مجدداً.'),
+      });
+      return;
+    } finally {
+      setConnectionBusy(false);
+    }
     setResult({
       tone: 'success',
       text: t('تم إرسال طلب انضمام إلى {0} — ينتظر موافقة التلميذ.', [
         center.name,
       ]),
     });
-  }, [selectedStudent, state.memberships, center, action, lang]);
+  }, [selectedStudent, state.memberships, center, inviteStudent, lang]);
 
   return (
     <div className="space-y-6">
@@ -307,7 +339,12 @@ export default function Reception() {
           <span aria-hidden="true">
             {result.tone === 'success' ? '✓' : '✕'}
           </span>
-          <p>{result.text}</p>
+          <p>
+            {result.tone === 'success' &&
+            selectedMembership?.status === 'active'
+              ? t('التلميذ مرتبط بهذا المركز بالفعل.')
+              : t(result.text)}
+          </p>
         </div>
       ) : null}
 
@@ -343,6 +380,7 @@ export default function Reception() {
               type="button"
               className="btn btn-primary"
               onClick={searchStudent}
+              disabled={connectionBusy}
             >
               {t('بحث')}
             </button>
@@ -351,7 +389,7 @@ export default function Reception() {
                 type="button"
                 className="btn btn-outline"
                 onClick={handleRegisterLink}
-                disabled={!center || !!selectedMembership}
+                disabled={connectionBusy || !center || !!selectedMembership}
               >
                 {selectedMembership?.status === 'active'
                   ? t('مرتبط بالمركز')
@@ -392,12 +430,14 @@ export default function Reception() {
               <h2 className="text-base font-bold text-ink">
                 {selectedStudent.fullName}
               </h2>
-              <p className="text-xs text-muted">
-                {selectedStudent.studentType === 'bac-libre'
-                  ? t('باك حر')
-                  : t('متمدرس')}{' '}
-                · {selectedStudent.level}
-              </p>
+              {selectedMembership?.status === 'active' ? (
+                <p className="text-xs text-muted">
+                  {selectedStudent.studentType === 'bac-libre'
+                    ? t('باك حر')
+                    : t('متمدرس')}{' '}
+                  · {selectedStudent.level}
+                </p>
+              ) : null}
             </div>
             <span className="text-xs text-muted">
               <span className="font-semibold">{t('الرمز:')}</span>{' '}
@@ -406,99 +446,112 @@ export default function Reception() {
               </span>
             </span>
             <span className="text-xs text-muted">
-              <span className="font-semibold">{t('الهاتف:')}</span>{' '}
+              <span className="font-semibold">
+                {selectedMembership?.status === 'active' ? t('الهاتف:') : ''}
+              </span>{' '}
               <span dir="ltr" className="num">
-                {selectedStudent.phone}
+                {selectedMembership?.status === 'active'
+                  ? selectedStudent.phone
+                  : ''}
               </span>
             </span>
           </div>
 
-          {/* ---- Enrollments ---- */}
-          <DataTable
-            columns={enrollmentColumns}
-            rows={filteredEnrollments}
-            getRowId={(e) => e.id}
-            title={t('المقررات المفعلة للتلميذ')}
-            compact
-            toolbar={
-              <Segmented
-                value={tab}
-                onChange={setTab}
-                options={TABS}
-                ariaLabel={t('تصفية حسب حالة الاشتراك')}
+          {selectedMembership?.status === 'active' ? (
+            <>
+              {/* ---- Enrollments ---- */}
+              <DataTable
+                columns={enrollmentColumns}
+                rows={filteredEnrollments}
+                getRowId={(e) => e.id}
+                title={t('المقررات المفعلة للتلميذ')}
+                compact
+                toolbar={
+                  <Segmented
+                    value={tab}
+                    onChange={setTab}
+                    options={TABS}
+                    ariaLabel={t('تصفية حسب حالة الاشتراك')}
+                  />
+                }
+                emptyState={
+                  <div className="flex flex-col items-center gap-2 text-muted">
+                    <Inbox size={26} className="text-faint" />
+                    <p className="text-sm font-semibold">
+                      {tab === 'active'
+                        ? t('لا اشتراكات نشطة')
+                        : tab === 'expired'
+                          ? t('لا اشتراكات منتهية')
+                          : t('لا اشتراكات مسجلة لهذا التلميذ')}
+                    </p>
+                  </div>
+                }
+                highlightRow={(e) =>
+                  e.status === 'active' && isEnrollmentExpired(e)
+                }
               />
-            }
-            emptyState={
-              <div className="flex flex-col items-center gap-2 text-muted">
-                <Inbox size={26} className="text-faint" />
-                <p className="text-sm font-semibold">
-                  {tab === 'active'
-                    ? t('لا اشتراكات نشطة')
-                    : tab === 'expired'
-                      ? t('لا اشتراكات منتهية')
-                      : t('لا اشتراكات مسجلة لهذا التلميذ')}
-                </p>
-              </div>
-            }
-            highlightRow={(e) =>
-              e.status === 'active' && isEnrollmentExpired(e)
-            }
-          />
 
-          {/* ---- Available courses to activate ---- */}
-          <div className="card overflow-hidden mt-6">
-            <div className="px-5 py-4 border-b border-line bg-surface">
-              <h3 className="text-sm font-bold text-ink">
-                {t('تسجيل اشتراك مع أستاذ')}
-              </h3>
-            </div>
-            <div className="px-5 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {state.courses.map((course) => {
-                  const already = enrollmentsOfStudent.find(
-                    (e) => e.courseId === course.id,
-                  );
-                  const hasAccess = already && enrollmentHasAccess(already);
-                  return (
-                    <div
-                      key={course.id}
-                      className={[
-                        'card rounded-xl p-4 border border-line transition-all hover:border-brand/30 hover:shadow-sm',
-                      ].join(' ')}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand-dark font-medium text-[10px]">
-                          {course.title.charAt(0)}
+              {/* ---- Available courses to activate ---- */}
+              <div className="card overflow-hidden mt-6">
+                <div className="px-5 py-4 border-b border-line bg-surface">
+                  <h3 className="text-sm font-bold text-ink">
+                    {t('تسجيل اشتراك مع أستاذ')}
+                  </h3>
+                </div>
+                <div className="px-5 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {state.courses.map((course) => {
+                      const already = enrollmentsOfStudent.find(
+                        (e) => e.courseId === course.id,
+                      );
+                      const hasAccess = already && enrollmentHasAccess(already);
+                      return (
+                        <div
+                          key={course.id}
+                          className={[
+                            'card rounded-xl p-4 border border-line transition-all hover:border-brand/30 hover:shadow-sm',
+                          ].join(' ')}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand-dark font-medium text-[10px]">
+                              {course.title.charAt(0)}
+                            </div>
+                            {hasAccess ? (
+                              <span className="text-[10px] font-semibold text-muted bg-surface-alt rounded-full px-2 py-0.5">
+                                {t('مسجل')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-xs font-medium text-ink leading-tight mb-1">
+                            <bdi>{course.title}</bdi>
+                          </p>
+                          <p className="text-[10px] text-muted mb-3">
+                            {course.subject} • {course.level}
+                          </p>
+                          <button
+                            type="button"
+                            className={[
+                              'w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors border',
+                              'bg-brand border-transparent text-white hover:bg-brand-dark shadow-sm hover:shadow-md',
+                            ].join(' ')}
+                            onClick={() => manageSubscription(course.id)}
+                          >
+                            {t('تخصيص الاشتراك')}
+                          </button>
                         </div>
-                        {hasAccess ? (
-                          <span className="text-[10px] font-semibold text-muted bg-surface-alt rounded-full px-2 py-0.5">
-                            {t('مسجل')}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-xs font-medium text-ink leading-tight mb-1">
-                        <bdi>{course.title}</bdi>
-                      </p>
-                      <p className="text-[10px] text-muted mb-3">
-                        {course.subject} • {course.level}
-                      </p>
-                      <button
-                        type="button"
-                        className={[
-                          'w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors border',
-                          'bg-brand border-transparent text-white hover:bg-brand-dark shadow-sm hover:shadow-md',
-                        ].join(' ')}
-                        onClick={() => manageSubscription(course.id)}
-                      >
-                        {t('تخصيص الاشتراك')}
-                      </button>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-
+            </>
+          ) : (
+            <p className="card p-4 text-sm text-muted">
+              {t(
+                'المعلومات الكاملة والاشتراكات متاحة بعد قبول التلميذ للدعوة.',
+              )}
+            </p>
+          )}
           {/* ---- Pending membership requests ---- */}
           <div className="card overflow-hidden mt-6">
             <div className="px-5 py-4 border-b border-line bg-surface">

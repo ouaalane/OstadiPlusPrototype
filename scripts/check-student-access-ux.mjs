@@ -1,3 +1,4 @@
+import { register } from 'node:module';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -6,15 +7,23 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
+register('../apps/api/src/resolve.mjs', import.meta.url);
+const { createWatermarkApi } = await import('../apps/api/src/server.mjs');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'),
   tmp = await mkdtemp(join(tmpdir(), 'oustadi-student-access-ux-'));
-let vite, browser;
+let vite, browser, api;
 let checks = 0;
 const done = (name) => {
   checks++;
   console.log('ok - ' + name);
 };
 try {
+  api = createWatermarkApi({
+    demoDirectory: join(tmp, 'api'),
+    logger: { log() {}, error() {} },
+  });
+  await new Promise((resolve) => api.server.listen(0, '127.0.0.1', resolve));
+  const endpoint = 'http://127.0.0.1:' + api.server.address().port;
   vite = await createServer({
     root: join(root, 'apps/teacher-dashboard'),
     cacheDir: join(tmp, 'vite'),
@@ -34,6 +43,10 @@ try {
   page.setDefaultTimeout(12000);
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await page.addInitScript(
+    (endpoint) => localStorage.setItem('ostadiplus.demo.endpoint', endpoint),
+    endpoint,
+  );
   await page.goto(base + '/#/students');
   await page.locator('h1').waitFor();
   const seed = await page.evaluate(() =>
@@ -192,6 +205,7 @@ try {
   assert.deepEqual(errors, [], 'browser runtime errors');
 } finally {
   await browser?.close();
+  await api?.close();
   await vite?.close();
   await rm(tmp, { recursive: true, force: true });
 }

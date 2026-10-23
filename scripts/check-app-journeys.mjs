@@ -47,6 +47,7 @@ async function mobileSync() {
 async function teacherSync(direction) {
   await dashboard.goto(dashboardBase + '/#/sync');
   await button(dashboard, direction === 'pull' ? 'جلب تحديثات التلاميذ' : 'نشر التحديثات للتطبيق').click();
+  if (direction === 'pull') await dashboard.getByRole('alertdialog').getByRole('button', { name: 'جلب نسخة الخادم', exact: true }).click();
   await dashboard.getByRole('status').filter({ hasText: 'آخر مزامنة' }).waitFor();
 }
 async function welcome() {
@@ -110,6 +111,11 @@ try {
   let state = await stored(student);
   const newId = state.activeStudentId;
   const newStudent = state.students.find(s => s.id === newId);
+  await student.waitForFunction(async ({ endpoint, newId }) => {
+    const data = await (await fetch(endpoint + '/api/demo/state')).json();
+    return data.students.some(s => s.id === newId);
+  }, { endpoint, newId });
+  done('new account registers with the centre server automatically without manual data sync');
   assert.equal(newStudent.email, 'journey@example.ma');
   assert.ok(!state.enrollments.some(e => e.studentId === newId));
   await shot(student, 'new-student-pending');
@@ -180,6 +186,41 @@ try {
     localStorage.setItem('ostadiplus.demo.endpoint', endpoint);
   }, { state: initial, endpoint });
   await teacherSync('pull');
+  const invitedProfile = remoteRegistered.students.find(s => s.id === newId);
+  await dashboard.goto(dashboardBase + '/#/students');
+  assert.equal(await dashboard.locator('tbody').getByText(invitedProfile.fullName, { exact: true }).count(), 0);
+  await dashboard.goto(dashboardBase + '/#/reception');
+  await field(dashboard, 'رمز الطالب').fill(newStudent.studentCode);
+  await button(dashboard, 'بحث').click();
+  await dashboard.route('**/api/demo/connections/invite', route => route.abort());
+  await button(dashboard, 'ربط بالمركز').click();
+  await dashboard.getByRole('alert').filter({ hasText: 'تعذّر إرسال الدعوة' }).waitFor();
+  await dashboard.unroute('**/api/demo/connections/invite');
+  await button(dashboard, 'ربط بالمركز').click();
+  await dashboard.getByText('تم إرسال الطلب؛ تبقى موافقة التلميذ مطلوبة في التطبيق.', { exact: true }).waitFor();
+  assert.equal(await button(dashboard, 'تخصيص الاشتراك').count(), 0);
+  await navigate('Tabs', { screen: 'Home' });
+  await student.getByRole('button', { name: /^Notifications/ }).click();
+  const accept = button(student, 'Accepter l’invitation');
+  await accept.waitFor();
+  // A failed answer must keep the invitation pending and offer a real retry.
+  await student.route('**/api/demo/connections/respond', route => route.abort());
+  await accept.click();
+  await student.getByText('Réponse non envoyée. Vérifiez la connexion et réessayez.', { exact: true }).waitFor();
+  assert.ok(!(await (await fetch(endpoint + '/api/demo/state')).json()).memberships.some(m => m.studentId === newId && m.status === 'active'));
+  await student.unroute('**/api/demo/connections/respond');
+  await accept.click();
+  await student.getByText('Invitation acceptée', { exact: true }).waitFor();
+  await dashboard.getByText(invitedProfile.phone, { exact: true }).first().waitFor();
+  await dashboard.goto(dashboardBase + '/#/students');
+  await dashboard.locator('tbody').getByText(invitedProfile.fullName, { exact: true }).waitFor();
+  const acceptedRemote = await (await fetch(endpoint + '/api/demo/state')).json();
+  assert.ok(acceptedRemote.memberships.some(m => m.studentId === newId && m.status === 'active'));
+  assert.ok(!acceptedRemote.enrollments.some(e => e.studentId === newId));
+  await button(student, 'Fermer').click();
+  await student.getByText(/Votre compte est lié à/).filter({ visible: true }).waitFor();
+  await shot(student, 'centre-connected');
+  done('centre invitation → waiting-screen notifications → failed response and retry → acceptance → automatic dashboard profile, without course access');
   await dashboard.goto(dashboardBase + '/#/courses');
   await button(dashboard, 'إنشاء دورة').click();
   await dashboard.getByPlaceholder('عنوان واضح للتلاميذ').fill('دورة التحقق الشامل');

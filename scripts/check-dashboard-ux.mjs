@@ -233,6 +233,18 @@ try {
         fullName: `تلميذ اختبار ${index}`,
       })),
     );
+    value.memberships.push(
+      ...value.students
+        .filter((s) => s.id.startsWith('ux-student-'))
+        .map((s) => ({
+          id: 'ux-membership-' + s.id,
+          studentId: s.id,
+          centerId: value.centers[0].id,
+          status: 'active',
+          requestedAt: new Date().toISOString(),
+          respondedAt: new Date().toISOString(),
+        })),
+    );
     localStorage.setItem('ostadiplus.demo.v3', JSON.stringify(value));
   });
   await page.reload();

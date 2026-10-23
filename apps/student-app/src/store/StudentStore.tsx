@@ -40,6 +40,7 @@ import {
   enrollmentAllowsLesson,
   courseWithEnrollmentScope,
   makeQuestion,
+  membershipForNotification,
   progressFor,
   questionsForCourse as selectQuestionsForCourse,
   type AppNotification,
@@ -55,7 +56,7 @@ import {
 import { videoAssets } from '../assets/registry';
 
 import { applyProfileDetails, profileErrors, type ProfileDetails } from '../lib/profile-details';
-import { loadDemoEndpoint, demoAssetUrl } from '../lib/demo-sync';
+import { loadDemoEndpoint, demoEndpoint, demoAssetUrl, studentConnections, type ConnectionUpdate } from '../lib/demo-sync';
 import { setLocalPassword } from '../lib/local-password';
 import { registrationErrors } from '../lib/student-registration';
 import { EMPTY_LIBRARY_PREFS, readLibraryPreferences, type StudentLibraryPrefs } from '../lib/library-preferences';
@@ -97,7 +98,7 @@ interface StoreValue {
   /** Center memberships for the signed-in student. */
   myMemberships: CenterMembership[];
   requestCenterJoin: (inviteCode: string) => 'ok' | 'not_found' | 'already_requested';
-  respondToMembership: (membershipId: string, accept: boolean) => void;
+  respondToMembership: (membershipId: string, accept: boolean) => Promise<void>;
   /** Downloads for the signed-in student, keyed by lessonId. */
   myDownloads: DownloadRecord[];
   /** Archived ("Archivés") course ids, persisted locally. */
@@ -161,6 +162,7 @@ const DOWNLOAD_DIR = `${Paths.cache.uri}/ostadiplus/downloads/`;
 const StoreContext = createContext<StoreValue | null>(null);
 
 type Action =
+  | { type: 'connections/merge'; studentId: string; update: ConnectionUpdate }
   | { type: 'hydrate'; state: DemoState }
   | { type: 'replace'; state: DemoState; syncedAt: string | null }
   | { type: 'signIn'; studentId: string }
@@ -187,6 +189,31 @@ const newId = (prefix: string) =>
 
 function reducer(state: DemoState, action: Action): DemoState {
   switch (action.type) {
+    case 'connections/merge': {
+      if (state.activeStudentId !== action.studentId) return state;
+      const update = action.update;
+      const merge = <T extends { id: string }>(a: T[], b: T[]) => [
+        ...new Map([...a, ...b].map(v => [v.id, v])).values(),
+      ];
+      const memberships = merge(state.memberships, update.memberships.map(m => {
+        const current = state.memberships.find(v => v.id === m.id);
+        return m.status === 'requested' && current && current.status !== 'requested' ? current : m;
+      }));
+      const notifications = merge(state.notifications, update.notifications.map(n => ({
+        ...n, read: n.read || state.notifications.some(v => v.id === n.id && v.read),
+      })));
+      const centers = merge(state.centers, update.centers);
+      const remoteStudent = update.students.find(s => s.id === action.studentId);
+      const localStudent = state.students.find(s => s.id === action.studentId);
+      if (remoteStudent?.studentCode === localStudent?.studentCode &&
+          JSON.stringify([memberships, notifications, centers]) === JSON.stringify([state.memberships, state.notifications, state.centers])) return state;
+      return {
+        ...state, memberships, notifications, centers,
+        students: state.students.map(s => s.id === action.studentId && remoteStudent
+          ? { ...s, studentCode: remoteStudent.studentCode } : s),
+      };
+    }
+
     case 'hydrate':
     case 'replace':
       return { ...action.state, students: repairStudentCodes(action.state.students) };
@@ -285,7 +312,7 @@ function reducer(state: DemoState, action: Action): DemoState {
         id: newId('notif'),
         studentId: action.studentId,
         kind: 'center-request',
-        payload: { centerId: action.centerId, centerName: center?.name ?? '' },
+        payload: { membershipId: newMembership.id, centerId: action.centerId, centerName: center?.name ?? '' },
         read: false,
         createdAt: nowIso(),
       };
@@ -298,7 +325,7 @@ function reducer(state: DemoState, action: Action): DemoState {
 
     case 'membership/respond': {
       const memberships = (state.memberships ?? []).map((m) => {
-        if (m.id !== action.membershipId) return m;
+        if (m.id !== action.membershipId || m.studentId !== action.studentId || m.status !== 'requested') return m;
         return {
           ...m,
           status: (action.accept ? 'active' : 'rejected') as CenterMembership['status'],
@@ -309,7 +336,8 @@ function reducer(state: DemoState, action: Action): DemoState {
       const notifications = (state.notifications ?? []).map((n) => {
         if (
           n.studentId === action.studentId &&
-          n.kind === 'center-request'
+          n.kind === 'center-request' &&
+          membershipForNotification(state.memberships, n)?.id === action.membershipId
         ) {
           return { ...n, read: true };
         }
@@ -463,6 +491,34 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
     [state.students, state.activeStudentId],
   );
 
+  const connectionState = useRef(state);
+  connectionState.current = state;
+  useEffect(() => {
+    if (!hydrated || !state.activeStudentId) return;
+    let cancelled = false, busy = false;
+    const studentId = state.activeStudentId;
+    let registeredProfile = '';
+    const refresh = async () => {
+      if (busy) return;
+      const student = connectionState.current.students.find(s => s.id === studentId);
+      if (!student) return;
+      busy = true;
+      try {
+        await loadDemoEndpoint();
+        const profile = demoEndpoint() + JSON.stringify(student);
+        const update = profile === registeredProfile
+          ? await studentConnections('?studentId=' + encodeURIComponent(studentId))
+          : await studentConnections('/student', { student });
+        registeredProfile = profile;
+        if (!cancelled) dispatch({ type: 'connections/merge', studentId, update });
+      } catch { /* No false acceptance while offline; the inbox supports retry. */ }
+      finally { busy = false; }
+    };
+    void refresh();
+    const timer = setInterval(refresh, 5000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [hydrated, state.activeStudentId]);
+
   const lang = state.lang ?? 'ar';
 
   const [accessClock, setAccessClock] = useState(() => Date.now());
@@ -586,15 +642,13 @@ export function StudentStoreProvider({ children }: { children: React.ReactNode }
   );
 
   const respondToMembership = useCallback(
-    (membershipId: string, accept: boolean) => {
-      dispatch({
-        type: 'membership/respond',
-        membershipId,
-        accept,
-        studentId: state.activeStudentId,
-      });
-    },
-    [state.activeStudentId],
+    async (membershipId: string, accept: boolean) => {
+      const studentId = state.activeStudentId;
+      const membership = state.memberships.find(m => m.id === membershipId && m.studentId === studentId);
+      if (!studentId || !membership || membership.status !== 'requested') throw new Error('Invitation unavailable');
+      const update = await studentConnections('/respond', { studentId, membershipId, accept });
+      dispatch({ type: 'connections/merge', studentId, update });
+    }, [state.activeStudentId, state.memberships],
   );
 
   const isArchived = useCallback(

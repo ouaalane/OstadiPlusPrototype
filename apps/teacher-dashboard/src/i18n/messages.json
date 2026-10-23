@@ -2890,5 +2890,17 @@
   "تم تحديث دورة «{0}»": {
     "en": "Updated course “{0}”",
     "fr": "Cours « {0} » mis à jour"
+  },
+  "تعذّر الاتصال بالمركز. تحقق من الرابط وحاول مجدداً.": {
+    "en": "Could not connect to the centre. Check the server URL and try again.",
+    "fr": "Impossible de contacter le centre. Vérifiez l’adresse du serveur et réessayez."
+  },
+  "تعذّر إرسال الدعوة. تحقق من الاتصال وحاول مجدداً.": {
+    "en": "Invitation not sent. Check your connection and try again.",
+    "fr": "Invitation non envoyée. Vérifiez votre connexion et réessayez."
+  },
+  "المعلومات الكاملة والاشتراكات متاحة بعد قبول التلميذ للدعوة.": {
+    "en": "The full profile and subscriptions are available after the student accepts the invitation.",
+    "fr": "Le profil complet et les abonnements sont disponibles après l’acceptation de l’invitation par l’élève."
   }
 }

@@ -53,3 +53,32 @@ export async function syncStudentDemo(
   const remote = await response.json();
   return { ...remote, activeStudentId: student.id, lang: state.lang };
 }
+
+export type ConnectionUpdate = Pick<
+  DemoState,
+  'students' | 'memberships' | 'notifications' | 'centers'
+>;
+export async function studentConnections(
+  path: string,
+  body?: unknown,
+): Promise<ConnectionUpdate> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(endpoint + '/api/demo/connections' + path, {
+      ...(body === undefined
+        ? {}
+        : {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          }),
+      signal: controller.signal,
+    });
+    if (!response.ok)
+      throw new Error(`Connection request failed (${response.status})`);
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}

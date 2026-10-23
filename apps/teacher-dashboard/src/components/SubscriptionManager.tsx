@@ -39,6 +39,12 @@ export default function SubscriptionManager({
     (e) => e.studentId === studentId && e.courseId === courseId,
   );
   const student = state.students.find((s) => s.id === studentId);
+  const hasConsent = state.memberships.some(
+    (m) =>
+      m.studentId === studentId &&
+      m.centerId === state.centers[0]?.id &&
+      m.status === 'active',
+  );
   const plan: AccessPlan = choice.startsWith('semester:')
     ? { kind: 'semester', semesterId: choice.slice(9), startsOn, endsOn }
     : { kind: 'months', durationMonths: months, startsOn };
@@ -73,6 +79,12 @@ export default function SubscriptionManager({
           e.preventDefault();
           setError('');
           try {
+            if (!hasConsent)
+              throw new Error(
+                t(
+                  'المعلومات الكاملة والاشتراكات متاحة بعد قبول التلميذ للدعوة.',
+                ),
+              );
             if (!course) throw new Error(t('اختر المقرر'));
             createAccessPeriod(plan, course, 'validate');
             action(
@@ -200,7 +212,7 @@ export default function SubscriptionManager({
         </section>
         <fieldset
           className="space-y-3"
-          disabled={saved || !course}
+          disabled={saved || !course || !hasConsent}
           aria-describedby={error ? `${formId}-error` : undefined}
         >
           <legend className="text-sm font-bold mb-3">
@@ -338,7 +350,7 @@ export default function SubscriptionManager({
         <div className="flex gap-2">
           <button
             type="submit"
-            disabled={saved || !course}
+            disabled={saved || !course || !hasConsent}
             className="btn btn-primary"
           >
             {t('حفظ الاشتراك')}

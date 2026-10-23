@@ -1,4 +1,9 @@
 import {
+  connectionRequest,
+  lookupConnection,
+  type ConnectionUpdate,
+} from '@/lib/demo-sync';
+import {
   createContext,
   useCallback,
   useContext,
@@ -33,6 +38,7 @@ import {
 /* ------------------------------------------------------------------ */
 
 export type Action =
+  | { type: 'connections/merge'; payload: ConnectionUpdate }
   | {
       type: 'enrollment/grant';
       payload: {
@@ -171,7 +177,6 @@ let counter = 0;
 export const newId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}-${(++counter).toString(36)}`;
 
-
 function expiresAt(durationMonths: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() + durationMonths);
@@ -228,8 +233,42 @@ function swap<T>(list: T[], index: number, dir: -1 | 1) {
 
 export function reducer(state: DemoState, action: Action): DemoState {
   switch (action.type) {
+    case 'connections/merge': {
+      const update = action.payload;
+      const merge = <T extends { id: string }>(a: T[], b: T[]) => [
+        ...new Map([...a, ...b].map((v) => [v.id, v])).values(),
+      ];
+      const next = {
+        ...state,
+        students: merge(state.students, update.students),
+        memberships: merge(
+          state.memberships,
+          update.memberships.map((m) => {
+            const current = state.memberships.find((v) => v.id === m.id);
+            return m.status === 'requested' &&
+              current &&
+              current.status !== 'requested'
+              ? current
+              : m;
+          }),
+        ),
+        notifications: merge(state.notifications, update.notifications),
+      };
+      return JSON.stringify([
+        next.students,
+        next.memberships,
+        next.notifications,
+      ]) ===
+        JSON.stringify([state.students, state.memberships, state.notifications])
+        ? state
+        : next;
+    }
+
     case 'replace':
-      return { ...action.state, students: repairStudentCodes(action.state.students) };
+      return {
+        ...action.state,
+        students: repairStudentCodes(action.state.students),
+      };
 
     case 'reset':
       return createDemoState();
@@ -646,6 +685,7 @@ export function reducer(state: DemoState, action: Action): DemoState {
           studentId,
           kind: 'center-request',
           payload: {
+            membershipId: membership.id,
             centerId,
             centerName: center?.name ?? 'مركزك',
           },
@@ -696,6 +736,11 @@ export interface Toast {
 }
 
 interface StoreValue {
+  lookupStudentByCode: (
+    code: string,
+  ) => Promise<DemoState['students'][number] | undefined>;
+  inviteStudent: (studentId: string, centerId: string) => Promise<void>;
+
   state: DemoState;
   dispatch: Dispatch<Action>;
   notify: (message: string, tone?: Toast['tone']) => void;
@@ -728,7 +773,10 @@ function loadInitial(): DemoState {
       ) {
         /* Q & R was added after v8: keep the saved dashboard data and attach
            the seeded threads so the inbox is not empty on first open. */
-        const repaired = { ...parsed, students: repairStudentCodes(parsed.students) };
+        const repaired = {
+          ...parsed,
+          students: repairStudentCodes(parsed.students),
+        };
         return repaired.questions === undefined
           ? { ...repaired, questions: createDemoState().questions ?? [] }
           : repaired;
@@ -789,8 +837,11 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const pendingMemberships = useMemo(
-    () => (state.memberships ?? []).filter((m) => m.status === 'requested'),
-    [state.memberships],
+    () =>
+      (state.memberships ?? []).filter(
+        (m) => m.status === 'requested' && m.centerId === state.centers[0]?.id,
+      ),
+    [state.memberships, state.centers],
   );
 
   const findStudentByCode = useCallback(
@@ -801,10 +852,70 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
     [state.students],
   );
 
+  const centerId = state.centers[0]?.id;
+  useEffect(() => {
+    if (!centerId) return;
+    let cancelled = false,
+      busy = false;
+    const refresh = async () => {
+      if (busy || document.visibilityState === 'hidden') return;
+      busy = true;
+      try {
+        const payload = await connectionRequest(
+          '?centerId=' + encodeURIComponent(centerId),
+        );
+        if (!cancelled) dispatch({ type: 'connections/merge', payload });
+      } catch {
+        /* Offline work remains usable; explicit requests show errors. */
+      } finally {
+        busy = false;
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener('focus', refresh);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [centerId]);
+  const lookupStudentByCode = useCallback(
+    async (code: string) => {
+      const student = await lookupConnection(code, centerId ?? '');
+      if (student)
+        dispatch({
+          type: 'connections/merge',
+          payload: {
+            students: [student],
+            memberships: [],
+            notifications: [],
+            centers: [],
+          },
+        });
+      return student;
+    },
+    [centerId],
+  );
+  const inviteStudent = useCallback(
+    async (studentId: string, centerId: string) => {
+      const student = state.students.find((s) => s.id === studentId);
+      if (!student) throw new Error('Student not found');
+      const payload = await connectionRequest('/invite', {
+        studentCode: student.studentCode,
+        centerId,
+      });
+      dispatch({ type: 'connections/merge', payload });
+    },
+    [state.students],
+  );
+
   const value = useMemo<StoreValue>(
     () => ({
       state,
       dispatch,
+      lookupStudentByCode,
+      inviteStudent,
       notify,
       toasts,
       dismissToast,
@@ -822,6 +933,8 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
       isDirty,
       pendingMemberships,
       findStudentByCode,
+      lookupStudentByCode,
+      inviteStudent,
     ],
   );
 
